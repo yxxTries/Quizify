@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quizify — Turn presentations into quizzes instantly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Google+Sans+Display:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #1C1C1E;
+  --surface:  #2C2C2E;
+  --surface2: #3A3A3C;
+  --border:   rgba(255,255,255,0.08);
+  --border2:  rgba(255,255,255,0.14);
+  --text:     #F2F2F7;
+  --text2:    #AEAEB2;
+  --text3:    #636366;
+  --blue:     #4285F4;
+  --blue-dim: rgba(66,133,244,0.12);
+  --green:    #34A853;
+  --sans: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --r: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px;
+  background: rgba(28,28,30,0.92);
+  backdrop-filter: blur(20px) saturate(1.8);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-size: 18px; font-weight: 500;
+  color: var(--text); text-decoration: none; letter-spacing: -0.01em;
+}
+.nav-logo b { color: var(--blue); font-weight: 500; }
+.nav-links { display: flex; gap: 4px; }
+.nav-link {
+  padding: 7px 16px; border-radius: 100px;
+  font-size: 14px; color: var(--text2);
+  text-decoration: none; transition: all 0.15s;
+}
+.nav-link:hover { color: var(--text); background: var(--surface); }
+.nav-cta {
+  padding: 8px 20px; border-radius: 100px;
+  background: var(--blue); color: #fff;
+  font-size: 14px; font-weight: 500;
+  text-decoration: none; transition: all 0.2s;
+}
+.nav-cta:hover { background: #5a95f5; box-shadow: 0 1px 8px rgba(66,133,244,0.4); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  padding-top: 64px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding-bottom: 80px;
+  text-align: center;
+}
+
+.hero-inner {
+  max-width: 720px;
+  padding: 80px 32px 48px;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.hero-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px;
+  background: var(--blue-dim);
+  border: 1px solid rgba(66,133,244,0.2);
+  border-radius: 100px;
+  font-size: 12px; color: #8ab4f8;
+  letter-spacing: 0.02em;
+  margin-bottom: 32px;
+  animation: fadeDown 0.5s ease both;
+}
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); flex-shrink: 0; }
+
+h1 {
+  font-size: clamp(40px, 6vw, 68px);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  color: var(--text);
+  margin-bottom: 20px;
+  animation: fadeDown 0.5s 0.08s ease both;
+}
+h1 strong { font-weight: 500; color: #8ab4f8; }
+
+.hero-sub {
+  font-size: 17px; font-weight: 400;
+  color: var(--text2); line-height: 1.65;
+  max-width: 480px; margin-bottom: 40px;
+  animation: fadeDown 0.5s 0.16s ease both;
+}
+
+.hero-btns {
+  display: flex; gap: 12px; justify-content: center;
+  margin-bottom: 64px;
+  animation: fadeDown 0.5s 0.24s ease both;
+}
+.btn-primary {
+  padding: 12px 28px; background: var(--blue); color: #fff;
+  border: none; border-radius: 100px;
+  font-family: var(--sans); font-size: 14px; font-weight: 500;
+  cursor: pointer; text-decoration: none; transition: all 0.2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover { background: #5a95f5; box-shadow: 0 2px 12px rgba(66,133,244,0.4); }
+.btn-secondary {
+  padding: 12px 28px; background: var(--surface); color: var(--text2);
+  border: 1px solid var(--border2); border-radius: 100px;
+  font-family: var(--sans); font-size: 14px; font-weight: 400;
+  cursor: pointer; text-decoration: none; transition: all 0.2s;
+}
+.btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.22); }
+
+/* Stats */
+.stats {
+  display: flex; gap: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden;
+  animation: fadeDown 0.5s 0.32s ease both;
+  width: 100%; max-width: 440px;
+}
+.stat { flex: 1; padding: 18px 20px; text-align: center; border-right: 1px solid var(--border); }
+.stat:last-child { border-right: none; }
+.stat-num { font-size: 22px; font-weight: 500; color: var(--text); letter-spacing: -0.03em; line-height: 1; margin-bottom: 4px; }
+.stat-num span { color: var(--blue); }
+.stat-lbl { font-size: 11px; color: var(--text3); letter-spacing: 0.03em; }
+
+/* ── UPLOAD ── */
+.upload-wrap {
+  width: 100%; max-width: 560px; padding: 0 32px;
+  animation: fadeUp 0.6s 0.4s ease both;
+}
+.upload-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden;
+}
+.upload-top {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.upload-top-label { font-size: 12px; color: var(--text3); letter-spacing: 0.03em; }
+.fmt-pills { display: flex; gap: 6px; }
+.fmt-pill {
+  padding: 3px 9px; border-radius: 100px;
+  background: var(--bg); border: 1px solid var(--border);
+  font-size: 11px; color: var(--text3);
+}
+
+.dropzone {
+  margin: 16px;
+  border: 1.5px dashed rgba(255,255,255,0.1);
+  border-radius: 10px; padding: 44px 24px;
+  text-align: center; cursor: pointer; transition: all 0.2s;
+  background: var(--bg);
+}
+.dropzone:hover, .dropzone.drag {
+  border-color: rgba(66,133,244,0.5);
+  background: rgba(66,133,244,0.04);
+}
+.dropzone.has-file {
+  border-style: solid; border-color: rgba(66,133,244,0.4);
+  background: rgba(66,133,244,0.04); padding: 18px 20px;
+}
+.dz-icon {
+  width: 44px; height: 44px; margin: 0 auto 14px;
+  border-radius: 10px; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+}
+.dropzone:hover .dz-icon, .dropzone.drag .dz-icon { background: var(--blue-dim); }
+.dropzone:hover .dz-icon svg, .dropzone.drag .dz-icon svg { stroke: #8ab4f8; }
+.dz-icon svg { stroke: var(--text3); transition: stroke 0.2s; }
+.dz-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.dz-sub { font-size: 13px; color: var(--text3); }
+.dz-sub a { color: #8ab4f8; text-decoration: none; cursor: pointer; }
+
+.file-row { display: flex; align-items: center; gap: 12px; text-align: left; }
+.file-chip {
+  width: 40px; height: 48px; border-radius: 6px;
+  background: var(--bg); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 500; color: #8ab4f8;
+  text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0;
+}
+.file-meta { flex: 1; }
+.file-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.file-size { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.file-rm {
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); display: flex; align-items: center;
+  padding: 6px; border-radius: 6px; transition: all 0.15s;
+}
+.file-rm:hover { color: var(--text); background: var(--surface2); }
+
+.upload-bottom { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.progress-wrap { display: none; }
+.progress-bar { height: 2px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--blue); border-radius: 2px; width: 0%; transition: width 0.3s ease; }
+
+.btn-generate {
+  width: 100%; padding: 13px; background: var(--blue); color: #fff;
+  border: none; border-radius: 8px;
+  font-family: var(--sans); font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-generate:hover:not(.off) { background: #5a95f5; }
+.btn-generate.off { opacity: 0.3; cursor: not-allowed; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.6s linear infinite; display: none;
+}
+
+/* ── SECTIONS ── */
+.section { padding: 96px 80px; border-top: 1px solid var(--border); }
+.section-label { font-size: 11px; color: var(--blue); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+.section-h {
+  font-size: clamp(28px, 3vw, 40px); font-weight: 400;
+  letter-spacing: -0.025em; color: var(--text); line-height: 1.1; margin-bottom: 52px;
+}
+.section-h em { font-style: normal; color: var(--text2); }
+
+.steps {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+  background: var(--border); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden;
+}
+.step { background: var(--bg); padding: 32px 28px; transition: background 0.2s; }
+.step:hover { background: var(--surface); }
+.step-n { font-size: 11px; color: var(--text3); letter-spacing: 0.08em; margin-bottom: 16px; }
+.step-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+.step-desc { font-size: 13px; color: var(--text3); line-height: 1.65; }
+
+.feature-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--border); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden;
+}
+.feat { background: var(--bg); padding: 40px; transition: background 0.2s; }
+.feat:hover { background: var(--surface); }
+.feat-icon {
+  width: 38px; height: 38px; border-radius: 8px;
+  background: var(--blue-dim); border: 1px solid rgba(66,133,244,0.2);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 18px;
+}
+.feat-icon svg { stroke: #8ab4f8; }
+.feat-tag { font-size: 11px; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+.feat-title { font-size: 17px; font-weight: 500; color: var(--text); letter-spacing: -0.02em; margin-bottom: 8px; }
+.feat-desc { font-size: 13px; color: var(--text3); line-height: 1.7; }
+.feat.span2 { grid-column: span 2; display: flex; gap: 40px; align-items: center; }
+.feat-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
+.feat-chip { padding: 5px 12px; border-radius: 100px; font-size: 12px; }
+.chip-b { background: var(--blue-dim); color: #8ab4f8; border: 1px solid rgba(66,133,244,0.2); }
+.chip-g { background: rgba(52,168,83,0.1); color: #81c995; border: 1px solid rgba(52,168,83,0.2); }
+.chip-n { background: var(--surface); color: var(--text3); border: 1px solid var(--border); }
+
+.testi-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 1px;
+  background: var(--border); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden;
+}
+.testi { background: var(--bg); padding: 32px; transition: background 0.2s; }
+.testi:hover { background: var(--surface); }
+.stars { color: #FBBC04; font-size: 12px; letter-spacing: 2px; margin-bottom: 14px; }
+.testi-body { font-size: 14px; color: var(--text2); line-height: 1.7; font-style: italic; margin-bottom: 20px; }
+.testi-who { display: flex; align-items: center; gap: 10px; }
+.avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 500; color: #fff; flex-shrink: 0;
+}
+.testi-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.testi-role { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+/* ── CTA ── */
+.cta-wrap { padding: 0 80px 96px; }
+.cta-band {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 72px 80px;
+  display: flex; align-items: center; justify-content: space-between; gap: 40px;
+}
+.cta-band h2 {
+  font-size: clamp(26px,3vw,38px); font-weight: 400;
+  letter-spacing: -0.025em; color: var(--text); line-height: 1.15; margin-bottom: 8px;
+}
+.cta-band p { font-size: 14px; color: var(--text3); }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border); padding: 28px 80px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.footer-logo { font-size: 15px; font-weight: 500; color: var(--text2); }
+.footer-logo b { color: var(--blue); font-weight: 500; }
+.footer-links { display: flex; gap: 24px; }
+.footer-links a { font-size: 13px; color: var(--text3); text-decoration: none; transition: color 0.15s; }
+.footer-links a:hover { color: var(--text2); }
+.footer-copy { font-size: 12px; color: var(--text3); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeUp   { from { opacity:0; transform:translateY(14px);  } to { opacity:1; transform:translateY(0); } }
+.reveal { opacity:0; transform:translateY(18px); transition: opacity 0.55s ease, transform 0.55s ease; }
+.reveal.in { opacity:1; transform:none; }
+.d1 { transition-delay:0.08s; } .d2 { transition-delay:0.16s; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  .nav-links { display:none; }
+  .section { padding: 64px 28px; }
+  .steps { grid-template-columns: 1fr 1fr; }
+  .feature-grid { grid-template-columns: 1fr; }
+  .feat.span2 { flex-direction: column; grid-column: span 1; }
+  .testi-grid { grid-template-columns: 1fr; }
+  .cta-wrap { padding: 0 28px 64px; }
+  .cta-band { flex-direction: column; text-align: center; padding: 48px 32px; }
+  footer { padding: 24px 28px; flex-direction: column; gap: 16px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#">Quiz<b>ify</b></a>
+  <div class="nav-links">
+    <a href="#how" class="nav-link">How it works</a>
+    <a href="#features" class="nav-link">Features</a>
+  </div>
+  <a href="#upload" class="nav-cta">Try free</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <h1>Slides in.<br><strong>Quizzes out.</strong></h1>
+    <p class="hero-sub">Upload any presentation and get a Kahoot-ready quiz in seconds — AI-written questions, smart distractors, zero manual work.</p>
+    <div class="hero-btns">
+      <a href="#upload" class="btn-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload slides
+      </a>
+      <a href="#how" class="btn-secondary">How it works</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-num"><span>~15</span>s</div><div class="stat-lbl">per 30 slides</div></div>
+      <div class="stat"><div class="stat-num">4</div><div class="stat-lbl">answers per Q</div></div>
+      <div class="stat"><div class="stat-num"><span>3</span></div><div class="stat-lbl">export formats</div></div>
+    </div>
+  </div>
+
+  <div class="upload-wrap" id="upload">
+    <div class="upload-card">
+      <div class="upload-top">
+        <span class="upload-top-label">Upload presentation</span>
+        <div class="fmt-pills"><span class="fmt-pill">.pptx</span><span class="fmt-pill">.pdf</span></div>
+      </div>
+      <div class="dropzone" id="dz" onclick="document.getElementById('fi').click()">
+        <input id="fi" type="file" accept=".pptx,.pdf" style="display:none" onchange="pick(this.files[0])">
+        <div id="empty">
+          <div class="dz-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div class="dz-title">Drop your file here</div>
+          <div class="dz-sub">or <a onclick="event.stopPropagation();document.getElementById('fi').click()">browse files</a> — up to 100 slides</div>
+        </div>
+        <div id="file-row" class="file-row" style="display:none">
+          <div class="file-chip" id="fext">PDF</div>
+          <div class="file-meta">
+            <div class="file-name" id="fname">—</div>
+            <div class="file-size" id="fsize">—</div>
+          </div>
+          <button class="file-rm" onclick="clear_(event)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="upload-bottom">
+        <div class="progress-wrap" id="pwrap">
+          <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
+        </div>
+        <button class="btn-generate off" id="gbtn" onclick="gen()">
+          <span class="spinner" id="spin"></span>
+          <span id="glabel">Generate quiz</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="reveal">
+    <div class="section-label">Process</div>
+    <div class="section-h">Four steps. <em>Done in seconds.</em></div>
+  </div>
+  <div class="steps reveal d1">
+    <div class="step"><div class="step-n">01</div><div class="step-title">Upload</div><div class="step-desc">Drop a .pptx or .pdf. We parse every slide — titles, bullets, and speaker notes.</div></div>
+    <div class="step"><div class="step-n">02</div><div class="step-title">Extract</div><div class="step-desc">Each slide becomes a focused knowledge chunk — one concept ready to be tested.</div></div>
+    <div class="step"><div class="step-n">03</div><div class="step-title">Generate</div><div class="step-desc">Claude writes one question and three plausible distractors per chunk, in parallel.</div></div>
+    <div class="step"><div class="step-n">04</div><div class="step-title">Export</div><div class="step-desc">Review, edit inline, then download a Kahoot CSV or push to Quizlet or Google Forms.</div></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="reveal">
+    <div class="section-label">Features</div>
+    <div class="section-h">Everything you need. <em>Nothing you don't.</em></div>
+  </div>
+  <div class="feature-grid reveal d1">
+    <div class="feat">
+      <div class="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+      <div class="feat-tag">Speed</div>
+      <div class="feat-title">30 slides in 15 seconds</div>
+      <div class="feat-desc">Generation runs in parallel across all your slides. A full lecture deck is ready before you'd finish writing the first question by hand.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div class="feat-tag">Quality</div>
+      <div class="feat-title">Grounded in your content</div>
+      <div class="feat-desc">Claude only asks about what's in your slides. No hallucination, no off-topic questions. Every answer traces back to a specific slide.</div>
+    </div>
+    <div class="feat span2">
+      <div>
+        <div class="feat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/></svg></div>
+        <div class="feat-tag">Export</div>
+        <div class="feat-title">Works where you teach</div>
+        <div class="feat-desc">Formatted exactly the way each platform expects — no reformatting, no manual entry, no surprises.</div>
+        <div class="feat-chips">
+          <span class="feat-chip chip-b">Kahoot CSV</span>
+          <span class="feat-chip chip-g">Quizlet</span>
+          <span class="feat-chip chip-b">Google Forms</span>
+          <span class="feat-chip chip-n">More coming</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- CTA -->
+<div class="cta-wrap">
+  <div class="cta-band reveal">
+    <div>
+      <h2>Ready to save hours<br>every week?</h2>
+      <p>Free during beta. No account required.</p>
+    </div>
+    <a href="#upload" class="btn-primary" style="padding:13px 32px;font-size:15px;flex-shrink:0">
+      Upload your first deck
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">Quiz<b>ify</b></div>
+  <div class="footer-links">
+    <a href="#">Privacy</a><a href="#">Terms</a><a href="#">GitHub</a><a href="#">Contact</a>
+  </div>
+  <div class="footer-copy">© 2026 Quizify</div>
+</footer>
+
+<script>
+let has = false, busy = false
+
+function pick(f) {
+  if (!f) return
+  const ext = f.name.split('.').pop().toLowerCase()
+  if (!['pptx','pdf'].includes(ext)) return
+  has = true
+  document.getElementById('fext').textContent = ext.toUpperCase()
+  document.getElementById('fname').textContent = f.name
+  document.getElementById('fsize').textContent = (f.size/1024).toFixed(0) + ' KB'
+  document.getElementById('empty').style.display = 'none'
+  document.getElementById('file-row').style.display = 'flex'
+  document.getElementById('dz').classList.add('has-file')
+  document.getElementById('gbtn').classList.remove('off')
+}
+
+function clear_(e) {
+  e.stopPropagation()
+  has = false
+  document.getElementById('empty').style.display = 'block'
+  document.getElementById('file-row').style.display = 'none'
+  document.getElementById('dz').classList.remove('has-file')
+  document.getElementById('gbtn').classList.add('off')
+  document.getElementById('fi').value = ''
+}
+
+function gen() {
+  if (!has || busy) return
+  busy = true
+  document.getElementById('pwrap').style.display = 'block'
+  document.getElementById('spin').style.display = 'block'
+  document.getElementById('glabel').textContent = 'Generating quiz…'
+  document.getElementById('gbtn').classList.add('off')
+  let p = 0
+  const iv = setInterval(() => {
+    p = Math.min(p + Math.random() * 14, 90)
+    document.getElementById('pfill').style.width = p + '%'
+  }, 300)
+  setTimeout(() => {
+    clearInterval(iv)
+    document.getElementById('pfill').style.width = '100%'
+    setTimeout(() => {
+      busy = false
+      document.getElementById('spin').style.display = 'none'
+      document.getElementById('glabel').textContent = 'Generate quiz'
+      document.getElementById('gbtn').classList.remove('off')
+      document.getElementById('pwrap').style.display = 'none'
+      document.getElementById('pfill').style.width = '0'
+    }, 400)
+  }, 2800)
+}
+
+const dz = document.getElementById('dz')
+dz.addEventListener('dragover',  e => { e.preventDefault(); if (!has) dz.classList.add('drag') })
+dz.addEventListener('dragleave', ()  => dz.classList.remove('drag'))
+dz.addEventListener('drop',      e  => { e.preventDefault(); dz.classList.remove('drag'); pick(e.dataTransfer.files[0]) })
+
+const obs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in') }), { threshold: 0.1 })
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el))
+</script>
+</body>
+</html>
