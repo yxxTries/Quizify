@@ -115,13 +115,22 @@ def _call_groq(prompt: str) -> str:
 
 def _parse_quiz(raw: str, num_questions: int = 10) -> dict:
     cleaned = re.sub(r"```(?:json)?\s*", "", raw).strip()
-    match = re.search(r'\{.*"questions"\s*:\s*\[.*\]\s*\}', cleaned, re.DOTALL)
-    if not match:
-        raise ValueError(f"Could not find JSON in LLM response. Raw: {raw[:500]}")
+    
+    # Sometimes Groq returns valid JSON directly without markdown blocks, 
+    # and the regex match fails if there are newlines or structural differences.
+    # Let's try parsing it directly first!
     try:
-        data = json.loads(match.group())
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON from LLM: {e}. Raw: {raw[:500]}") from e
+        data = json.loads(cleaned)
+    except json.JSONDecodeError:
+        # If direct parse fails, fallback to regex extraction
+        match = re.search(r'\{.*"questions"\s*:\s*\[.*\]\s*\}', cleaned, re.DOTALL) 
+        if not match:
+            raise ValueError(f"Could not find JSON in LLM response. Raw: {raw[:500]}")
+        try:
+            data = json.loads(match.group())
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON from LLM: {e}. Raw: {raw[:500]}") from e
+
     if "questions" not in data or not isinstance(data["questions"], list):
         raise ValueError("LLM response missing 'questions' list.")
     valid = []
