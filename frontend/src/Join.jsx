@@ -7,6 +7,8 @@ export default function Join({ onExit, initialPin = "" }) {
   const [status, setStatus] = useState("login"); // login, joining, waiting, playing
   const [quiz, setQuiz] = useState(null);
   const [error, setError] = useState("");
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [leaderboard, setLeaderboard] = useState({});
   const ws = useRef(null);
 
   const handleJoin = (e) => {
@@ -36,6 +38,12 @@ export default function Join({ onExit, initialPin = "" }) {
       } else if (data.type === "start") {
         setQuiz(data.quiz);
         setStatus("playing");
+      } else if (data.type === "next_question") {
+        setCurrentQuestionIndex(data.index);
+      } else if (data.type === "leaderboard") {
+        setLeaderboard(data.scores);
+      } else if (data.type === "end_game") {
+        setCurrentQuestionIndex(quiz?.questions?.length || 1000);
       }
     };
     
@@ -57,7 +65,13 @@ export default function Join({ onExit, initialPin = "" }) {
     return (
       <div style={{ position: "relative" }}>
         {/* We reuse the Quiz component */}
-        <Quiz quiz={quiz} onRestart={() => { if(ws.current) ws.current.close(); onExit(); }} onScoreUpdate={handleScoreUpdate} />
+        <Quiz 
+          quiz={quiz} 
+          onRestart={() => { if(ws.current) ws.current.close(); onExit(); }} 
+          onScoreUpdate={handleScoreUpdate} 
+          currentQuestionIndex={currentQuestionIndex}
+          leaderboard={leaderboard}
+        />
       </div>
     );
   }

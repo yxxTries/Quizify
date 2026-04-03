@@ -45,10 +45,11 @@ async def websocket_host(websocket: WebSocket):
             manager.rooms[pin] = {
                 "host": websocket,
                 "players": {},
+                "scores": {},
                 "quiz": data.get("quiz")
             }
             await websocket.send_json({"type": "created", "pin": pin})
-            
+
             # Keep connection alive and listen for host commands
             while True:
                 msg = await websocket.receive_json()
@@ -58,6 +59,15 @@ async def websocket_host(websocket: WebSocket):
                     await manager.broadcast_to_players(pin, {
                         "type": "start",
                         "quiz": quiz_data
+                    })
+                elif msg.get("type") == "next_question":
+                    await manager.broadcast_to_players(pin, {
+                        "type": "next_question",
+                        "index": msg.get("index")
+                    })
+                elif msg.get("type") == "end_game":
+                    await manager.broadcast_to_players(pin, {
+                        "type": "end_game"
                     })
     except WebSocketDisconnect:
         # We need to find which room this host was running and close it
@@ -76,22 +86,47 @@ async def websocket_join(websocket: WebSocket, pin: str, name: str):
         return
 
     try:
+        room = manager.get_room(pin)
+        if room:
+            if "scores" not in room:
+                room["scores"] = {}
+            room["scores"][name] = 0
+            scores = room["scores"]
+            await manager.broadcast_to_players(pin, {"type": "leaderboard", "scores": scores})
+            try:
+                await room["host"].send_json({"type": "leaderboard", "scores": scores})
+            except Exception:
+                pass
+
         while True:
             data = await websocket.receive_json()
             if data.get("type") == "score_update":
-                # Forward the score to the host
+                # Forward the score to the host and players
                 room = manager.get_room(pin)
-                if room and "host" in room:
-                    try:
-                        await room["host"].send_json({
-                            "type": "score_update",
-                            "name": name,
-                            "score": data.get("score", 0)
-                        })
-                    except Exception:
-                        pass
+                if room:
+                    room["scores"][name] = data.get("score", 0)
+                    scores = room["scores"]
+                    await manager.broadcast_to_players(pin, {"type": "leaderboard", "scores": scores})
+                    if "host" in room:
+                        try:
+                            await room["host"].send_json({
+                                "type": "leaderboard",
+                                "scores": scores
+                            })
+                        except Exception:
+                            pass
     except WebSocketDisconnect:
         await manager.remove_player(pin, name)
+        room = manager.get_room(pin)
+        if room and "scores" in room and name in room["scores"]:
+            del room["scores"][name]
+            scores = room["scores"]
+            await manager.broadcast_to_players(pin, {"type": "leaderboard", "scores": scores})
+            if "host" in room:
+                try:
+                    await room["host"].send_json({"type": "leaderboard", "scores": scores})
+                except Exception:
+                    pass
 
 
 @app.post("/generate-quiz")
