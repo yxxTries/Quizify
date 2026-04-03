@@ -97,30 +97,53 @@ const scoreStyles = {
   },
 };
 
-export default function Quiz({ quiz, onRestart }) {
+export default function Quiz({ quiz, onRestart, onScoreUpdate, currentQuestionIndex = null, leaderboard = null }) {
   const { questions } = quiz;
   const total = questions.length;
 
-  const [current,   setCurrent]   = useState(0);
-  const [selected,  setSelected]  = useState(null);   // index of chosen answer
-  const [revealed,  setRevealed]  = useState(false);  // show correct/wrong
+  const isMultiplayer = currentQuestionIndex !== null;
+
+  const [localCurrent, setLocalCurrent] = useState(0);
+  const current = isMultiplayer ? currentQuestionIndex : localCurrent;
+
+  const [selected,  setSelected]  = useState(null);   // index of chosen answer 
+  const [revealed,  setRevealed]  = useState(false);  // show correct/wrong     
   const [score,     setScore]     = useState(0);
   const [done,      setDone]      = useState(false);
 
-  const q = questions[current];
+  // When host moves to the next question, reset selection state
+  React.useEffect(() => {
+    if (isMultiplayer) {
+      if (current < total) {
+        setSelected(null);
+        setRevealed(false);
+      } else {
+        setDone(true);
+      }
+    }
+  }, [current, total, isMultiplayer]);
+
+  const q = questions[current < total ? current : total - 1] || questions[0];
 
   const handleSelect = (idx) => {
     if (revealed) return;
     setSelected(idx);
     setRevealed(true);
-    if (idx === q.correct_index) setScore((s) => s + 1);
+    let newScore = score;
+    if (idx === q.correct_index) {
+       newScore += 1;
+       setScore(newScore);
+    }
+    if (onScoreUpdate) {
+       onScoreUpdate(newScore);
+    }
   };
 
-  const handleNext = () => {
-    if (current + 1 >= total) {
+  const handleNextLocal = () => {
+    if (localCurrent + 1 >= total) {
       setDone(true);
     } else {
-      setCurrent((c) => c + 1);
+      setLocalCurrent((c) => c + 1);
       setSelected(null);
       setRevealed(false);
     }
@@ -186,10 +209,10 @@ export default function Quiz({ quiz, onRestart }) {
                 <span style={styles.choiceShape}>{color.label}</span>
                 <span style={styles.choiceText}>{choice}</span>
                 {revealed && idx === q.correct_index && (
-                  <span style={styles.tick}>✓</span>
+                  <span style={styles.tick}>&#10003;</span>
                 )}
-                {revealed && idx === selected && idx !== q.correct_index && (
-                  <span style={styles.cross}>✗</span>
+                {revealed && idx === selected && idx !== q.correct_index && (   
+                  <span style={styles.cross}>&#10007;</span>
                 )}
               </button>
             );
@@ -201,12 +224,34 @@ export default function Quiz({ quiz, onRestart }) {
           <div style={styles.feedbackRow} key={"fb-" + current}>
             <div style={selected === q.correct_index ? styles.feedbackCorrect : styles.feedbackWrong}>
               {selected === q.correct_index
-                ? "✓ Correct!"
-                : `✗ The answer was: ${q.choices[q.correct_index]}`}
+                ? "\u2713 Correct!"
+                : `\u2717 The answer was: ${q.choices[q.correct_index]}`}
             </div>
-            <button style={styles.nextBtn} onClick={handleNext}>
-              {current + 1 < total ? "Next question →" : "See results →"}
-            </button>
+            
+            {leaderboard ? (
+               <div style={styles.miniLeaderboard}>
+                 <h4 style={{ margin: "0 0 10px 0" }}>Live Leaderboard</h4>
+                 {Object.entries(leaderboard)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 3)
+                    .map(([name, s], i) => (
+                      <div key={name} style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", padding: "4px 0" }}>
+                        <span>{i+1}. {name}</span>
+                        <span>{s} pts</span>
+                      </div>
+                    ))}
+               </div>
+            ) : null}
+
+            {isMultiplayer ? (
+              <p style={{ textAlign: "center", color: "#8e8ea0", margin: "10px 0" }}>
+                Waiting for the host to start the next question...
+              </p>
+            ) : (
+              <button style={styles.nextBtn} onClick={handleNextLocal}>
+                {localCurrent + 1 < total ? "Next question \u2192" : "See results \u2192"}   
+              </button>
+            )}
           </div>
         )}
       </main>
@@ -372,5 +417,12 @@ const styles = {
     fontFamily: "'DM Sans', sans-serif",
     cursor: "pointer",
     width: "100%",
+  },
+  miniLeaderboard: {
+    background: "#1a1a2e",
+    border: "1px solid #2e2e42",
+    borderRadius: "10px",
+    padding: "12px 16px",
+    color: "#f0ede8",
   },
 };

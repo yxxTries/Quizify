@@ -6,6 +6,7 @@ export default function Host({ quiz, onEnd }) {
   const [players, setPlayers] = useState([]);
   const [scores, setScores] = useState({});
   const [status, setStatus] = useState("connecting"); // connecting, lobby, playing
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const ws = useRef(null);
 
     useEffect(() => {
@@ -30,6 +31,8 @@ export default function Host({ quiz, onEnd }) {
         setScores(s => ({ ...s, [data.name]: 0 }));
       } else if (data.type === "player_left") {
         setPlayers(p => p.filter(name => name !== data.name));
+      } else if (data.type === "leaderboard") {
+        setScores(data.scores);
       } else if (data.type === "score_update") {
         setScores(s => ({ ...s, [data.name]: data.score }));
       }
@@ -45,10 +48,23 @@ export default function Host({ quiz, onEnd }) {
 
   const handleStart = () => {
     setStatus("playing");
+    setCurrentQuestionIndex(0);
     ws.current.send(JSON.stringify({ type: "start" }));
+    ws.current.send(JSON.stringify({ type: "next_question", index: 0 }));
   };
 
-  const joinUrl = `http://${window.location.host}`;
+  const handleNext = () => {
+    const nextIdx = currentQuestionIndex + 1;
+    if (nextIdx >= quiz.questions.length) {
+      ws.current.send(JSON.stringify({ type: "end_game" }));
+      onEnd(); // End game view or just return to lobby
+    } else {
+      setCurrentQuestionIndex(nextIdx);
+      ws.current.send(JSON.stringify({ type: "next_question", index: nextIdx }));
+    }
+  };
+
+  const joinUrl = `http://${window.location.host}/?pin=${pin}`;
 
   return (
     <div style={{ padding: 40, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", gap: 20 }}>
@@ -116,7 +132,12 @@ export default function Host({ quiz, onEnd }) {
                 </div>
               ))}
             </div>
-            <button onClick={onEnd} style={{ padding: "12px 24px", marginTop: 40, background: "#2e2e42", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>End Game</button>
+            {currentQuestionIndex < quiz.questions.length - 1 ? (
+              <button onClick={handleNext} style={{ padding: "12px 24px", marginTop: 40, background: "#7c6fff", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: "20px" }}>Next Question &rarr;</button>
+            ) : (
+              <button onClick={handleNext} style={{ padding: "12px 24px", marginTop: 40, background: "#7c6fff", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: "20px" }}>End Game</button>
+            )}
+            <button onClick={onEnd} style={{ padding: "12px 24px", marginTop: 10, background: "#2e2e42", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>Force Quit</button>
          </>
       )}
     </div>

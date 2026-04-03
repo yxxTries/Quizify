@@ -440,7 +440,7 @@ const cardStyles = {
 // Preview (main component)
 // ─────────────────────────────────────────────
 
-export default function Preview({ quiz, onStart, onBack }) {
+export default function Preview({ quiz, onStart, onBack, intent = "solo" }) {
   const [questions, setQuestions]       = useState(() => cloneQuestions(quiz.questions));
   const [showAnswers, setShowAnswers]   = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -618,14 +618,14 @@ export default function Preview({ quiz, onStart, onBack }) {
         <span style={styles.logo}>QuizAI</span>
         <span style={styles.title}>Review Questions</span>
         <button style={styles.startBtn} onClick={handleStart}>
-          Start Quiz →
+          {intent === "host" ? "Create Lobby \u2192" : "Start Quiz \u2192"}
         </button>
       </header>
 
       {/* Error banner */}
       {errorBanner && (
         <div style={styles.errorBanner}>
-          ⚠ {errorBanner}
+          &#9888; {errorBanner}
         </div>
       )}
 
@@ -689,7 +689,7 @@ export default function Preview({ quiz, onStart, onBack }) {
 
         {/* Back link */}
         <button style={styles.backLink} onClick={onBack}>
-          ← Upload a different file
+          &larr; Upload a different file
         </button>
       </main>
 

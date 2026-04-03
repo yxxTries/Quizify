@@ -4,6 +4,7 @@ import re
 import requests
 from dotenv import load_dotenv
 from pathlib import Path
+import json_repair
 
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -102,8 +103,8 @@ def _call_groq(prompt: str) -> str:
             json={
                 "model": REAL_GROQ_MODEL,
                 "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7,
-                "max_tokens": 4096,
+                "temperature": 0.1,
+                "max_tokens": 2500,
                 "response_format": {"type": "json_object"},
             },
             timeout=60,
@@ -127,14 +128,14 @@ def _parse_quiz(raw: str, num_questions: int = 10) -> dict:
     json_str = cleaned[start_idx:end_idx+1]
     
     try:
-        data = json.loads(json_str)
-    except json.JSONDecodeError as e:
+        data = json_repair.loads(json_str)
+    except Exception as e:
         raise ValueError(f"Invalid JSON from LLM: {e}. Extracted JSON: {json_str[:500]}... Raw: {raw[:500]}") from e
 
-    if "questions" not in data or not isinstance(data["questions"], list):
+    if "questions" not in data or not isinstance(data["questions"], list): # type: ignore
         raise ValueError("LLM response missing 'questions' list.")
     valid = []
-    for item in data["questions"]:
+    for item in data["questions"]: # type: ignore
         if not isinstance(item, dict):
             continue
         q = item.get("question", "").strip()
