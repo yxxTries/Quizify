@@ -10,12 +10,16 @@ const globalStyle = `
   body {
     background: #0a0a0f;
     color: #f0ede8;
+    font-family: 'DM Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
   button { font-family: inherit; }
   input  { font-family: inherit; }
   textarea { font-family: inherit; }
 
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Syne', sans-serif;
+  }
   @media (max-width: 520px) {
     .quiz-grid { grid-template-columns: 1fr !important; }
   }
@@ -30,20 +34,27 @@ export default function App() {
   });
   
   const [quiz, setQuiz] = useState(null);
+  const [intent, setIntent] = useState("solo");
 
   const handleQuizReady = (quizData) => {
     setQuiz(quizData);
+    setIntent("solo");
     setPage("preview");
   };
 
   const handleHostReady = (quizData) => {
     setQuiz(quizData);
-    setPage("host");
+    setIntent("host");
+    setPage("preview");
   }
 
-  const handleStartQuiz = (editedQuiz) => {
+  const handleStartReview = (editedQuiz) => {
     setQuiz(editedQuiz);
-    setPage("quiz");
+    if (intent === "host") {
+      setPage("host");
+    } else {
+      setPage("quiz");
+    }
   };
 
   const handleRestart = () => {
@@ -68,7 +79,7 @@ export default function App() {
            <Upload onQuizReady={handleQuizReady} onHostReady={handleHostReady} />
          </div>
       )}
-      {page === "preview" && <Preview quiz={quiz} onStart={handleStartQuiz} onBack={handleRestart} />}
+      {page === "preview" && <Preview quiz={quiz} onStart={handleStartReview} onBack={handleRestart} intent={intent} />}
       {page === "quiz"    && <Quiz    quiz={quiz} onRestart={handleRestart} />}
       {page === "host"    && <Host    quiz={quiz} onEnd={handleRestart} />}
       {page === "join"    && <Join    initialPin={initialPin} onExit={handleRestart} />}

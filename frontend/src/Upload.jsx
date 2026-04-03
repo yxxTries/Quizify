@@ -39,7 +39,20 @@ export default function Upload({ onQuizReady, onHostReady }) {
   const onDragLeave = ()  => setDragging(false);
 
   const handleSubmit = async (isHost = false) => {
-    if (!file) return;
+    if (!file) {
+      const dummyQuestions = Array.from({ length: numQuestions }, (_, i) => ({
+        question: `Question ${i + 1}`,
+        choices: ["Option a", "Option b", "Option c", "Option d"],
+        correct_index: 0
+      }));
+      const dummyQuiz = { questions: dummyQuestions };
+      if (isHost) {
+        onHostReady(dummyQuiz);
+      } else {
+        onQuizReady(dummyQuiz);
+      }
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -167,10 +180,10 @@ export default function Upload({ onQuizReady, onHostReady }) {
           <button
             style={{
               ...styles.btn,
-              ...((!file || loading) ? styles.btnDisabled : {}),
+              ...(loading ? styles.btnDisabled : {}),
             }}
             onClick={() => handleSubmit(false)}
-            disabled={!file || loading}
+            disabled={loading}
           >
             {loading ? (
               <span style={styles.loadingRow}>
@@ -183,10 +196,10 @@ export default function Upload({ onQuizReady, onHostReady }) {
           <button
             style={{
               ...styles.btnSecondary,
-              ...((!file || loading) ? styles.btnSecondaryDisabled : {}),
+              ...(loading ? styles.btnSecondaryDisabled : {}),
             }}
             onClick={() => handleSubmit(true)}
-            disabled={!file || loading}
+            disabled={loading}
           >
             {loading ? "Generating Quiz..." : "Host Multiplayer"}
           </button>

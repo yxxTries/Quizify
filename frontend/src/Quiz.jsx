@@ -209,10 +209,10 @@ export default function Quiz({ quiz, onRestart, onScoreUpdate, currentQuestionIn
                 <span style={styles.choiceShape}>{color.label}</span>
                 <span style={styles.choiceText}>{choice}</span>
                 {revealed && idx === q.correct_index && (
-                  <span style={styles.tick}>✓</span>
+                  <span style={styles.tick}>&#10003;</span>
                 )}
-                {revealed && idx === selected && idx !== q.correct_index && (
-                  <span style={styles.cross}>✗</span>
+                {revealed && idx === selected && idx !== q.correct_index && (   
+                  <span style={styles.cross}>&#10007;</span>
                 )}
               </button>
             );
@@ -224,8 +224,8 @@ export default function Quiz({ quiz, onRestart, onScoreUpdate, currentQuestionIn
           <div style={styles.feedbackRow} key={"fb-" + current}>
             <div style={selected === q.correct_index ? styles.feedbackCorrect : styles.feedbackWrong}>
               {selected === q.correct_index
-                ? "✓ Correct!"
-                : `✗ The answer was: ${q.choices[q.correct_index]}`}
+                ? "\u2713 Correct!"
+                : `\u2717 The answer was: ${q.choices[q.correct_index]}`}
             </div>
             
             {leaderboard ? (
@@ -249,7 +249,7 @@ export default function Quiz({ quiz, onRestart, onScoreUpdate, currentQuestionIn
               </p>
             ) : (
               <button style={styles.nextBtn} onClick={handleNextLocal}>
-                {localCurrent + 1 < total ? "Next question â†’" : "See results â†’"}   
+                {localCurrent + 1 < total ? "Next question \u2192" : "See results \u2192"}   
               </button>
             )}
           </div>

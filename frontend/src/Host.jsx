@@ -133,7 +133,7 @@ export default function Host({ quiz, onEnd }) {
               ))}
             </div>
             {currentQuestionIndex < quiz.questions.length - 1 ? (
-              <button onClick={handleNext} style={{ padding: "12px 24px", marginTop: 40, background: "#7c6fff", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: "20px" }}>Next Question â†’</button>
+              <button onClick={handleNext} style={{ padding: "12px 24px", marginTop: 40, background: "#7c6fff", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: "20px" }}>Next Question &rarr;</button>
             ) : (
               <button onClick={handleNext} style={{ padding: "12px 24px", marginTop: 40, background: "#7c6fff", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: "20px" }}>End Game</button>
             )}
