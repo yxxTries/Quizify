@@ -100,7 +100,7 @@ export default function Upload({ onQuizReady, onHostReady }) {
           <span style={styles.accent}>Get a quiz.</span>
         </h1>
         <p style={styles.sub}>
-          Upload a PDF or PowerPoint. The AI reads it and writes your questions — instantly.
+          Upload a PDF or PowerPoint to get a quiz made by QuizAI. You can edit it as you like before playing.
         </p>
 
         {/* Drop zone */}
@@ -165,10 +165,12 @@ export default function Upload({ onQuizReady, onHostReady }) {
             style={styles.slider}
           />
           <div style={styles.sliderTicks}>
-            <span>5</span>
-            <span>10</span>
-            <span>15</span>
-            <span>20</span>
+            <div style={{ position: "relative", width: "100%", height: "12px" }}>
+              <span style={{ position: "absolute", left: "8px", transform: "translateX(-50%)" }}>5</span>
+              <span style={{ position: "absolute", left: "calc(8px + (100% - 16px) * 0.3333)", transform: "translateX(-50%)" }}>10</span>
+              <span style={{ position: "absolute", left: "calc(8px + (100% - 16px) * 0.6666)", transform: "translateX(-50%)" }}>15</span>
+              <span style={{ position: "absolute", left: "calc(100% - 8px)", transform: "translateX(-50%)" }}>20</span>
+            </div>
           </div>
         </div>
 
@@ -190,7 +192,7 @@ export default function Upload({ onQuizReady, onHostReady }) {
                 <span style={styles.spinner} />
                 {progress}
               </span>
-            ) : "Play Solo"}
+            ) : file ? "Play Solo" : "Play Solo (create without file attachment)"}
           </button>
           
           <button
@@ -201,7 +203,7 @@ export default function Upload({ onQuizReady, onHostReady }) {
             onClick={() => handleSubmit(true)}
             disabled={loading}
           >
-            {loading ? "Generating Quiz..." : "Host Multiplayer"}
+            {loading ? "Generating Quiz..." : file ? "Host Multiplayer" : "Host Multiplayer"}
           </button>
         </div>
 
@@ -229,8 +231,8 @@ export default function Upload({ onQuizReady, onHostReady }) {
         input[type=range]::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           background: #7c6fff;
           cursor: pointer;
@@ -238,8 +240,8 @@ export default function Upload({ onQuizReady, onHostReady }) {
           box-shadow: 0 0 0 2px #7c6fff44;
         }
         input[type=range]::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
+          width: 16px;
+          height: 16px;
           border-radius: 50%;
           background: #7c6fff;
           cursor: pointer;
@@ -422,8 +424,7 @@ const styles = {
     marginBottom: "8px",
   },
   sliderTicks: {
-    display: "flex",
-    justifyContent: "space-between",
+    position: "relative",
     fontSize: "12px",
     color: "#3d3d5c",
     paddingTop: "2px",
