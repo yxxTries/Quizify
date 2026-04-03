@@ -53,11 +53,11 @@ The project includes:
 ### 1) Backend setup
 
 ```bash
-cd /home/runner/work/Quizify/Quizify/backend
+cd backend
 pip install -r requirements.txt
 ```
 
-Create `/home/runner/work/Quizify/Quizify/backend/.env`:
+Create `backend/.env`:
 
 **Option A: Groq**
 ```env
@@ -83,7 +83,7 @@ ollama serve
 
 Start backend:
 ```bash
-cd /home/runner/work/Quizify/Quizify/backend
+cd backend
 uvicorn main:app --reload
 ```
 Backend runs at `http://localhost:8000`.
@@ -91,7 +91,7 @@ Backend runs at `http://localhost:8000`.
 ### 2) Frontend setup
 
 ```bash
-cd /home/runner/work/Quizify/Quizify/frontend
+cd frontend
 npm install
 npm run dev
 ```
@@ -105,14 +105,14 @@ Open `http://localhost:5173`.
 
 ### Frontend
 ```bash
-cd /home/runner/work/Quizify/Quizify/frontend
+cd frontend
 npm run dev
 npm run build
 ```
 
 ### Backend
 ```bash
-cd /home/runner/work/Quizify/Quizify/backend
+cd backend
 uvicorn main:app --reload
 ```
 
