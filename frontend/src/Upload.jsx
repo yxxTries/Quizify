@@ -158,22 +158,35 @@ export default function Upload({ onQuizReady }) {
         {/* Error */}
         {error && <div style={styles.error}>{error}</div>}
 
-        {/* Submit */}
-        <button
-          style={{
-            ...styles.btn,
-            ...((!file || loading) ? styles.btnDisabled : {}),
-          }}
-          onClick={handleSubmit}
-          disabled={!file || loading}
-        >
-          {loading ? (
-            <span style={styles.loadingRow}>
-              <span style={styles.spinner} />
-              {progress}
-            </span>
-          ) : `Generate ${numQuestions} Questions →`}
-        </button>
+        {/* Submit Actions */}
+        <div style={styles.btnGroup}>
+          <button
+            style={{
+              ...styles.btn,
+              ...((!file || loading) ? styles.btnDisabled : {}),
+            }}
+            onClick={handleSubmit}
+            disabled={!file || loading}
+          >
+            {loading ? (
+              <span style={styles.loadingRow}>
+                <span style={styles.spinner} />
+                {progress}
+              </span>
+            ) : "Play Solo"}
+          </button>
+          
+          <button
+            style={{
+              ...styles.btnSecondary,
+              ...((!file || loading) ? styles.btnSecondaryDisabled : {}),
+            }}
+            onClick={() => {/* TODO: Implement MP Host logic */}}
+            disabled={!file || loading}
+          >
+            Host Multiplayer
+          </button>
+        </div>
 
         <p style={styles.hint}>
           Runs locally · No data stored · Free
@@ -410,6 +423,14 @@ const styles = {
     marginBottom: "16px",
     boxSizing: "border-box",
   },
+  btnGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    width: "100%",
+    maxWidth: "520px",
+    marginBottom: "16px",
+  },
   btn: {
     background: "#7c6fff",
     color: "#fff",
@@ -417,16 +438,32 @@ const styles = {
     borderRadius: "12px",
     padding: "16px 40px",
     fontSize: "16px",
-    fontWeight: 500,
+    fontWeight: 600,
     fontFamily: "'DM Sans', sans-serif",
     cursor: "pointer",
-    maxWidth: "520px",
     width: "100%",
     transition: "background 0.2s, transform 0.1s",
-    marginBottom: "16px",
   },
   btnDisabled: {
     background: "#2a2a3e",
+    color: "#4a4a5e",
+    cursor: "not-allowed",
+  },
+  btnSecondary: {
+    background: "transparent",
+    color: "#7c6fff",
+    border: "2px solid #7c6fff",
+    borderRadius: "12px",
+    padding: "14px 40px",
+    fontSize: "16px",
+    fontWeight: 600,
+    fontFamily: "'DM Sans', sans-serif",
+    cursor: "pointer",
+    width: "100%",
+    transition: "background 0.2s, color 0.2s",
+  },
+  btnSecondaryDisabled: {
+    borderColor: "#2a2a3e",
     color: "#4a4a5e",
     cursor: "not-allowed",
   },
