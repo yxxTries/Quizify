@@ -200,7 +200,7 @@ export default function Quiz({ quiz, onRestart, onScoreUpdate, onAnswerSubmit, c
       {/* Top bar (minimalist loading screen) */}
       <header style={styles.header}>
         <div style={styles.headerTop}>
-          <span style={styles.logo}>Runnit</span>
+          <span style={styles.logo}>Kuizu</span>
           <span style={styles.scoreChip}>
             {isHostMode ? (
               <span onClick={onRestart} style={{ cursor: "pointer", color: "#ff4d4f", fontWeight: 600 }}>

@@ -102,7 +102,7 @@ export default function Host({ quiz, onEnd }) {
 
   return (
     <div style={{ padding: 40, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", gap: 20 }}>
-      <h1>{status === "lobby" ? "Game Lobby - Host" : "Runnit"}</h1>
+      <h1>{status === "lobby" ? "Game Lobby - Host" : "Kuizu"}</h1>
       
       {status === "connecting" && <p>Connecting to server...</p>}
 

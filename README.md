@@ -1,4 +1,4 @@
-# Quizify (Runnit)
+# Quizify (Kuizu)
 
 Generate quizzes from PDF/PPTX files and play them in either:
 - **Solo mode** (single player), or

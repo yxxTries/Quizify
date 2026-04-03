@@ -616,7 +616,7 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo" }) {
     <div style={styles.page}>
       {/* Header */}
       <header style={styles.header}>
-        <span style={styles.logo}>Runnit</span>
+        <span style={styles.logo}>Kuizu</span>
         <span style={styles.title}>Review Questions</span>
         <button style={styles.startBtn} onClick={handleStart}>
           {intent === "host" ? "Create Lobby \u2192" : "Start Quiz \u2192"}

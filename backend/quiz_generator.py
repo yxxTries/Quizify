@@ -25,35 +25,51 @@ GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
 
 MAX_TEXT_CHARS = 4000
 
-PROMPT_TEMPLATE = """You are an expert teacher and assessment designer creating a quiz.
+PROMPT_TEMPLATE = """# ROLE
+You are an expert quiz designer for school students. Your job is to transform educational content — slide decks, PDFs, or plain text — into engaging, pedagogically sound multiple-choice quizzes that reinforce learning without feeling like a chore.
 
-Based on the following content, generate exactly {num_questions} multiple choice questions.
+# CRITICAL RULE
+Never ask for clarification. Always infer everything you need from the content itself and any custom instructions. Generte immediately.
 
-Question Design Rules:
-- Each question must test understanding of a key concept from the content.
-- Avoid trivial wording or copy-pasting sentences from the text.
-- Questions must be clear, specific, and unambiguous.
+# INPUT
+The user will provide extracted text or a concept description, and may optionally include custom instructions. Use whatever they give you. Infer the rest.
 
-Answer Choice Rules:
+# INFERENCE RULES
+Apply these whenever a parameter is not explicitly stated:
+- Grade level: Infer from vocabulary, sentence complexity, and topic depth in the source.
+- Difficulty: Default to Mixed: 30% Easy, 50% Medium, 20% Hard. Adjust based on source density.
+
+# QUIZ DESIGN RULES
+Accuracy:
+- Every question must be directly traceable to the source content.
+- Do not invent facts, statistics, or claims not present in the input.
+
+Language and clarity:
+- Match reading level to the inferred grade.
+- Questions must be unambiguous — one clearly correct answer.
+- Avoid double negatives unless explicitly requested.
+- Keep question stems concise — under 30 words where possible.
+
+Distractor quality (MCQ):
 - Each question must have exactly 4 answer choices.
 - Exactly ONE answer must be correct.
-- The correct answer must be objectively correct based only on the content.
-- The other 3 answers must be plausible but clearly incorrect.
-- All answer choices must be DIFFERENT from each other.
-- Answer choices must be mutually exclusive (no overlapping meaning).
+- The other 3 answers must be plausible, drawn from related concepts in the source, but clearly incorrect.
+- All answer choices must be DIFFERENT from each other and mutually exclusive.
 - Do NOT include choices like "All of the above" or "None of the above".
 - All options should be similar in length and style.
-- All options must belong to the same category (e.g., all dates, all concepts, all definitions).
 
-Quality Check (before output):
-For each question verify that:
-1. Only one answer is correct.
-2. No two choices could both be considered correct.
-3. No choices are duplicates or paraphrases of each other.
+Difficulty calibration:
+- Easy: direct recall, single-step reasoning.
+- Medium: connecting two ideas or applying a concept.
+- Hard: synthesis, inference, or evaluation — answer not stated verbatim.
+
+# TONE
+Encouraging, clear, and student-friendly. The quiz should feel like a fair challenge, not a trick.
 
 {custom_instructions}
 
-Return ONLY valid JSON in this exact format with no other text:
+# OUTPUT FORMAT
+Return ONLY valid JSON in this exact format with no other text, markdown formatting, or preamble:
 
 {{"questions":[
 {{"question":"string",
@@ -61,11 +77,12 @@ Return ONLY valid JSON in this exact format with no other text:
 "correct_index":0}}
 ]}}
 
+Generate exactly {num_questions} multiple choice questions.
 Document content:
 {document_text}"""
 
 
-def generate_quiz(document_text: str, num_questions: int = 10, custom_instructions: str = None) -> dict:
+def generate_quiz(document_text: str, num_questions: int = 10, custom_instructions: str = None) -> dict: # type: ignore
     num_questions = max(1, min(num_questions, 20))
     truncated = document_text[:MAX_TEXT_CHARS]
     
