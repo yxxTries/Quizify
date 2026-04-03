@@ -1,2 +1,28 @@
-.vercel
-.env*.local
+﻿# Node/Frontend
+node_modules/
+dist/
+.vite/
+npm-debug.log
+yarn-error.log
+
+# Python/Backend
+__pycache__/
+*.py[cod]
+*.class
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Vercel/Deployment
+.vercel/
+
+# OS files
+.DS_Store
+Thumbs.db
