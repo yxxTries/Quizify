@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 // Classic Kahoot-inspired answer colors
 const CHOICE_COLORS = [
@@ -10,7 +11,6 @@ const CHOICE_COLORS = [
 
 const pbStyles = {
   container: {
-    padding: "0 32px",
     display: "flex",
     flexDirection: "column",
     gap: "8px",
@@ -45,13 +45,8 @@ const pbStyles = {
 
 function ProgressBar({ current, total }) {
   const pct = Math.max(0, Math.min(100, (current / total) * 100));
-  const remaining = total - current;
   return (
     <div style={pbStyles.container}>
-      <div style={pbStyles.textRow}>
-        <span style={{ color: "#00D2D3" }}>{current} Done</span>
-        <span>{remaining} Left</span>
-      </div>
       <div style={pbStyles.track}>
         <div style={{ ...pbStyles.fill, width: `${pct}%` }} />
       </div>
@@ -59,12 +54,12 @@ function ProgressBar({ current, total }) {
   );
 }
 
-function ScoreScreen({ score, total, onRestart }) {
+function ScoreScreen({ score, total, onRestart, onJoinNew, leaderboard, isMultiplayer }) {
   const pct = Math.round((score / total) * 100);
   const emoji = pct === 100 ? "🏆" : pct >= 70 ? "🎉" : pct >= 40 ? "🙂" : "😅";
 
   return (
-    <div style={scoreStyles.wrap}>
+    <div style={{ ...scoreStyles.wrap, padding: "40px", boxSizing: "border-box" }}>
       <div style={scoreStyles.emoji}>{emoji}</div>
       <h1 style={scoreStyles.h1}>Quiz complete!</h1>
       <div style={scoreStyles.scoreBox}>
@@ -72,9 +67,36 @@ function ScoreScreen({ score, total, onRestart }) {
         <span style={scoreStyles.scoreOf}>/ {total}</span>
       </div>
       <div style={scoreStyles.pct}>{pct}% correct</div>
-      <button style={scoreStyles.btn} onClick={onRestart}>
-        Try another document →
-      </button>
+
+      {isMultiplayer && leaderboard && Object.keys(leaderboard).length > 0 && (
+        <div style={{ marginTop: "32px", width: "100%", maxWidth: "500px", background: "#252A4A", borderRadius: "16px", padding: "24px", border: "1px solid #0F3460", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "40vh", overflowY: "auto" }}>
+           <h2 style={{ color: "#F1F2F6", margin: "0 0 16px 0", fontSize: "24px", fontFamily: "'Syne', sans-serif", borderBottom: "1px solid #16213E", paddingBottom: "12px" }}>Final Leaderboard</h2>
+           {Object.entries(leaderboard)
+             .sort(([, a], [, b]) => b - a)
+             .map(([name, pts], i) => (
+                <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "12px", borderBottom: i < Object.entries(leaderboard).length - 1 ? "1px solid #16213E" : "none", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ color: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#B0BAC3", fontWeight: i < 3 ? "bold" : "normal", fontSize: "20px", width: "30px" }}>
+                      {i + 1}.
+                    </span>
+                    <span style={{ color: i === 0 ? "#00D2D3" : "#F1F2F6", fontWeight: i < 3 ? "bold" : "normal", fontSize: "20px" }}>{name}</span>
+                  </div>
+                  <span style={{ color: "#B0BAC3", fontWeight: "bold", fontSize: "20px" }}>{pts} pts</span>
+                </div>
+             ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "24px", width: "100%", maxWidth: "320px" }}>
+        {isMultiplayer && onJoinNew && (
+          <button style={{...scoreStyles.btn, marginTop: 0, width: "100%", background: "#00D2D3", color: "#16213E", border: "none", boxSizing: "border-box"}} onClick={onJoinNew}>
+            Join New Game →
+          </button>
+        )}
+        <button style={{...scoreStyles.btn, marginTop: 0, width: "100%", boxSizing: "border-box", ...(isMultiplayer && onJoinNew ? { background: "#FF6B6B", color: "#F1F2F6", border: "none" } : {})}} onClick={onRestart}>
+          {isMultiplayer ? "Exit Game" : "Try another document →"}
+        </button>
+      </div>
       <style>{`@keyframes popIn { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }`}</style>
     </div>
   );
@@ -123,11 +145,13 @@ const scoreStyles = {
   },
 };
 
-export default function Quiz({ quiz, onRestart, onScoreUpdate, onAnswerSubmit, currentQuestionIndex = null, leaderboard = null, streaks = null, isHostMode = false, hostAnswers = {}, triggerNextQuestion = null, hostRevealed = false, onReveal = null }) {
+export default function Quiz({ quiz, onRestart, onJoinNew, onScoreUpdate, onAnswerSubmit, currentQuestionIndex = null, leaderboard = null, streaks = null, isHostMode = false, hostAnswers = {}, triggerNextQuestion = null, hostRevealed = false, onReveal = null }) {
   const { questions } = quiz;
   const total = questions.length;
 
   const isMultiplayer = currentQuestionIndex !== null;
+
+  const [leaderboardRef] = useAutoAnimate();
 
   const [localCurrent, setLocalCurrent] = useState(0);
   const current = isMultiplayer ? currentQuestionIndex : localCurrent;
@@ -137,6 +161,17 @@ export default function Quiz({ quiz, onRestart, onScoreUpdate, onAnswerSubmit, c
   const [score,     setScore]     = useState(0);
   const [streak,    setStreak]    = useState(0);
   const [done,      setDone]      = useState(false);
+  const [showConfirmEnd, setShowConfirmEnd] = useState(false);
+
+  const [lockedLeaderboard, setLockedLeaderboard] = useState(leaderboard || {});
+  const [lockedStreaks, setLockedStreaks] = useState(streaks || {});
+
+  React.useEffect(() => {
+    if (revealed || done) {
+      setLockedLeaderboard(leaderboard || {});
+      setLockedStreaks(streaks || {});
+    }
+  }, [leaderboard, streaks, revealed, done]);
 
   // When host moves to the next question, reset selection state
   React.useEffect(() => {
@@ -202,7 +237,7 @@ export default function Quiz({ quiz, onRestart, onScoreUpdate, onAnswerSubmit, c
   if (done) {
     return (
       <div style={styles.page}>
-        <ScoreScreen score={score} total={total} onRestart={onRestart} />
+        <ScoreScreen score={score} total={total} onRestart={onRestart} onJoinNew={onJoinNew} leaderboard={lockedLeaderboard} isMultiplayer={isMultiplayer} />
       </div>
     );
   }
@@ -213,21 +248,46 @@ export default function Quiz({ quiz, onRestart, onScoreUpdate, onAnswerSubmit, c
       <header style={styles.header}>
         <div style={styles.headerTop}>
           <span style={styles.logo}>Kuizu</span>
-          <span style={styles.scoreChip}>
-            {isHostMode ? (
-              <span onClick={onRestart} style={{ cursor: "pointer", color: "#FF6B6B", fontWeight: 600 }}>
-                End Game
-              </span>
-            ) : (
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                {!isMultiplayer && <span style={{ fontWeight: 600 }}>Score: {score}/{total}</span>}
-                <span onClick={onRestart} style={{ cursor: 'pointer', color: '#FF6B6B', fontWeight: 600 }}>End Game</span>
+            <div style={{ flex: 1, maxWidth: "1000px", display: "flex", justifyContent: "center", alignItems: "center", margin: "0 auto", gap: "16px" }}>
+              <div style={{ width: "100%" }}>
+                <ProgressBar current={current + (revealed ? 1 : 0)} total={total} />
               </div>
-            )}
-          </span>
-        </div>
-        <ProgressBar current={current + (revealed ? 1 : 0)} total={total} />
-      </header>
+              <span style={{ color: "#B0BAC3", fontWeight: "bold", fontSize: "16px", whiteSpace: "nowrap", fontFamily: "'Syne', sans-serif" }}>
+                {Math.min(current + (revealed || isHostMode ? 1 : 0), total)} / {total}
+              </span>
+            </div>
+            <span style={styles.scoreChip}>
+              {isHostMode ? (
+                showConfirmEnd ? (
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <span style={{ color: "#F1F2F6", fontWeight: 500 }}>End Game?</span>
+                    <span onClick={onRestart} style={{ cursor: "pointer", color: "#FF6B6B", fontWeight: 600 }}>Yes</span>
+                    <span onClick={() => setShowConfirmEnd(false)} style={{ cursor: "pointer", color: "#00D2D3", fontWeight: 600 }}>No</span>
+                  </div>
+                ) : (
+                  <span onClick={() => setShowConfirmEnd(true)} style={{ cursor: "pointer", color: "#FF6B6B", fontWeight: 600 }}>
+                    End Game
+                  </span>
+                )
+              ) : (
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  {!isMultiplayer && <span style={{ fontWeight: 600 }}>Score: {score}/{total}</span>}
+                  {showConfirmEnd ? (
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <span style={{ color: "#F1F2F6", fontWeight: 500 }}>Leave?</span>
+                      <span onClick={onRestart} style={{ cursor: "pointer", color: "#FF6B6B", fontWeight: 600 }}>Yes</span>
+                      <span onClick={() => setShowConfirmEnd(false)} style={{ cursor: "pointer", color: "#00D2D3", fontWeight: 600 }}>No</span>
+                    </div>
+                  ) : (
+                    <span onClick={() => setShowConfirmEnd(true)} style={{ cursor: 'pointer', color: '#FF6B6B', fontWeight: 600 }}>
+                      Leave Game
+                    </span>
+                  )}
+                </div>
+              )}
+            </span>
+          </div>
+        </header>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden", width: "100%" }}>
         <main style={{...styles.main, overflowY: "auto"}}>
@@ -341,28 +401,28 @@ export default function Quiz({ quiz, onRestart, onScoreUpdate, onAnswerSubmit, c
           )}
         </main>
         
-        {isHostMode && leaderboard && (
-           <div style={{ 
-              width: "600px", 
-              background: "#252A4A", 
+        {isHostMode && lockedLeaderboard && (
+           <div style={{
+              width: "clamp(300px, 25vw, 600px)",
+              background: "#252A4A",
               border: "1px solid #0F3460",
-              borderRadius: "24px",
-              margin: "32px 32px 32px 0",
-              display: "flex", 
+              borderRadius: "clamp(16px, 1.5vw, 24px)",
+              margin: "clamp(16px, 2vw, 32px) clamp(16px, 2vw, 32px) clamp(16px, 2vw, 32px) 0",
+              display: "flex",
               flexDirection: "column",
-              padding: "24px",
+              padding: "clamp(16px, 1.5vw, 24px)",
               boxShadow: "0 12px 48px rgba(0,0,0,0.3)",
               maxHeight: "calc(100vh - 160px)",
               overflowY: "auto"
            }}>
-              <h2 style={{ margin: "0 0 24px 0", fontSize: "32px", color: "#F1F2F6", fontFamily: "'Syne', sans-serif", borderBottom: "1px solid #16213E", paddingBottom: "16px" }}>
+              <h2 style={{ margin: "0 0 clamp(16px, 1.5vw, 24px) 0", fontSize: "clamp(24px, 2vw, 32px)", color: "#F1F2F6", fontFamily: "'Syne', sans-serif", borderBottom: "1px solid #16213E", paddingBottom: "clamp(12px, 1vw, 16px)" }}>
                 Live Leaderboard
               </h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {Object.entries(leaderboard)
+              <div ref={leaderboardRef} style={{ display: "flex", flexDirection: "column", gap: "clamp(12px, 1vw, 16px)" }}>
+                {Object.entries(lockedLeaderboard)
                   .sort(([, a], [, b]) => b - a)
                   .map(([name, score], i) => {
-                    const playerStreak = streaks && streaks[name] ? streaks[name] : 0;
+                    const playerStreak = lockedStreaks && lockedStreaks[name] ? lockedStreaks[name] : 0;
                     const isOnStreak = playerStreak >= 2;
                     
                     return (
@@ -428,8 +488,7 @@ const styles = {
   header: {
     display: "flex",
     flexDirection: "column",
-    padding: "24px 0",
-    gap: "24px",
+    padding: "clamp(12px, 1.5vw, 24px) 0",
     background: "#16213E",
     borderBottom: "1px solid #1e1e2e",
     boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
@@ -439,6 +498,7 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     padding: "0 32px",
+    gap: "32px",
   },
   logo: {
     fontFamily: "'Syne', sans-serif",
@@ -460,7 +520,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    padding: "48px 30px 60px",
+    padding: "clamp(24px, 4vh, 48px) clamp(16px, 2vw, 30px) clamp(30px, 5vh, 60px)",
     maxWidth: "1600px",
     margin: "0 auto",
     width: "100%",
@@ -469,10 +529,10 @@ const styles = {
   questionCard: {
     background: "#252A4A",
     border: "1px solid #0F3460",
-    borderRadius: "32px",
-    padding: "100px 60px",
+    borderRadius: "clamp(20px, 2vw, 32px)",
+    padding: "clamp(40px, 6vh, 100px) clamp(30px, 4vw, 60px)",
     width: "100%",
-    marginBottom: "60px",
+    marginBottom: "clamp(30px, 4vh, 60px)",
     animation: "slideUp 0.35s ease both",
     boxSizing: "border-box",
     textAlign: "center",
@@ -481,18 +541,18 @@ const styles = {
   qNumber: {
     display: "inline-block",
     background: "rgba(124, 111, 255, 0.15)",
-    padding: "8px 24px",
+    padding: "clamp(6px, 1vh, 8px) clamp(16px, 2vw, 24px)",
     borderRadius: "20px",
     fontFamily: "'Syne', sans-serif",
     fontWeight: 700,
-    fontSize: "20px",
+    fontSize: "clamp(16px, 1.5vw, 20px)",
     color: "#00D2D3",
-    marginBottom: "32px",
+    marginBottom: "clamp(16px, 3vh, 32px)",
     letterSpacing: "1px",
     textTransform: "uppercase",
   },
   questionText: {
-    fontSize: "64px",
+    fontSize: "clamp(36px, 4vw, 64px)",
     fontWeight: 700,
     lineHeight: 1.3,
     margin: 0,
@@ -502,30 +562,30 @@ const styles = {
   grid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "32px",
+    gap: "clamp(16px, 2vw, 32px)",
     width: "100%",
-    marginBottom: "32px",
+    marginBottom: "clamp(16px, 3vh, 32px)",
   },
   choiceBtn: {
     display: "flex",
     alignItems: "center",
-    gap: "32px",
-    padding: "40px 48px",
-    borderRadius: "24px",
+    gap: "clamp(16px, 2vw, 32px)",
+    padding: "clamp(24px, 4vh, 40px) clamp(24px, 3vw, 48px)",
+    borderRadius: "clamp(16px, 1.5vw, 24px)",
     border: "none",
     cursor: "pointer",
     textAlign: "left",
-    fontSize: "clamp(32px, 4vw, 56px)",
+    fontSize: "clamp(24px, 3.5vw, 56px)",
     fontFamily: "'DM Sans', sans-serif",
     fontWeight: 600,
     color: "#16213E",
     transition: "opacity 0.2s, transform 0.15s, outline 0.1s",
-    height: "240px",
+    height: "clamp(150px, 20vh, 240px)",
     maxHeight: "240px",
     overflow: "hidden",
   },
   choiceShape: {
-    fontSize: "48px",
+    fontSize: "clamp(32px, 3vw, 48px)",
     flexShrink: 0,
     opacity: 0.85,
   },

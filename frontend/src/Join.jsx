@@ -86,6 +86,14 @@ export default function Join({ onExit, initialPin = "" }) {
         <Quiz
           quiz={quiz}
           onRestart={() => { if(ws.current) ws.current.close(); onExit(); }}
+          onJoinNew={() => {
+            if(ws.current) ws.current.close();
+            setStatus("login");
+            setPin("");
+            setQuiz(null);
+            setCurrentQuestionIndex(0);
+            setLeaderboard({});
+          }}
           onScoreUpdate={handleScoreUpdate}
           onAnswerSubmit={handleAnswerSubmit}
           currentQuestionIndex={currentQuestionIndex}

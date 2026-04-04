@@ -109,8 +109,15 @@ export default function Host({ quiz, onEnd }) {
   };
 
   return (
-    <div style={{ padding: 40, textAlign: "center", minHeight: "100vh", display: "flex", flexDirection: "column", gap: 20 }}>
-      <h1>{status === "lobby" ? "Game Lobby - Host" : "Kuizu"}</h1>
+    <div style={{ 
+      padding: status === "playing" ? 0 : 40, 
+      textAlign: "center", 
+      minHeight: "100vh", 
+      display: "flex", 
+      flexDirection: "column", 
+      gap: status === "playing" ? 0 : 20 
+    }}>
+      {status !== "playing" && <h1>{status === "lobby" ? "Game Lobby - Host" : "Kuizu"}</h1>}
       
       {status === "connecting" && <p>Connecting to server...</p>}
 
@@ -373,7 +380,7 @@ export default function Host({ quiz, onEnd }) {
                             <span style={{ fontSize: "24px", color: textColor }}>{i + 1}.</span>
                           )}
                        </div>
-                       <span style={{ fontSize: "24px", fontWeight: i < 3 ? "bold" : "normal", color: i === 0 ? "#00D2D3" : "#16213E" }}>{name}</span>
+                       <span style={{ fontSize: "24px", fontWeight: i < 3 ? "bold" : "normal", color: i === 0 ? "#00D2D3" : "#F1F2F6" }}>{name}</span>
                      </div>
                      <span style={{ fontSize: "28px", fontWeight: "bold", color: textColor }}>{score} pts</span>
                    </div>
