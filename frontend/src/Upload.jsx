@@ -108,152 +108,161 @@ export default function Upload({ onQuizReady, onHostReady }) {
         <p style={styles.sub}>
           Upload a PDF or PowerPoint to get a quiz made by Kuizu. You can edit it as you like before playing.
         </p>
+        
+        <div style={styles.cardContainer}>
+          {/* Left Column */}
+          <div style={styles.leftColumn}>
+            {/* Drop zone */}
+            <div
+              style={{
+                ...styles.dropzone,
+                ...(dragging ? styles.dropzoneDragging : {}),
+                ...(file ? styles.dropzoneHasFile : {}),
+              }}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onClick={() => !loading && inputRef.current.click()}
+            >
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".pdf,.pptx"
+                style={{ display: "none" }}
+                onChange={onInputChange}
+              />
 
-        {/* Drop zone */}
-        <div
-          style={{
-            ...styles.dropzone,
-            ...(dragging ? styles.dropzoneDragging : {}),
-            ...(file ? styles.dropzoneHasFile : {}),
-          }}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          onDragLeave={onDragLeave}
-          onClick={() => !loading && inputRef.current.click()}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".pdf,.pptx"
-            style={{ display: "none" }}
-            onChange={onInputChange}
-          />
-
-          {file ? (
-            <div style={styles.fileInfo}>
-              <span style={styles.fileIcon}>{file.name.endsWith(".pdf") ? "📄" : "📊"}</span>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={styles.fileName}>{file.name}</div>
-                <div style={styles.fileSize}>{(file.size / 1024 / 1024).toFixed(2)} MB</div>
-              </div>
-              {!loading && (
-                <button
-                  style={styles.clearBtn}
-                  onClick={(e) => { e.stopPropagation(); setFile(null); setError(""); }}
-                >✕</button>
+              {file ? (
+                <div style={styles.fileInfo}>
+                  <span style={styles.fileIcon}>{file.name.endsWith(".pdf") ? "📄" : "📊"}</span>
+                  <div style={{ flex: 1, textAlign: "left" }}>
+                    <div style={styles.fileName}>{file.name}</div>
+                    <div style={styles.fileSize}>{(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                  </div>
+                  {!loading && (
+                    <button
+                      style={styles.clearBtn}
+                      onClick={(e) => { e.stopPropagation(); setFile(null); setError(""); }}
+                    >✕</button>
+                  )}
+                </div>
+              ) : (
+                <div style={styles.dropPrompt}>
+                  <div style={styles.dropIcon}>⬆</div>
+                  <div style={styles.dropText}>
+                    {dragging ? "Drop it!" : "Drag & drop or click to browse"}
+                  </div>
+                  <div style={styles.dropMeta}>PDF · PPTX · max 20 MB</div>
+                </div>
               )}
             </div>
-          ) : (
-            <div style={styles.dropPrompt}>
-              <div style={styles.dropIcon}>⬆</div>
-              <div style={styles.dropText}>
-                {dragging ? "Drop it!" : "Drag & drop or click to browse"}
+
+            {/* Custom Prompt Section */}
+            <div style={styles.promptWrap}>
+              <div style={styles.promptHeader}>
+                <span style={styles.promptLabel}>Prompt / Context Text</span>
+                <span style={{
+                  ...styles.promptCounter, 
+                  color: prompt.length >= 4000 ? "#FF6B6B" : "#B0BAC3"
+                }}>
+                  {prompt.length} / 4000
+                </span>
               </div>
-              <div style={styles.dropMeta}>PDF · PPTX · max 20 MB</div>
+              <textarea
+                style={{
+                  ...styles.promptInput,
+                  borderColor: prompt.length >= 4000 ? "#FF6B6B" : "#0F3460",
+                }}
+                value={prompt}
+                maxLength={4000}
+                onChange={(e) => setPrompt(e.target.value)}
+                disabled={loading}
+                onFocus={(e) => {
+                  if (prompt.length < 4000) {
+                    e.currentTarget.style.borderColor = "#00D2D3";
+                    e.currentTarget.style.boxShadow = "0 0 0 4px rgba(124, 111, 255, 0.1)";
+                  }
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = prompt.length >= 4000 ? "#FF6B6B" : "#0F3460";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              />
             </div>
-          )}
-        </div>
 
-        {/* Custom Prompt Section */}
-        <div style={styles.promptWrap}>
-          <div style={styles.promptHeader}>
-            <span style={styles.promptLabel}>Prompt / Context Text</span>
-            <span style={{
-              ...styles.promptCounter, 
-              color: prompt.length >= 4000 ? "#FF6B6B" : "#B0BAC3"
-            }}>
-              {prompt.length} / 4000
-            </span>
-          </div>
-          <textarea
-            style={{
-              ...styles.promptInput,
-              borderColor: prompt.length >= 4000 ? "#FF6B6B" : "#0F3460",
-            }}
-            value={prompt}
-            maxLength={4000}
-            onChange={(e) => setPrompt(e.target.value)}
-            disabled={loading}
-            onFocus={(e) => {
-              if (prompt.length < 4000) {
-                e.currentTarget.style.borderColor = "#00D2D3";
-                e.currentTarget.style.boxShadow = "0 0 0 4px rgba(124, 111, 255, 0.1)";
-              }
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = prompt.length >= 4000 ? "#FF6B6B" : "#0F3460";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          />
-        </div>
+            {/* Error */}
+            {error && <div style={styles.error}>{error}</div>}
 
-        {/* Question count slider */}
-        <div style={styles.sliderWrap}>
-          <div style={styles.sliderHeader}>
-            <span style={styles.sliderLabel}>Number of questions</span>
-            <span style={styles.sliderValue}>{numQuestions}</span>
-          </div>
-          <input
-            type="range"
-            min={5}
-            max={20}
-            step={1}
-            value={numQuestions}
-            onChange={(e) => setNumQuestions(Number(e.target.value))}
-            disabled={loading}
-            style={styles.slider}
-          />
-          <div style={styles.sliderTicks}>
-            <div style={{ position: "relative", width: "100%", height: "12px" }}>
-              <span style={{ position: "absolute", left: "8px", transform: "translateX(-50%)" }}>5</span>
-              <span style={{ position: "absolute", left: "calc(8px + (100% - 16px) * 0.3333)", transform: "translateX(-50%)" }}>10</span>
-              <span style={{ position: "absolute", left: "calc(8px + (100% - 16px) * 0.6666)", transform: "translateX(-50%)" }}>15</span>
-              <span style={{ position: "absolute", left: "calc(100% - 8px)", transform: "translateX(-50%)" }}>20</span>
+            {/* Submit Actions */}
+            <div style={styles.btnGroup}>
+              <button
+                style={{
+                  ...styles.btn,
+                  ...(loading ? styles.btnDisabled : {}),
+                }}
+                onClick={() => handleSubmit(false)}
+                disabled={loading}
+              >
+                {loading ? (
+                  <span style={styles.loadingRow}>
+                    <span style={styles.spinner} />
+                    {progress}
+                  </span>
+                ) : file || prompt.trim() ? "Generate & Play Solo" : "Play Sample Solo"}
+              </button>
+              
+              <button
+                style={{
+                  ...styles.btnSecondary,
+                  ...(loading ? styles.btnSecondaryDisabled : {}),
+                }}
+                onClick={() => handleSubmit(true)}
+                disabled={loading}
+              >
+                {loading ? "Generating Quiz..." : file || prompt.trim() ? "Generate & Host Multiplayer" : "Host Sample Multiplayer"}
+              </button>
             </div>
+
+            <p style={styles.hint}>
+              Runs locally / Groq API · No data stored · Free
+            </p>
+          </div>
+
+          {/* Right Column */}
+          <div style={styles.rightColumn}>
+            {/* Question count slider */}
+            <div style={styles.sliderWrap}>
+              <div style={styles.sliderHeader}>
+                <span style={styles.sliderLabel}>Number of questions</span>
+                <span style={styles.sliderValue}>{numQuestions}</span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={20}
+                step={1}
+                value={numQuestions}
+                onChange={(e) => setNumQuestions(Number(e.target.value))}
+                disabled={loading}
+                style={styles.slider}
+              />
+              <div style={styles.sliderTicks}>
+                <div style={{ position: "relative", width: "100%", height: "12px" }}>
+                  <span style={{ position: "absolute", left: "8px", transform: "translateX(-50%)" }}>5</span>
+                  <span style={{ position: "absolute", left: "calc(8px + (100% - 16px) * 0.3333)", transform: "translateX(-50%)" }}>10</span>
+                  <span style={{ position: "absolute", left: "calc(8px + (100% - 16px) * 0.6666)", transform: "translateX(-50%)" }}>15</span>
+                  <span style={{ position: "absolute", left: "calc(100% - 8px)", transform: "translateX(-50%)" }}>20</span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        {/* Error */}
-        {error && <div style={styles.error}>{error}</div>}
-
-        {/* Submit Actions */}
-        <div style={styles.btnGroup}>
-          <button
-            style={{
-              ...styles.btn,
-              ...(loading ? styles.btnDisabled : {}),
-            }}
-            onClick={() => handleSubmit(false)}
-            disabled={loading}
-          >
-            {loading ? (
-              <span style={styles.loadingRow}>
-                <span style={styles.spinner} />
-                {progress}
-              </span>
-            ) : file || prompt.trim() ? "Generate & Play Solo" : "Play Sample Solo"}
-          </button>
-          
-          <button
-            style={{
-              ...styles.btnSecondary,
-              ...(loading ? styles.btnSecondaryDisabled : {}),
-            }}
-            onClick={() => handleSubmit(true)}
-            disabled={loading}
-          >
-            {loading ? "Generating Quiz..." : file || prompt.trim() ? "Generate & Host Multiplayer" : "Host Sample Multiplayer"}
-          </button>
-        </div>
-
-        <p style={styles.hint}>
-          Runs locally / Groq API · No data stored · Free
-        </p>
-
-          <a href="#" style={{ position: "absolute", bottom: "16px", right: "24px", fontSize: "12px", color: "#B0BAC3", opacity: 0.5, textDecoration: "none", cursor: "default" }}>
-            made by Amil
-          </a>
-        </main>
+        <a href="#" style={{ position: "absolute", bottom: "16px", right: "24px", fontSize: "12px", color: "#B0BAC3", opacity: 0.5, textDecoration: "none", cursor: "default" }}>
+          made by Amil
+        </a>
+      </main>
 
         <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -335,11 +344,37 @@ const styles = {
     justifyContent: "center",
     padding: "60px 24px",
     animation: "fadeUp 0.5s ease both",
+    width: "100%",
+    boxSizing: "border-box",
+  },
+  cardContainer: {
+    display: "flex",
+    flexDirection: "row",
+    gap: "40px",
+    width: "100%",
+    maxWidth: "1000px",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+  },
+  leftColumn: {
+    flex: "1 1 500px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
+  rightColumn: {
+    flex: "1 1 350px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
   h1: {
     fontFamily: "'Syne', sans-serif",
     fontWeight: 800,
-    fontSize: "clamp(36px, 6vw, 64px)",
+    fontSize: "clamp(36px, 5vw, 56px)",
     lineHeight: 1.1,
     textAlign: "center",
     marginBottom: "20px",

@@ -1,6 +1,5 @@
 import random
 import string
-import json
 from fastapi import WebSocket
 
 class ConnectionManager:
@@ -34,6 +33,15 @@ class ConnectionManager:
     def get_room(self, pin: str):
         return self.rooms.get(pin)
 
+    def ensure_room_state(self, pin: str):
+        room = self.get_room(pin)
+        if not room:
+            return None
+        room.setdefault("scores", {})
+        room.setdefault("streaks", {})
+        room.setdefault("answer_ranks", {})
+        return room
+
     async def broadcast_to_players(self, pin: str, message: dict):
         if pin in self.rooms:
             for player_name, player_ws in list(self.rooms[pin]["players"].items()):
@@ -42,6 +50,21 @@ class ConnectionManager:
                 except Exception:
                     # Remove player if connection is dead
                     await self.remove_player(pin, player_name)
+
+    async def sync_leaderboard(self, pin: str):
+        room = self.get_room(pin)
+        if not room:
+            return
+        payload = {
+            "type": "leaderboard",
+            "scores": room.get("scores", {}),
+            "streaks": room.get("streaks", {}),
+        }
+        await self.broadcast_to_players(pin, payload)
+        try:
+            await room["host"].send_json(payload)
+        except Exception:
+            pass
 
     async def remove_player(self, pin: str, player_name: str):
         if pin in self.rooms:

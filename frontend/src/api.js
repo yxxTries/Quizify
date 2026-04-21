@@ -1,6 +1,19 @@
 // Use an environment variable for the backend URL, fallback to localhost for local dev
 const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
+export function buildWebSocketUrl(path) {
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  if (/^wss?:\/\//.test(BASE_URL)) {
+    return `${BASE_URL}${cleanPath}`;
+  }
+  if (/^https?:\/\//.test(BASE_URL)) {
+    const wsBase = BASE_URL.replace(/^http/, "ws");
+    return `${wsBase}${cleanPath}`;
+  }
+  const normalized = BASE_URL.replace(/^\/+/, "");
+  return `wss://${normalized}${cleanPath}`;
+}
+
 /**
  * Upload a file to the backend and receive a generated quiz.
  * @param {File} file - The PDF or PPTX file to upload.

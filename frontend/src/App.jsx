@@ -4,6 +4,7 @@ import Preview from "./Preview.jsx";
 import Quiz from "./Quiz.jsx";
 import Host from "./Host.jsx";
 import Join from "./Join.jsx";
+import Discover from "./Discover.jsx";
 
 const globalStyle = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,7 +27,7 @@ const globalStyle = `
 `;
 
 export default function App() {
-  // "upload" | "preview" | "quiz" | "host" | "join"
+  // "upload" | "preview" | "quiz" | "host" | "join" | "discover"
   const [page, setPage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("pin")) return "join";
@@ -35,6 +36,7 @@ export default function App() {
   
   const [quiz, setQuiz] = useState(null);
   const [intent, setIntent] = useState("solo");
+  const [joinPin, setJoinPin] = useState(() => new URLSearchParams(window.location.search).get("pin") || "");
 
   const handleQuizReady = (quizData) => {
     setQuiz(quizData);
@@ -59,30 +61,70 @@ export default function App() {
 
   const handleRestart = () => {
     setQuiz(null);
+    setJoinPin("");
     setPage("upload");
     window.history.replaceState({}, document.title, window.location.pathname);
   };
 
-  const initialPin = new URLSearchParams(window.location.search).get("pin") || "";
+  const handlePlayFromDiscover = (quizData) => {
+    setQuiz(quizData);
+    setIntent("solo");
+    setPage("preview");
+  };
 
   return (
     <>
       <style>{globalStyle}</style>
       {page === "upload"  && (
          <div style={{ position: "relative" }}>
-           <button 
-              onClick={() => setPage("join")} 
-              style={{ position: "absolute", top: 24, right: 40, padding: "8px 16px", background: "transparent", color: "#B0BAC3", border: "1px solid #0F3460", borderRadius: 8, cursor: "pointer" }}
+           <div
+             style={{
+               position: "absolute",
+               top: 24,
+               right: 40,
+               display: "flex",
+               gap: "10px",
+               alignItems: "center",
+             }}
            >
-              Join a Game
-           </button>
+             <button
+               onClick={() => setPage("discover")}
+               style={{
+                 padding: "8px 16px",
+                 background: "rgba(15, 52, 96, 0.55)",
+                 color: "#E2E8F0",
+                 border: "1px solid #2B5A8A",
+                 borderRadius: 8,
+                 cursor: "pointer",
+                 fontWeight: 600,
+               }}
+             >
+               Discover
+             </button>
+             <button
+               onClick={() => setPage("join")}
+               style={{
+                 padding: "8px 16px",
+                 background: "#00D2D3",
+                 color: "#0E1A2B",
+                 border: "1px solid #6FF4F0",
+                 borderRadius: 8,
+                 cursor: "pointer",
+                 fontWeight: 700,
+                 boxShadow: "0 6px 14px rgba(0, 210, 211, 0.35)",
+               }}
+             >
+               Join a Game
+             </button>
+           </div>
            <Upload onQuizReady={handleQuizReady} onHostReady={handleHostReady} />
          </div>
       )}
       {page === "preview" && <Preview quiz={quiz} onStart={handleStartReview} onBack={handleRestart} intent={intent} />}
       {page === "quiz"    && <Quiz    quiz={quiz} onRestart={handleRestart} />}
       {page === "host"    && <Host    quiz={quiz} onEnd={handleRestart} />}
-      {page === "join"    && <Join    initialPin={initialPin} onExit={handleRestart} />}
+      {page === "join"    && <Join    initialPin={joinPin} onExit={handleRestart} />}
+      {page === "discover" && <Discover onBack={handleRestart} onPlay={handlePlayFromDiscover} />}
     </>
   );
 }

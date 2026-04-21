@@ -447,6 +447,7 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo" }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [globalErrors, setGlobalErrors] = useState({}); // { _id: { field: msg } }
   const [errorBanner, setErrorBanner]   = useState("");
+  const discoverMeta = quiz?.discoverMeta || null;
 
   // Drag state
   const dragIndex = useRef(null);
@@ -657,6 +658,33 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo" }) {
           </label>
         </div>
 
+        {discoverMeta && (
+          <section style={styles.discoverSummary}>
+            <div style={styles.discoverHeaderRow}>
+              <div style={styles.authorWrap}>
+                <div style={styles.authorIcon} aria-hidden="true">
+                  {discoverMeta.author?.slice(0, 1)?.toUpperCase() || "?"}
+                </div>
+                <div>
+                  <p style={styles.authorName}>{discoverMeta.author}</p>
+                  <p style={styles.authorMeta}>Community creator</p>
+                </div>
+              </div>
+              <span style={styles.communityBadge}>Community Quiz</span>
+            </div>
+
+            <h2 style={styles.discoverTitle}>{discoverMeta.title}</h2>
+
+            <div style={styles.discoverStatsGrid}>
+              <p style={styles.discoverStat}>Category: <span style={styles.discoverStatValue}>{discoverMeta.category}</span></p>
+              <p style={styles.discoverStat}>Difficulty: <span style={styles.discoverStatValue}>{discoverMeta.difficulty}</span></p>
+              <p style={styles.discoverStat}>Est. Time: <span style={styles.discoverStatValue}>{discoverMeta.estimatedTime}</span></p>
+              <p style={styles.discoverStat}>Plays: <span style={styles.discoverStatValue}>{discoverMeta.plays}</span></p>
+              <p style={styles.discoverStat}>Rating: <span style={styles.discoverStatValue}>{Number(discoverMeta.rating || 0).toFixed(1)} / 5</span></p>
+            </div>
+          </section>
+        )}
+
         {/* Card list */}
         <div style={styles.cardList}>
           {questions.map((q, i) => (
@@ -820,6 +848,78 @@ const styles = {
   cardList: {
     display: "flex",
     flexDirection: "column",
+  },
+  discoverSummary: {
+    border: "1px solid #0F3460",
+    background: "#20233D",
+    borderRadius: "14px",
+    padding: "14px",
+    marginBottom: "14px",
+  },
+  discoverHeaderRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  authorWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  authorIcon: {
+    width: "38px",
+    height: "38px",
+    borderRadius: "999px",
+    background: "#00D2D3",
+    color: "#0E1A2B",
+    display: "grid",
+    placeItems: "center",
+    fontWeight: 800,
+    fontSize: "16px",
+  },
+  authorName: {
+    margin: 0,
+    fontSize: "14px",
+    fontWeight: 700,
+    color: "#F1F2F6",
+  },
+  authorMeta: {
+    margin: "2px 0 0 0",
+    color: "#B0BAC3",
+    fontSize: "12px",
+  },
+  communityBadge: {
+    border: "1px solid #2B5A8A",
+    borderRadius: "999px",
+    padding: "4px 10px",
+    fontSize: "11px",
+    fontWeight: 700,
+    color: "#00D2D3",
+    letterSpacing: "0.4px",
+    textTransform: "uppercase",
+  },
+  discoverTitle: {
+    margin: "12px 0 10px 0",
+    fontSize: "22px",
+    lineHeight: 1.2,
+    color: "#F1F2F6",
+    fontFamily: "'Syne', sans-serif",
+  },
+  discoverStatsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+    gap: "8px",
+  },
+  discoverStat: {
+    margin: 0,
+    color: "#B0BAC3",
+    fontSize: "13px",
+  },
+  discoverStatValue: {
+    color: "#F1F2F6",
+    fontWeight: 700,
   },
   addBtn: {
     width: "100%",
