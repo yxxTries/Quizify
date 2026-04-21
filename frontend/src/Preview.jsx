@@ -441,12 +441,14 @@ const cardStyles = {
 // Preview (main component)
 // ─────────────────────────────────────────────
 
-export default function Preview({ quiz, onStart, onBack, intent = "solo" }) {
+export default function Preview({ quiz, onStart, onBack, intent = "solo", onSaveGame }) {
   const [questions, setQuestions]       = useState(() => cloneQuestions(quiz.questions));
   const [showAnswers, setShowAnswers]   = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [globalErrors, setGlobalErrors] = useState({}); // { _id: { field: msg } }
   const [errorBanner, setErrorBanner]   = useState("");
+  const [saveLoading, setSaveLoading]   = useState(false);
+  const [saveMessage, setSaveMessage]   = useState("");
   const discoverMeta = quiz?.discoverMeta || null;
 
   // Drag state
@@ -613,16 +615,67 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo" }) {
     onStart({ questions: clean });
   };
 
+  const handleSaveGame = async () => {
+    if (!onSaveGame) {
+      return;
+    }
+
+    if (questions.length === 0) {
+      setErrorBanner("Add at least one question before saving.");
+      return;
+    }
+
+    const newErrors = {};
+    questions.forEach((q) => {
+      const errs = validateCard(q);
+      if (hasErrors(errs)) {
+        newErrors[q._id] = errs;
+      }
+    });
+    if (Object.keys(newErrors).length > 0) {
+      setGlobalErrors(newErrors);
+      setErrorBanner("Fix question issues before saving.");
+      return;
+    }
+
+    const clean = questions.map(({ _id, ...rest }) => rest);
+    const fallbackTitle = clean[0]?.question?.slice(0, 60) || "Untitled Quiz";
+    const title = discoverMeta?.title || fallbackTitle;
+    const category = discoverMeta?.category || "General";
+
+    setSaveLoading(true);
+    setSaveMessage("");
+    try {
+      await onSaveGame({
+        title,
+        category,
+        quiz: { questions: clean, discoverMeta: discoverMeta || undefined },
+      });
+      setSaveMessage("Saved to My Games.");
+    } catch (err) {
+      setSaveMessage(err?.message || "Could not save game.");
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
   return (
     <div style={styles.page}>
       {/* Header */}
       <header style={styles.header}>
         <span style={styles.logo}>Kuizu</span>
         <span style={styles.title}>Review Questions</span>
-        <button style={styles.startBtn} onClick={handleStart}>
-          {intent === "host" ? "Create Lobby \u2192" : "Start Quiz \u2192"}
-        </button>
+        <div style={styles.headerActions}>
+          <button style={styles.saveBtn} onClick={handleSaveGame} disabled={saveLoading}>
+            {saveLoading ? "Saving..." : "Save Game"}
+          </button>
+          <button style={styles.startBtn} onClick={handleStart}>
+            {intent === "host" ? "Create Lobby \u2192" : "Start Quiz \u2192"}
+          </button>
+        </div>
       </header>
+
+      {saveMessage && <div style={styles.saveBanner}>{saveMessage}</div>}
 
       {/* Error banner */}
       {errorBanner && (
@@ -773,6 +826,23 @@ const styles = {
     color: "#F1F2F6",
     letterSpacing: "-0.3px",
   },
+  headerActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  saveBtn: {
+    background: "rgba(20, 45, 78, 0.95)",
+    color: "#d8e7fb",
+    border: "1px solid #3f6c9b",
+    borderRadius: "10px",
+    padding: "10px 16px",
+    fontSize: "14px",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
+    whiteSpace: "nowrap",
+  },
   startBtn: {
     background: "#00D2D3",
     color: "#16213E",
@@ -784,6 +854,14 @@ const styles = {
     cursor: "pointer",
     fontFamily: "'DM Sans', sans-serif",
     whiteSpace: "nowrap",
+  },
+  saveBanner: {
+    background: "#10243d",
+    border: "1px solid #35618f",
+    color: "#8fe0ff",
+    padding: "10px 32px",
+    fontSize: "13px",
+    fontWeight: 600,
   },
   errorBanner: {
     background: "#1e0f0f",

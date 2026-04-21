@@ -5,8 +5,9 @@ import Quiz from "./Quiz.jsx";
 import Host from "./Host.jsx";
 import Join from "./Join.jsx";
 import Discover from "./Discover.jsx";
+import MyGames from "./MyGames.jsx";
 import AuthModal from "./AuthModal.jsx";
-import { getCurrentUser, logout } from "./api";
+import { getCurrentUser, logout, saveMyGame } from "./api";
 
 const USERNAME_KEY_PREFIX = "quizify_username_";
 
@@ -184,6 +185,21 @@ export default function App() {
     setPage("preview");
   };
 
+  const handlePlayFromMyGames = (quizData) => {
+    setQuiz(quizData);
+    setIntent("solo");
+    setPage("preview");
+  };
+
+  const handleSaveGame = async (payload) => {
+    if (!user) {
+      setIsAuthOpen(true);
+      throw new Error("Please sign in to save games.");
+    }
+
+    return saveMyGame(payload);
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -272,7 +288,6 @@ export default function App() {
                 >
                   <div style={{ padding: "12px 12px 10px", borderBottom: "1px solid #264363" }}>
                     <div style={{ color: "#d7e8ff", fontWeight: 700, fontSize: 14 }}>{username}</div>
-                    <div style={{ color: "#93adc9", fontSize: 12 }}>{user.email}</div>
                   </div>
 
                   <button
@@ -374,7 +389,15 @@ export default function App() {
            <Upload onQuizReady={handleQuizReady} onHostReady={handleHostReady} />
          </div>
       )}
-      {page === "preview" && <Preview quiz={quiz} onStart={handleStartReview} onBack={handleRestart} intent={intent} />}
+      {page === "preview" && (
+        <Preview
+          quiz={quiz}
+          onStart={handleStartReview}
+          onBack={handleRestart}
+          intent={intent}
+          onSaveGame={handleSaveGame}
+        />
+      )}
       {page === "quiz"    && <Quiz    quiz={quiz} onRestart={handleRestart} />}
       {page === "host"    && <Host    quiz={quiz} onEnd={handleRestart} />}
       {page === "join"    && <Join    initialPin={joinPin} onExit={handleRestart} />}
@@ -386,10 +409,12 @@ export default function App() {
         </div>
       )}
       {page === "games" && (
-        <div style={{ padding: "100px 24px", textAlign: "center" }}>
-          <h2 style={{ fontSize: 34, marginBottom: 8 }}>My Games</h2>
-          <p style={{ color: "#9bb3cb" }}>This page will be built next.</p>
-        </div>
+        <MyGames
+          onBack={handleRestart}
+          username={username}
+          onPlay={handlePlayFromMyGames}
+          onRequireAuth={() => setIsAuthOpen(true)}
+        />
       )}
       {page === "settings" && (
         <div style={{ padding: "100px 24px", textAlign: "center" }}>

@@ -11,6 +11,7 @@ from quiz_generator import generate_quiz
 from multiplayer import manager
 from core.config import ALLOWED_ORIGINS
 from routes.auth_routes import router as auth_router
+from routes.game_routes import router as game_router
 from services.user_service import init_user_db
 
 app = FastAPI(title="Quiz AI", version="1.0.0")
@@ -25,6 +26,7 @@ app.add_middleware(
 
 init_user_db()
 app.include_router(auth_router)
+app.include_router(game_router)
 
 ALLOWED_EXTENSIONS = {".pdf", ".pptx"}
 MAX_FILE_SIZE_MB   = 20

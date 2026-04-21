@@ -116,3 +116,23 @@ export function resetPassword(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export function getMyGames() {
+  return request("/games", {
+    method: "GET",
+  });
+}
+
+export function saveMyGame(payload) {
+  return request("/games", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function setMyGamePinned(gameId, pinned) {
+  return request(`/games/${gameId}/pin`, {
+    method: "PATCH",
+    body: JSON.stringify({ pinned }),
+  });
+}
