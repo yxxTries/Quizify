@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Upload from "./Upload.jsx";
 import Preview from "./Preview.jsx";
 import Quiz from "./Quiz.jsx";
@@ -7,6 +7,52 @@ import Join from "./Join.jsx";
 import Discover from "./Discover.jsx";
 import AuthModal from "./AuthModal.jsx";
 import { getCurrentUser, logout } from "./api";
+
+const USERNAME_KEY_PREFIX = "quizify_username_";
+
+function generateRandomUsername() {
+  const adjectives = [
+    "Swift",
+    "Bright",
+    "Lucky",
+    "Neon",
+    "Nova",
+    "Rapid",
+    "Smart",
+    "Cosmic",
+    "Pixel",
+    "Sonic",
+  ];
+  const nouns = [
+    "Falcon",
+    "Panda",
+    "Comet",
+    "Wizard",
+    "Rider",
+    "Tiger",
+    "Phoenix",
+    "Otter",
+    "Voyager",
+    "Sprinter",
+  ];
+
+  const left = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const right = nouns[Math.floor(Math.random() * nouns.length)];
+  const suffix = Math.floor(100 + Math.random() * 900);
+  return `${left}${right}${suffix}`;
+}
+
+function getOrCreateUsername(userId) {
+  const key = `${USERNAME_KEY_PREFIX}${userId}`;
+  const existing = window.localStorage.getItem(key);
+  if (existing) {
+    return existing;
+  }
+
+  const generated = generateRandomUsername();
+  window.localStorage.setItem(key, generated);
+  return generated;
+}
 
 const globalStyle = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,7 +75,7 @@ const globalStyle = `
 `;
 
 export default function App() {
-  // "upload" | "preview" | "quiz" | "host" | "join" | "discover"
+  // "upload" | "preview" | "quiz" | "host" | "join" | "discover" | "profile" | "games" | "settings"
   const [page, setPage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("pin")) return "join";
@@ -42,6 +88,27 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [authBooting, setAuthBooting] = useState(true);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  const username = useMemo(() => {
+    if (!user?.id) {
+      return "";
+    }
+    return getOrCreateUsername(user.id);
+  }, [user]);
+
+  const profileInitial = useMemo(() => {
+    if (username) {
+      return username[0].toUpperCase();
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return "P";
+  }, [username, user]);
+
+  const showFloatingAccountControls = page === "upload";
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +134,20 @@ export default function App() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    function handleOutsideClick(event) {
+      if (!profileMenuRef.current) {
+        return;
+      }
+      if (!profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
   const handleQuizReady = (quizData) => {
@@ -110,61 +191,124 @@ export default function App() {
       // Keep UX resilient even if logout API fails.
     }
     setUser(null);
+    setIsProfileMenuOpen(false);
+    setPage("upload");
+  };
+
+  const handleAuthSuccess = (nextUser) => {
+    setUser(nextUser);
+    setIsProfileMenuOpen(false);
+    setPage("upload");
   };
 
   return (
     <>
       <style>{globalStyle}</style>
-      <div
-        style={{
-          position: "fixed",
-          top: 18,
-          right: 20,
-          zIndex: 50,
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-        }}
-      >
-        {!authBooting && !user && (
-          <button
-            onClick={() => setIsAuthOpen(true)}
-            style={{
-              padding: "8px 14px",
-              background: "#13243d",
-              color: "#e3eefc",
-              border: "1px solid #2d4d73",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: 700,
-            }}
-          >
-            Sign In
-          </button>
-        )}
-
-        {!authBooting && user && (
-          <>
-            <div style={{ color: "#a7c1de", fontSize: 13, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis" }}>
-              {user.email}
-            </div>
+      {showFloatingAccountControls && (
+        <div
+          ref={profileMenuRef}
+          style={{
+            position: "fixed",
+            top: 18,
+            right: 20,
+            zIndex: 50,
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+          }}
+        >
+          {!authBooting && !user && (
             <button
-              onClick={handleLogout}
+              onClick={() => setIsAuthOpen(true)}
               style={{
-                padding: "8px 12px",
-                background: "rgba(16, 30, 49, 0.9)",
-                color: "#f5c7cb",
-                border: "1px solid #83505a",
+                padding: "8px 14px",
+                background: "#13243d",
+                color: "#e3eefc",
+                border: "1px solid #2d4d73",
                 borderRadius: 8,
                 cursor: "pointer",
                 fontWeight: 700,
               }}
             >
-              Sign Out
+              Sign In
             </button>
-          </>
-        )}
-      </div>
+          )}
+
+          {!authBooting && user && (
+            <>
+              <button
+                onClick={() => setIsProfileMenuOpen((open) => !open)}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: "linear-gradient(180deg, #1c3f67 0%, #132a47 100%)",
+                  color: "#dbf4ff",
+                  border: "1px solid #4b6f96",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  display: "grid",
+                  placeItems: "center",
+                  fontSize: 16,
+                }}
+                aria-label="Open profile menu"
+              >
+                {profileInitial}
+              </button>
+
+              {isProfileMenuOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 48,
+                    right: 0,
+                    minWidth: 210,
+                    borderRadius: 12,
+                    border: "1px solid #2f4f75",
+                    background: "linear-gradient(180deg, #12243d 0%, #0c1a2b 100%)",
+                    boxShadow: "0 16px 32px rgba(0, 0, 0, 0.35)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div style={{ padding: "12px 12px 10px", borderBottom: "1px solid #264363" }}>
+                    <div style={{ color: "#d7e8ff", fontWeight: 700, fontSize: 14 }}>{username}</div>
+                    <div style={{ color: "#93adc9", fontSize: 12 }}>{user.email}</div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => { setPage("profile"); setIsProfileMenuOpen(false); }}
+                    style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer" }}
+                  >
+                    My Profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPage("games"); setIsProfileMenuOpen(false); }}
+                    style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer" }}
+                  >
+                    My Games
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPage("settings"); setIsProfileMenuOpen(false); }}
+                    style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer" }}
+                  >
+                    My Settings
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", borderTop: "1px solid #264363", background: "transparent", color: "#ffb7bf", cursor: "pointer" }}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {page === "upload"  && (
          <div style={{ position: "relative" }}>
@@ -176,6 +320,10 @@ export default function App() {
                transform: "translateX(-50%)",
                display: "flex",
                gap: "10px",
+               flexWrap: "wrap",
+               justifyContent: "center",
+               maxWidth: "calc(100vw - 140px)",
+               padding: "0 4px",
                alignItems: "center",
              }}
            >
@@ -192,6 +340,20 @@ export default function App() {
                }}
              >
                Discover
+             </button>
+             <button
+               onClick={() => setPage("games")}
+               style={{
+                 padding: "8px 16px",
+                 background: "rgba(36, 73, 121, 0.65)",
+                 color: "#E2E8F0",
+                 border: "1px solid #3E6EA3",
+                 borderRadius: 8,
+                 cursor: "pointer",
+                 fontWeight: 700,
+               }}
+             >
+               My Games
              </button>
              <button
                onClick={() => setPage("join")}
@@ -217,10 +379,28 @@ export default function App() {
       {page === "host"    && <Host    quiz={quiz} onEnd={handleRestart} />}
       {page === "join"    && <Join    initialPin={joinPin} onExit={handleRestart} />}
       {page === "discover" && <Discover onBack={handleRestart} onPlay={handlePlayFromDiscover} />}
+      {page === "profile" && (
+        <div style={{ padding: "100px 24px", textAlign: "center" }}>
+          <h2 style={{ fontSize: 34, marginBottom: 8 }}>My Profile</h2>
+          <p style={{ color: "#9bb3cb" }}>This page will be built next. Signed in as {username || user?.email}.</p>
+        </div>
+      )}
+      {page === "games" && (
+        <div style={{ padding: "100px 24px", textAlign: "center" }}>
+          <h2 style={{ fontSize: 34, marginBottom: 8 }}>My Games</h2>
+          <p style={{ color: "#9bb3cb" }}>This page will be built next.</p>
+        </div>
+      )}
+      {page === "settings" && (
+        <div style={{ padding: "100px 24px", textAlign: "center" }}>
+          <h2 style={{ fontSize: 34, marginBottom: 8 }}>My Settings</h2>
+          <p style={{ color: "#9bb3cb" }}>This page will be built next.</p>
+        </div>
+      )}
       {isAuthOpen && (
         <AuthModal
           onClose={() => setIsAuthOpen(false)}
-          onAuthSuccess={(nextUser) => setUser(nextUser)}
+          onAuthSuccess={handleAuthSuccess}
         />
       )}
     </>
