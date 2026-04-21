@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import Quiz from "./Quiz.jsx";
+import { buildWebSocketUrl } from "./api.js";
 
 export default function Host({ quiz, onEnd }) {
   const [pin, setPin] = useState(null);
@@ -15,20 +16,7 @@ export default function Host({ quiz, onEnd }) {
   const ws = useRef(null);
 
     useEffect(() => {
-// Connect to the actual backend URL using WebSockets
-    // If BASE_URL is http://..., we need ws://...
-    // If BASE_URL is https://..., we need wss://...
-    const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-    const wsUrl = baseUrl
-      .replace(/^https?:\/\//, baseUrl.startsWith("https") ? "wss://" : "ws://")
-      + `/ws/host`;
-
-    // Fallback if the user forgot http:// in VITE_BACKEND_URL
-    const finalWsUrl = wsUrl.startsWith("ws") 
-      ? wsUrl 
-      : `wss://${wsUrl.replace(/^\/\//, '')}`;
-
-    ws.current = new WebSocket(finalWsUrl);
+    ws.current = new WebSocket(buildWebSocketUrl("/ws/host"));
     
     ws.current.onopen = () => {
       ws.current.send(JSON.stringify({ type: "create", quiz }));
@@ -48,9 +36,6 @@ export default function Host({ quiz, onEnd }) {
       } else if (data.type === "leaderboard") {
         setScores(data.scores);
         if (data.streaks) setStreaks(data.streaks);
-      } else if (data.type === "score_update") {
-        setScores(s => ({ ...s, [data.name]: data.score }));
-        if (data.streak !== undefined) setStreaks(s => ({ ...s, [data.name]: data.streak }));
       } else if (data.type === "answer_submit") {
           console.log("Host received answer_submit!", data);
           setHostAnswers(prev => {

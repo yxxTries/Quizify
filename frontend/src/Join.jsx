@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import Quiz from "./Quiz.jsx";
+import { buildWebSocketUrl } from "./api.js";
 
 export default function Join({ onExit, initialPin = "" }) {
   const [pin, setPin] = useState(initialPin);
@@ -19,20 +20,7 @@ export default function Join({ onExit, initialPin = "" }) {
     setError("");
     setStatus("joining");
 
-// Connect to the actual backend URL using WebSockets
-    // If BASE_URL is http://..., we need ws://...
-    // If BASE_URL is https://..., we need wss://...
-    const baseUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-    const wsUrl = baseUrl
-      .replace(/^https?:\/\//, baseUrl.startsWith("https") ? "wss://" : "ws://")
-      + `/ws/join/${pin}/${name}`;
-    
-    // Fallback if the user forgot http:// in VITE_BACKEND_URL
-    const finalWsUrl = wsUrl.startsWith("ws") 
-      ? wsUrl 
-      : `wss://${wsUrl.replace(/^\/\//, '')}`;
-
-    ws.current = new WebSocket(finalWsUrl);
+    ws.current = new WebSocket(buildWebSocketUrl(`/ws/join/${pin}/${name}`));
 
     ws.current.onopen = () => {
       setStatus("waiting");
@@ -67,12 +55,6 @@ export default function Join({ onExit, initialPin = "" }) {
     };
   };
 
-  const handleScoreUpdate = (score, streak = 0) => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({ type: "score_update", score, streak }));
-    }
-  };
-
   const handleAnswerSubmit = (questionIndex, optionIndex) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify({ type: "answer_submit", questionIndex, optionIndex }));
@@ -94,7 +76,6 @@ export default function Join({ onExit, initialPin = "" }) {
             setCurrentQuestionIndex(0);
             setLeaderboard({});
           }}
-          onScoreUpdate={handleScoreUpdate}
           onAnswerSubmit={handleAnswerSubmit}
           currentQuestionIndex={currentQuestionIndex}
           leaderboard={leaderboard}

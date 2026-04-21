@@ -145,7 +145,7 @@ const scoreStyles = {
   },
 };
 
-export default function Quiz({ quiz, onRestart, onJoinNew, onScoreUpdate, onAnswerSubmit, currentQuestionIndex = null, leaderboard = null, streaks = null, isHostMode = false, hostAnswers = {}, triggerNextQuestion = null, hostRevealed = false, onReveal = null }) {
+export default function Quiz({ quiz, onRestart, onJoinNew, onAnswerSubmit, currentQuestionIndex = null, leaderboard = null, streaks = null, isHostMode = false, hostAnswers = {}, triggerNextQuestion = null, hostRevealed = false, onReveal = null }) {
   const { questions } = quiz;
   const total = questions.length;
 
@@ -203,9 +203,6 @@ export default function Quiz({ quiz, onRestart, onJoinNew, onScoreUpdate, onAnsw
     } else {
        newStreak = 0;
        setStreak(newStreak);
-    }
-    if (onScoreUpdate) {
-       onScoreUpdate(newScore, newStreak);
     }
     if (onAnswerSubmit) {
        onAnswerSubmit(current, idx);
@@ -298,7 +295,10 @@ export default function Quiz({ quiz, onRestart, onJoinNew, onScoreUpdate, onAnsw
           </div>
 
         {/* Answer grid */}
-        <div style={styles.grid}>
+        <div style={{
+          ...styles.grid,
+          gridTemplateColumns: q.choices.length === 2 ? '1fr' : 'repeat(2, 1fr)',
+        }}>
           {q.choices.map((choice, idx) => {
             const color = CHOICE_COLORS[idx];
             let bg = color.bg;

@@ -441,12 +441,15 @@ const cardStyles = {
 // Preview (main component)
 // ─────────────────────────────────────────────
 
-export default function Preview({ quiz, onStart, onBack, intent = "solo" }) {
+export default function Preview({ quiz, onStart, onBack, intent = "solo", onSaveGame }) {
   const [questions, setQuestions]       = useState(() => cloneQuestions(quiz.questions));
   const [showAnswers, setShowAnswers]   = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [globalErrors, setGlobalErrors] = useState({}); // { _id: { field: msg } }
   const [errorBanner, setErrorBanner]   = useState("");
+  const [saveLoading, setSaveLoading]   = useState(false);
+  const [saveMessage, setSaveMessage]   = useState("");
+  const discoverMeta = quiz?.discoverMeta || null;
 
   // Drag state
   const dragIndex = useRef(null);
@@ -612,16 +615,67 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo" }) {
     onStart({ questions: clean });
   };
 
+  const handleSaveGame = async () => {
+    if (!onSaveGame) {
+      return;
+    }
+
+    if (questions.length === 0) {
+      setErrorBanner("Add at least one question before saving.");
+      return;
+    }
+
+    const newErrors = {};
+    questions.forEach((q) => {
+      const errs = validateCard(q);
+      if (hasErrors(errs)) {
+        newErrors[q._id] = errs;
+      }
+    });
+    if (Object.keys(newErrors).length > 0) {
+      setGlobalErrors(newErrors);
+      setErrorBanner("Fix question issues before saving.");
+      return;
+    }
+
+    const clean = questions.map(({ _id, ...rest }) => rest);
+    const fallbackTitle = clean[0]?.question?.slice(0, 60) || "Untitled Quiz";
+    const title = discoverMeta?.title || fallbackTitle;
+    const category = discoverMeta?.category || "General";
+
+    setSaveLoading(true);
+    setSaveMessage("");
+    try {
+      await onSaveGame({
+        title,
+        category,
+        quiz: { questions: clean, discoverMeta: discoverMeta || undefined },
+      });
+      setSaveMessage("Saved to My Games.");
+    } catch (err) {
+      setSaveMessage(err?.message || "Could not save game.");
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
   return (
     <div style={styles.page}>
       {/* Header */}
       <header style={styles.header}>
         <span style={styles.logo}>Kuizu</span>
         <span style={styles.title}>Review Questions</span>
-        <button style={styles.startBtn} onClick={handleStart}>
-          {intent === "host" ? "Create Lobby \u2192" : "Start Quiz \u2192"}
-        </button>
+        <div style={styles.headerActions}>
+          <button style={styles.saveBtn} onClick={handleSaveGame} disabled={saveLoading}>
+            {saveLoading ? "Saving..." : "Save Game"}
+          </button>
+          <button style={styles.startBtn} onClick={handleStart}>
+            {intent === "host" ? "Create Lobby \u2192" : "Start Quiz \u2192"}
+          </button>
+        </div>
       </header>
+
+      {saveMessage && <div style={styles.saveBanner}>{saveMessage}</div>}
 
       {/* Error banner */}
       {errorBanner && (
@@ -656,6 +710,33 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo" }) {
             </div>
           </label>
         </div>
+
+        {discoverMeta && (
+          <section style={styles.discoverSummary}>
+            <div style={styles.discoverHeaderRow}>
+              <div style={styles.authorWrap}>
+                <div style={styles.authorIcon} aria-hidden="true">
+                  {discoverMeta.author?.slice(0, 1)?.toUpperCase() || "?"}
+                </div>
+                <div>
+                  <p style={styles.authorName}>{discoverMeta.author}</p>
+                  <p style={styles.authorMeta}>Community creator</p>
+                </div>
+              </div>
+              <span style={styles.communityBadge}>Community Quiz</span>
+            </div>
+
+            <h2 style={styles.discoverTitle}>{discoverMeta.title}</h2>
+
+            <div style={styles.discoverStatsGrid}>
+              <p style={styles.discoverStat}>Category: <span style={styles.discoverStatValue}>{discoverMeta.category}</span></p>
+              <p style={styles.discoverStat}>Difficulty: <span style={styles.discoverStatValue}>{discoverMeta.difficulty}</span></p>
+              <p style={styles.discoverStat}>Est. Time: <span style={styles.discoverStatValue}>{discoverMeta.estimatedTime}</span></p>
+              <p style={styles.discoverStat}>Plays: <span style={styles.discoverStatValue}>{discoverMeta.plays}</span></p>
+              <p style={styles.discoverStat}>Rating: <span style={styles.discoverStatValue}>{Number(discoverMeta.rating || 0).toFixed(1)} / 5</span></p>
+            </div>
+          </section>
+        )}
 
         {/* Card list */}
         <div style={styles.cardList}>
@@ -745,6 +826,23 @@ const styles = {
     color: "#F1F2F6",
     letterSpacing: "-0.3px",
   },
+  headerActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  saveBtn: {
+    background: "rgba(20, 45, 78, 0.95)",
+    color: "#d8e7fb",
+    border: "1px solid #3f6c9b",
+    borderRadius: "10px",
+    padding: "10px 16px",
+    fontSize: "14px",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
+    whiteSpace: "nowrap",
+  },
   startBtn: {
     background: "#00D2D3",
     color: "#16213E",
@@ -756,6 +854,14 @@ const styles = {
     cursor: "pointer",
     fontFamily: "'DM Sans', sans-serif",
     whiteSpace: "nowrap",
+  },
+  saveBanner: {
+    background: "#10243d",
+    border: "1px solid #35618f",
+    color: "#8fe0ff",
+    padding: "10px 32px",
+    fontSize: "13px",
+    fontWeight: 600,
   },
   errorBanner: {
     background: "#1e0f0f",
@@ -820,6 +926,78 @@ const styles = {
   cardList: {
     display: "flex",
     flexDirection: "column",
+  },
+  discoverSummary: {
+    border: "1px solid #0F3460",
+    background: "#20233D",
+    borderRadius: "14px",
+    padding: "14px",
+    marginBottom: "14px",
+  },
+  discoverHeaderRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  authorWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  authorIcon: {
+    width: "38px",
+    height: "38px",
+    borderRadius: "999px",
+    background: "#00D2D3",
+    color: "#0E1A2B",
+    display: "grid",
+    placeItems: "center",
+    fontWeight: 800,
+    fontSize: "16px",
+  },
+  authorName: {
+    margin: 0,
+    fontSize: "14px",
+    fontWeight: 700,
+    color: "#F1F2F6",
+  },
+  authorMeta: {
+    margin: "2px 0 0 0",
+    color: "#B0BAC3",
+    fontSize: "12px",
+  },
+  communityBadge: {
+    border: "1px solid #2B5A8A",
+    borderRadius: "999px",
+    padding: "4px 10px",
+    fontSize: "11px",
+    fontWeight: 700,
+    color: "#00D2D3",
+    letterSpacing: "0.4px",
+    textTransform: "uppercase",
+  },
+  discoverTitle: {
+    margin: "12px 0 10px 0",
+    fontSize: "22px",
+    lineHeight: 1.2,
+    color: "#F1F2F6",
+    fontFamily: "'Syne', sans-serif",
+  },
+  discoverStatsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+    gap: "8px",
+  },
+  discoverStat: {
+    margin: 0,
+    color: "#B0BAC3",
+    fontSize: "13px",
+  },
+  discoverStatValue: {
+    color: "#F1F2F6",
+    fontWeight: 700,
   },
   addBtn: {
     width: "100%",
