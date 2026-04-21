@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Upload from "./Upload.jsx";
 import Preview from "./Preview.jsx";
 import Quiz from "./Quiz.jsx";
 import Host from "./Host.jsx";
 import Join from "./Join.jsx";
 import Discover from "./Discover.jsx";
+import AuthModal from "./AuthModal.jsx";
+import { getCurrentUser, logout } from "./api";
 
 const globalStyle = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,6 +39,35 @@ export default function App() {
   const [quiz, setQuiz] = useState(null);
   const [intent, setIntent] = useState("solo");
   const [joinPin, setJoinPin] = useState(() => new URLSearchParams(window.location.search).get("pin") || "");
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authBooting, setAuthBooting] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrapAuth() {
+      try {
+        const currentUser = await getCurrentUser();
+        if (!cancelled) {
+          setUser(currentUser);
+        }
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setAuthBooting(false);
+        }
+      }
+    }
+
+    bootstrapAuth();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleQuizReady = (quizData) => {
     setQuiz(quizData);
@@ -72,16 +103,77 @@ export default function App() {
     setPage("preview");
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // Keep UX resilient even if logout API fails.
+    }
+    setUser(null);
+  };
+
   return (
     <>
       <style>{globalStyle}</style>
+      <div
+        style={{
+          position: "fixed",
+          top: 18,
+          right: 20,
+          zIndex: 50,
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+        }}
+      >
+        {!authBooting && !user && (
+          <button
+            onClick={() => setIsAuthOpen(true)}
+            style={{
+              padding: "8px 14px",
+              background: "#13243d",
+              color: "#e3eefc",
+              border: "1px solid #2d4d73",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: 700,
+            }}
+          >
+            Sign In
+          </button>
+        )}
+
+        {!authBooting && user && (
+          <>
+            <div style={{ color: "#a7c1de", fontSize: 13, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis" }}>
+              {user.email}
+            </div>
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: "8px 12px",
+                background: "rgba(16, 30, 49, 0.9)",
+                color: "#f5c7cb",
+                border: "1px solid #83505a",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              Sign Out
+            </button>
+          </>
+        )}
+      </div>
+
       {page === "upload"  && (
          <div style={{ position: "relative" }}>
            <div
              style={{
                position: "absolute",
                top: 24,
-               right: 40,
+               left: "50%",
+               transform: "translateX(-50%)",
                display: "flex",
                gap: "10px",
                alignItems: "center",
@@ -125,6 +217,12 @@ export default function App() {
       {page === "host"    && <Host    quiz={quiz} onEnd={handleRestart} />}
       {page === "join"    && <Join    initialPin={joinPin} onExit={handleRestart} />}
       {page === "discover" && <Discover onBack={handleRestart} onPlay={handlePlayFromDiscover} />}
+      {isAuthOpen && (
+        <AuthModal
+          onClose={() => setIsAuthOpen(false)}
+          onAuthSuccess={(nextUser) => setUser(nextUser)}
+        />
+      )}
     </>
   );
 }

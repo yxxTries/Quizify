@@ -6,3 +6,6 @@ python-pptx==0.6.23
 requests==2.31.0
 python-dotenv==1.0.1
 json-repair==0.23.0
+bcrypt==4.2.0
+PyJWT==2.9.0
+email-validator==2.2.0

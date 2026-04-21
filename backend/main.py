@@ -9,15 +9,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from extractor import extract_text
 from quiz_generator import generate_quiz
 from multiplayer import manager
+from core.config import ALLOWED_ORIGINS
+from routes.auth_routes import router as auth_router
+from services.user_service import init_user_db
 
 app = FastAPI(title="Quiz AI", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all origins so Vercel and local tunnels can access it
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+init_user_db()
+app.include_router(auth_router)
 
 ALLOWED_EXTENSIONS = {".pdf", ".pptx"}
 MAX_FILE_SIZE_MB   = 20
