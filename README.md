@@ -4,6 +4,7 @@ Generate quizzes from PDF/PPTX files and play them in either:
 - **Solo mode** (single player), or
 - **Multiplayer host/join mode** with a PIN and live leaderboard.
 
+built this as an assistant for my classes to make a fast, interactive quiz for students, without compromising on quality.
 ## Project Scope
 
 Quizify is a full-stack app that:
