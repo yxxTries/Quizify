@@ -1,5 +1,5 @@
-﻿import React, { useState, useRef, useCallback } from "react";
-import { generateQuiz } from "./api.js";
+﻿import React, { useState, useRef, useCallback, useEffect } from "react";
+import { generateQuiz, getMyGames } from "./api.js";
 
 const ALLOWED = [".pdf", ".pptx"];
 
@@ -9,7 +9,7 @@ function fileIsValid(file) {
   return ALLOWED.some((ext) => name.endsWith(ext));
 }
 
-export default function Upload({ onQuizReady, onHostReady }) {
+export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned }) {
   const [dragging, setDragging]       = useState(false);
   const [file, setFile]               = useState(null);
   const [loading, setLoading]         = useState(false);
@@ -17,7 +17,16 @@ export default function Upload({ onQuizReady, onHostReady }) {
   const [progress, setProgress]       = useState("");
   const [numQuestions, setNumQuestions] = useState(5);
   const [prompt, setPrompt]           = useState("");
+  const [pinnedGames, setPinnedGames] = useState([]);
   const inputRef                      = useRef();
+
+  useEffect(() => {
+    if (user) {
+      getMyGames()
+        .then((games) => setPinnedGames(games.filter((g) => g.pinned)))
+        .catch((err) => console.error("Failed to load pinned games:", err));
+    }
+  }, [user]);
 
   const pickFile = (f) => {
     setError("");
@@ -101,13 +110,17 @@ export default function Upload({ onQuizReady, onHostReady }) {
       </header>
 
       <main style={styles.main}>
-        <h1 style={styles.h1}>
-          Drop your deck.<br />
-          <span style={styles.accent}>Get a quiz.</span>
-        </h1>
-        <p style={styles.sub}>
-          Upload a PDF or PowerPoint to get a quiz made by Kuizu. You can edit it as you like before playing.
-        </p>
+        {!user && (
+          <>
+            <h1 style={styles.h1}>
+              Drop your deck.<br />
+              <span style={styles.accent}>Get a quiz.</span>
+            </h1>
+            <p style={styles.sub}>
+              Upload a PDF or PowerPoint to get a quiz made by Kuizu. You can edit it as you like before playing.
+            </p>
+          </>
+        )}
         
         <div style={styles.cardContainer}>
           {/* Left Column */}
@@ -255,6 +268,27 @@ export default function Upload({ onQuizReady, onHostReady }) {
                 </div>
               </div>
             </div>
+
+            {/* Pinned Quizzes */}
+            {user && pinnedGames.length > 0 && (
+              <div style={styles.pinnedWrap}>
+                <div style={styles.pinnedHeader}>Pinned Quizzes</div>
+                <div style={styles.pinnedList}>
+                  {pinnedGames.map((game) => (
+                    <div
+                      key={game.id}
+                      style={styles.pinnedItem}
+                      onClick={() => onPlayPinned?.(game.quiz)}
+                    >
+                      <div style={styles.pinnedItemTitle}>{game.title}</div>
+                      <div style={styles.pinnedItemMeta}>
+                        {game.questions_count} Qs &bull; {game.category || "Quiz"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
@@ -626,6 +660,46 @@ const styles = {
   hint: {
     fontSize: "13px",
     color: "#F1F2F6",
+  },
+  pinnedWrap: {
+    width: "100%",
+    maxWidth: "520px",
+    background: "transparent",
+    borderTop: "1px solid #1e1e2e",
+    paddingTop: "24px",
+    boxSizing: "border-box",
+    marginTop: "20px",
+  },
+  pinnedHeader: {
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "#B0BAC3",
+    textTransform: "uppercase",
+    letterSpacing: "1.2px",
+    marginBottom: "16px",
+  },
+  pinnedList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  pinnedItem: {
+    background: "#16213E",
+    border: "1px solid #2B5A8A",
+    borderRadius: "10px",
+    padding: "16px",
+    cursor: "pointer",
+    transition: "background 0.2s, transform 0.2s",
+  },
+  pinnedItemTitle: {
+    fontSize: "15px",
+    fontWeight: 600,
+    color: "#F1F2F6",
+    marginBottom: "4px",
+  },
+  pinnedItemMeta: {
+    fontSize: "13px",
+    color: "#00D2D3",
   },
 };
 
