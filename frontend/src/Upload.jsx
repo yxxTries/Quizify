@@ -275,7 +275,7 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
                     <span style={styles.spinner} />
                     {progress}
                   </span>
-                ) : file || prompt.trim() ? "Generate & Play Solo" : "Play Sample Solo"}
+                ) : file || prompt.trim() ? "Play Solo" : "Play empty quiz Solo"}
               </button>
               
               <button
@@ -286,7 +286,7 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
                 onClick={() => handleSubmit(true)}
                 disabled={loading}
               >
-                {loading ? "Generating Quiz..." : file || prompt.trim() ? "Generate & Host Multiplayer" : "Host Sample Multiplayer"}
+                {loading ? "Generating Quiz..." : file || prompt.trim() ? "Host Multiplayer" : "Host empty Multiplayer quiz"}
               </button>
             </div>
 
@@ -338,7 +338,7 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
             {user && (
               <div style={styles.timerWrap}>
                 <div style={styles.timerHeader}>
-                  <span style={styles.sliderLabel}>Question timer</span>
+                  <span style={styles.sliderLabel}>Question timer (under maintenance right now)</span>
                   <span style={styles.timerValue}>{formatTimerSummary(timeControl)}</span>
                 </div>
 

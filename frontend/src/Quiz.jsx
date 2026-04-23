@@ -110,7 +110,7 @@ function ScoreScreen({ score, total, onRestart, onJoinNew, leaderboard, isMultip
           </button>
         )}
         <button style={{...scoreStyles.btn, marginTop: 0, width: "100%", boxSizing: "border-box", ...(isMultiplayer && onJoinNew ? { background: "#FF6B6B", color: "#F1F2F6", border: "none" } : {})}} onClick={onRestart}>
-          {isMultiplayer ? "Exit Game" : "Try another document →"}
+          {isMultiplayer ? "Exit Game" : "New Quiz →"}
         </button>
       </div>
       <style>{`@keyframes popIn { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }`}</style>
