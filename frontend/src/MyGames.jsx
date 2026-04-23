@@ -1,7 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getMyGames, setMyGamePinned } from "./api";
+import { getMyGames, setMyGamePinned, deleteMyGame, updateMyGameCategory } from "./api";
 
 const MAX_PINNED_GAMES = 5;
+
+const AVAILABLE_TOPICS = [
+  "Science",
+  "History",
+  "Math",
+  "Gaming",
+  "Language",
+  "Business",
+  "General",
+  "Other",
+];
 
 function formatDate(isoDate) {
   const date = new Date(isoDate);
@@ -12,7 +23,7 @@ function formatDate(isoDate) {
   });
 }
 
-export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
+export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdit }) {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -21,6 +32,14 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [sortBy, setSortBy] = useState("recent");
   const [pinMessage, setPinMessage] = useState("");
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [editingTopicId, setEditingTopicId] = useState(null);
+
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMenuId(null);
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +96,10 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
       next.sort((a, b) => b.questions_count - a.questions_count);
       return next;
     }
+    if (sortBy === "category") {
+      next.sort((a, b) => a.category.localeCompare(b.category));
+      return next;
+    }
     next.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
     return next;
   }, [games, sortBy]);
@@ -108,6 +131,54 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
       setGames((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
     } catch (err) {
       setPinMessage(err?.message || "Could not update pin state.");
+    }
+  };
+
+  const toggleMenu = (e, gameId) => {
+    e.stopPropagation();
+    setOpenMenuId(prev => prev === gameId ? null : gameId);
+  };
+
+  const handleDelete = async (e, gameId) => {
+    e.stopPropagation();
+    setOpenMenuId(null);
+    if (!window.confirm("Are you sure you want to delete this game?")) return;
+    
+    try {
+      await deleteMyGame(gameId);
+      setGames(prev => prev.filter(g => g.id !== gameId));
+    } catch (err) {
+      alert(err.message || "Could not delete game");
+    }
+  };
+
+  const handleEdit = (e, game) => {
+    e.stopPropagation();
+    setOpenMenuId(null);
+    if (onEdit) onEdit(game);
+  };
+
+  const handlePostDiscover = (e, game) => {
+    e.stopPropagation();
+    setOpenMenuId(null);
+    alert("Post to Discover coming soon!");
+  };
+
+  const startTopicEdit = (e, gameId) => {
+    e.stopPropagation();
+    setOpenMenuId(null);
+    setEditingTopicId(gameId);
+  };
+
+  const handleTopicSave = async (e, game, newTopic) => {
+    e.stopPropagation();
+    setEditingTopicId(null);
+    if (!newTopic || newTopic === game.category) return;
+    try {
+      const updated = await updateMyGameCategory(game.id, newTopic);
+      setGames((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (err) {
+      alert(err.message || "Could not change topic");
     }
   };
 
@@ -157,6 +228,7 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
                     <option value="title">Title (A-Z)</option>
                     <option value="plays">Most Played</option>
                     <option value="questions">Most Questions</option>
+                    <option value="category">Topic (A-Z)</option>
                   </select>
                 </label>
               </div>
@@ -188,9 +260,24 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
                 <h2 style={styles.sectionTitle}>Pinned Games</h2>
                 <div style={styles.grid}>
                   {pinnedGames.map((game) => (
-                    <article key={`pinned-${game.id}`} style={{ ...styles.card, ...styles.pinnedCard }} onClick={() => onPlay(game.quiz)}>
-                      <div style={styles.cardTop}>
+<article key={`pinned-${game.id}`} style={{ ...styles.card, ...styles.pinnedCard }} onClick={() => editingTopicId !== game.id && onPlay(game.quiz)}>
+                    <div style={styles.cardTop}>
+                      {editingTopicId === game.id ? (
+                        <select
+                          style={styles.inlineSelect}
+                          value={game.category}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => handleTopicSave(e, game, e.target.value)}
+                          onBlur={(e) => setEditingTopicId(null)}
+                          autoFocus
+                        >
+                          {AVAILABLE_TOPICS.map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      ) : (
                         <span style={styles.category}>{game.category}</span>
+                      )}
                         <span style={styles.pinBadge}>Pinned</span>
                       </div>
 
@@ -205,6 +292,19 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
                       <div style={styles.actions}>
                         <button type="button" style={styles.secondaryAction} onClick={(event) => { event.stopPropagation(); onPlay(game.quiz); }}>Play</button>
                         <button type="button" style={styles.pinActionActive} onClick={(event) => { event.stopPropagation(); togglePin(game); }}>Unpin</button>
+                        <div style={{ position: "relative" }}>
+                          <button type="button" style={styles.menuIconBtn} onClick={(e) => toggleMenu(e, game.id)}>
+                            &#8942;
+                          </button>
+                          {openMenuId === game.id && (
+                            <div style={styles.dropdownMenu}>
+                              <button type="button" style={styles.dropdownItem} onClick={(e) => handleEdit(e, game)}>Edit</button>
+                              <button type="button" style={styles.dropdownItem} onClick={(e) => startTopicEdit(e, game.id)}>Change Topic</button>
+                              <button type="button" style={styles.dropdownItem} onClick={(e) => handlePostDiscover(e, game)}>Post to Discover</button>
+                              <button type="button" style={{...styles.dropdownItem, color: "#ff6b81"}} onClick={(e) => handleDelete(e, game.id)}>Delete</button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </article>
                   ))}
@@ -223,9 +323,24 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
               )}
 
               {!loading && !error && filteredGames.map((game) => (
-                <article key={game.id} style={styles.card} onClick={() => onPlay(game.quiz)}>
+                <article key={game.id} style={styles.card} onClick={() => editingTopicId !== game.id && onPlay(game.quiz)}>
                   <div style={styles.cardTop}>
-                    <span style={styles.category}>{game.category}</span>
+                    {editingTopicId === game.id ? (
+                      <select
+                        style={styles.inlineSelect}
+                        value={game.category}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => handleTopicSave(e, game, e.target.value)}
+                        onBlur={(e) => setEditingTopicId(null)}
+                        autoFocus
+                      >
+                        {AVAILABLE_TOPICS.map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span style={styles.category}>{game.category}</span>
+                    )}
                     {game.pinned ? <span style={styles.pinBadge}>Pinned</span> : <span style={styles.pinBadgeMuted}>Saved</span>}
                   </div>
 
@@ -246,6 +361,20 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
                     >
                       {game.pinned ? "Unpin" : "Pin"}
                     </button>
+
+                    <div style={{ position: "relative" }}>
+                      <button type="button" style={styles.menuIconBtn} onClick={(e) => toggleMenu(e, game.id)}>
+                        &#8942;
+                      </button>
+                      {openMenuId === game.id && (
+                        <div style={styles.dropdownMenu}>
+                          <button type="button" style={styles.dropdownItem} onClick={(e) => handleEdit(e, game)}>Edit</button>
+                          <button type="button" style={styles.dropdownItem} onClick={(e) => startTopicEdit(e, game.id)}>Change Topic</button>
+                          <button type="button" style={styles.dropdownItem} onClick={(e) => handlePostDiscover(e, game)}>Post to Discover</button>
+                          <button type="button" style={{...styles.dropdownItem, color: "#ff6b81"}} onClick={(e) => handleDelete(e, game.id)}>Delete</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </article>
               ))}
@@ -295,6 +424,42 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "20px",
+  },
+  menuIconBtn: {
+    background: "transparent",
+    border: "none",
+    color: "#b6c3d8",
+    fontSize: "24px",
+    cursor: "pointer",
+    padding: "0 8px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    right: 0,
+    bottom: "100%",
+    marginBottom: "5px",
+    background: "#1e2541",
+    border: "1px solid #2e3b5e",
+    borderRadius: "8px",
+    padding: "4px 0",
+    minWidth: "160px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+    zIndex: 10,
+    display: "flex",
+    flexDirection: "column",
+  },
+  dropdownItem: {
+    background: "transparent",
+    border: "none",
+    color: "#f1f2f6",
+    padding: "10px 16px",
+    textAlign: "left",
+    cursor: "pointer",
+    fontSize: "14px",
+    transition: "background 0.2s",
   },
   header: {
     display: "flex",
@@ -560,4 +725,15 @@ const styles = {
     padding: "10px 14px",
     cursor: "pointer",
   },
+  inlineSelect: {
+    padding: "4px 8px",
+    borderRadius: "4px",
+    background: "#2f3640",
+    color: "#fff",
+    border: "1px solid #718093",
+    outline: "none",
+    fontFamily: "inherit",
+    fontSize: "0.85rem",
+    cursor: "pointer",
+  }
 };

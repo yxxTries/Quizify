@@ -32,11 +32,32 @@ const globalStyle = `
 
 export default function App() {
   // "upload" | "preview" | "quiz" | "host" | "join" | "discover" | "profile" | "games"
-  const [page, setPage] = useState(() => {
+  const [page, _setPage] = useState(() => {
+    if (window.history.state?.page) {
+      return window.history.state.page;
+    }
     const params = new URLSearchParams(window.location.search);
     if (params.get("pin")) return "join";
     return "upload";
   });
+
+  const setPage = (newPage) => {
+    window.history.pushState({ page: newPage }, "");
+    _setPage(newPage);
+  };
+
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state?.page) {
+        _setPage(event.state.page);
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        _setPage(params.get("pin") ? "join" : "upload");
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
   
   const [quiz, setQuiz] = useState(null);
   const [intent, setIntent] = useState("solo");
@@ -163,7 +184,7 @@ export default function App() {
     setQuiz(null);
     setJoinPin("");
     setPage("upload");
-    window.history.replaceState({}, document.title, window.location.pathname);
+    window.history.replaceState({ page: "upload" }, document.title, window.location.pathname);
   };
 
   const handlePlayFromDiscover = (quizData) => {
@@ -174,6 +195,12 @@ export default function App() {
 
   const handlePlayFromMyGames = (quizData) => {
     setQuiz(quizData);
+    setIntent("solo");
+    setPage("preview");
+  };
+
+  const handleEditFromMyGames = (game) => {
+    setQuiz(game.quiz);
     setIntent("solo");
     setPage("preview");
   };
@@ -431,6 +458,7 @@ export default function App() {
           username={username}
           onPlay={handlePlayFromMyGames}
           onRequireAuth={() => setIsAuthOpen(true)}
+          onEdit={handleEditFromMyGames}
         />
       )}
       {isAuthOpen && (
