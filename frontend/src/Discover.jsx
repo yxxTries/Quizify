@@ -8,6 +8,8 @@ const CATEGORIES = [
   "Gaming",
   "Language",
   "Business",
+  "General",
+  "Other",
 ];
 
 const QUIZ_SHOWROOM = [

@@ -11,6 +11,10 @@ class PinGameRequest(BaseModel):
     pinned: bool
 
 
+class ChangeGameCategoryRequest(BaseModel):
+    category: str = Field(min_length=1, max_length=50)
+
+
 class GameResponse(BaseModel):
     id: int
     title: str

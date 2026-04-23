@@ -128,6 +128,56 @@ def set_game_pinned(user_id: int, game_id: int, pinned: bool) -> dict[str, Any]:
             conn.close()
 
 
+def update_game_category(user_id: int, game_id: int, category: str) -> dict[str, Any]:
+    with _DB_LOCK:
+        conn = _connect()
+        try:
+            existing = conn.execute(
+                "SELECT id FROM games WHERE id = ? AND user_id = ?",
+                (game_id, user_id),
+            ).fetchone()
+            if existing is None:
+                raise HTTPException(status_code=404, detail="Game not found.")
+
+            now = datetime.now(UTC).isoformat()
+            conn.execute(
+                "UPDATE games SET category = ?, updated_at = ? WHERE id = ? AND user_id = ?",
+                (category.strip(), now, game_id, user_id),
+            )
+            conn.commit()
+
+            row = conn.execute(
+                """
+                SELECT id, title, category, plays, pinned, updated_at, questions_count, quiz_json
+                FROM games
+                WHERE id = ? AND user_id = ?
+                """,
+                (game_id, user_id),
+            ).fetchone()
+            if row is None:
+                raise RuntimeError("Failed to load updated game.")
+            return _row_to_game(row)
+        finally:
+            conn.close()
+
+
+def delete_game_for_user(user_id: int, game_id: int) -> None:
+    with _DB_LOCK:
+        conn = _connect()
+        try:
+            existing = conn.execute(
+                "SELECT id FROM games WHERE id = ? AND user_id = ?",
+                (game_id, user_id),
+            ).fetchone()
+            if existing is None:
+                raise HTTPException(status_code=404, detail="Game not found.")
+
+            conn.execute("DELETE FROM games WHERE id = ? AND user_id = ?", (game_id, user_id))
+            conn.commit()
+        finally:
+            conn.close()
+
+
 def _row_to_game(row: sqlite3.Row) -> dict[str, Any]:
     return {
         "id": int(row["id"]),

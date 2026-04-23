@@ -147,6 +147,12 @@ export function getMyGames() {
   });
 }
 
+export function deleteMyGame(gameId) {
+  return request(`/games/${gameId}`, {
+    method: "DELETE",
+  });
+}
+
 export function saveMyGame(payload) {
   return request("/games", {
     method: "POST",
@@ -158,5 +164,12 @@ export function setMyGamePinned(gameId, pinned) {
   return request(`/games/${gameId}/pin`, {
     method: "PATCH",
     body: JSON.stringify({ pinned }),
+  });
+}
+
+export function updateMyGameCategory(gameId, category) {
+  return request(`/games/${gameId}/category`, {
+    method: "PATCH",
+    body: JSON.stringify({ category }),
   });
 }
