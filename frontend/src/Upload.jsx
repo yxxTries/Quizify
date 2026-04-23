@@ -3,6 +3,42 @@ import { generateQuiz, getMyGames } from "./api.js";
 
 const ALLOWED = [".pdf", ".pptx"];
 
+const TIMER_PRESETS = [
+  { id: "quick", label: "Quick", seconds: 10 },
+  { id: "standard", label: "Standard", seconds: 20 },
+  { id: "thinker", label: "Thinker", seconds: 30 },
+  { id: "extended", label: "Extended", seconds: 45 },
+];
+
+function normalizeTimeControl(value) {
+  const seconds = Number(value?.secondsPerQuestion);
+  const matchingPreset = TIMER_PRESETS.find((preset) => preset.seconds === seconds);
+  return {
+    enabled: Boolean(value?.enabled && Number.isFinite(seconds) && seconds >= 5 && seconds <= 120),
+    preset: matchingPreset ? matchingPreset.id : "standard",
+    secondsPerQuestion: Number.isFinite(seconds) ? Math.max(5, Math.min(120, Math.round(seconds))) : 20,
+  };
+}
+
+function buildTimeControlPayload(value) {
+  if (!value?.enabled) {
+    return { enabled: false };
+  }
+
+  return {
+    enabled: true,
+    mode: "per_question",
+    secondsPerQuestion: Math.max(5, Math.min(120, Math.round(Number(value.secondsPerQuestion) || 20))),
+  };
+}
+
+function formatTimerSummary(value) {
+  if (!value?.enabled) {
+    return "Off";
+  }
+  return `${Math.round(value.secondsPerQuestion)}s / question`;
+}
+
 function fileIsValid(file) {
   if (!file) return false;
   const name = file.name.toLowerCase();
@@ -18,7 +54,9 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
   const [numQuestions, setNumQuestions] = useState(5);
   const [prompt, setPrompt]           = useState("");
   const [pinnedGames, setPinnedGames] = useState([]);
+  const [timeControl, setTimeControl] = useState(() => normalizeTimeControl({ enabled: false }));
   const inputRef                      = useRef();
+  const username = user?.username || user?.email?.split("@")[0] || "";
 
   useEffect(() => {
     if (user) {
@@ -60,7 +98,10 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
         choices: ["Option a", "Option b", "Option c", "Option d"],
         correct_index: 0
       }));
-      const dummyQuiz = { questions: dummyQuestions };
+      const dummyQuiz = {
+        questions: dummyQuestions,
+        timeControl: buildTimeControlPayload(timeControl),
+      };
       if (isHost) {
         onHostReady(dummyQuiz);
       } else {
@@ -86,11 +127,15 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
 
     try {
       const quiz = await generateQuiz(file, numQuestions, prompt);
+      const enrichedQuiz = {
+        ...quiz,
+        timeControl: buildTimeControlPayload(timeControl),
+      };
       clearInterval(ticker);
       if (isHost) {
-        onHostReady(quiz);
+        onHostReady(enrichedQuiz);
       } else {
-        onQuizReady(quiz);
+        onQuizReady(enrichedQuiz);
       }
     } catch (err) {
       clearInterval(ticker);
@@ -120,6 +165,15 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
               Upload a PDF or PowerPoint to get a quiz made by Kuizu. You can edit it as you like before playing.
             </p>
           </>
+        )}
+        {user && (
+          <div style={styles.userGreeting}>
+            <p style={styles.userGreetingEyebrow}>Welcome back</p>
+            <h1 style={styles.userGreetingTitle}>Hi {username || "there"}, build your next quiz.</h1>
+            <p style={styles.userGreetingText}>
+              Choose the question count and timer up front, then generate and review before you play.
+            </p>
+          </div>
         )}
         
         <div style={styles.cardContainer}>
@@ -269,6 +323,126 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
               </div>
             </div>
 
+            {!user && (
+              <div style={styles.lockedFeaturesCard}>
+                <div style={styles.lockedFeaturesIcon}>LOCK</div>
+                <div style={styles.lockedFeaturesContent}>
+                  <div style={styles.lockedFeaturesTitle}>Log in to access more features</div>
+                  <div style={styles.lockedFeaturesText}>
+                    Use timer controls and more once you are signed in.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {user && (
+              <div style={styles.timerWrap}>
+                <div style={styles.timerHeader}>
+                  <span style={styles.sliderLabel}>Question timer</span>
+                  <span style={styles.timerValue}>{formatTimerSummary(timeControl)}</span>
+                </div>
+
+                <div style={styles.timerModeRow}>
+                  <button
+                    type="button"
+                    onClick={() => setTimeControl((prev) => ({ ...prev, enabled: false }))}
+                    style={{
+                      ...styles.timerModeBtn,
+                      ...(!timeControl.enabled ? styles.timerModeBtnActive : {}),
+                    }}
+                    disabled={loading}
+                  >
+                    Off
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTimeControl((prev) => ({
+                        ...prev,
+                        enabled: true,
+                        preset: prev.preset || "standard",
+                        secondsPerQuestion: prev.secondsPerQuestion || 20,
+                      }))
+                    }
+                    style={{
+                      ...styles.timerModeBtn,
+                      ...(timeControl.enabled ? styles.timerModeBtnActive : {}),
+                    }}
+                    disabled={loading}
+                  >
+                    On
+                  </button>
+                </div>
+
+                {timeControl.enabled && (
+                  <>
+                    <div style={styles.timerPresetGrid}>
+                      {TIMER_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() =>
+                            setTimeControl({
+                              enabled: true,
+                              preset: preset.id,
+                              secondsPerQuestion: preset.seconds,
+                            })
+                          }
+                          style={{
+                            ...styles.timerPresetBtn,
+                            ...(timeControl.preset === preset.id ? styles.timerPresetBtnActive : {}),
+                          }}
+                          disabled={loading}
+                        >
+                          <span style={styles.timerPresetName}>{preset.label}</span>
+                          <span style={styles.timerPresetSeconds}>{preset.seconds}s</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={styles.customTimerRow}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setTimeControl((prev) => ({
+                            ...prev,
+                            enabled: true,
+                            preset: "custom",
+                          }))
+                        }
+                        style={{
+                          ...styles.customTimerBtn,
+                          ...(timeControl.preset === "custom" ? styles.customTimerBtnActive : {}),
+                        }}
+                        disabled={loading}
+                      >
+                        Custom
+                      </button>
+                      <input
+                        type="number"
+                        min={5}
+                        max={120}
+                        value={timeControl.secondsPerQuestion}
+                        onChange={(e) =>
+                          setTimeControl({
+                            enabled: true,
+                            preset: "custom",
+                            secondsPerQuestion: Math.max(5, Math.min(120, Number(e.target.value) || 5)),
+                          })
+                        }
+                        disabled={loading || timeControl.preset !== "custom"}
+                        style={{
+                          ...styles.customTimerInput,
+                          ...(timeControl.preset !== "custom" ? styles.customTimerInputDisabled : {}),
+                        }}
+                      />
+                      <span style={styles.customTimerText}>seconds per question</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Pinned Quizzes */}
             {user && pinnedGames.length > 0 && (
               <div style={styles.pinnedWrap}>
@@ -405,6 +579,35 @@ const styles = {
     alignItems: "center",
     justifyContent: "flex-start",
   },
+  userGreeting: {
+    width: "100%",
+    maxWidth: "1000px",
+    marginBottom: "28px",
+    textAlign: "center",
+  },
+  userGreetingEyebrow: {
+    margin: 0,
+    color: "#87f4ee",
+    fontSize: "12px",
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "1px",
+  },
+  userGreetingTitle: {
+    margin: "8px 0 10px 0",
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 800,
+    fontSize: "clamp(32px, 4.5vw, 48px)",
+    lineHeight: 1.08,
+    color: "#F1F2F6",
+    letterSpacing: "-1px",
+  },
+  userGreetingText: {
+    margin: 0,
+    color: "#B0BAC3",
+    fontSize: "16px",
+    lineHeight: 1.55,
+  },
   h1: {
     fontFamily: "'Syne', sans-serif",
     fontWeight: 800,
@@ -540,6 +743,167 @@ const styles = {
     fontSize: "12px",
     color: "#F1F2F6",
     paddingTop: "2px",
+  },
+  timerWrap: {
+    width: "100%",
+    maxWidth: "520px",
+    marginBottom: "20px",
+    background: "#16213E",
+    border: "1px solid #1e1e2e",
+    borderRadius: "14px",
+    padding: "18px 22px",
+    boxSizing: "border-box",
+    display: "flex",
+    flexDirection: "column",
+    gap: "14px",
+  },
+  lockedFeaturesCard: {
+    width: "100%",
+    maxWidth: "520px",
+    marginBottom: "20px",
+    background: "#16213E",
+    border: "1px solid #2B5A8A",
+    borderRadius: "12px",
+    padding: "12px 14px",
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "12px",
+  },
+  lockedFeaturesIcon: {
+    flexShrink: 0,
+    minWidth: "42px",
+    height: "42px",
+    borderRadius: "10px",
+    background: "#122038",
+    border: "1px solid #2B5A8A",
+    display: "grid",
+    placeItems: "center",
+    color: "#8deeed",
+    fontSize: "11px",
+    fontWeight: 800,
+    textTransform: "uppercase",
+    letterSpacing: "0.7px",
+  },
+  lockedFeaturesContent: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "3px",
+    paddingTop: "2px",
+  },
+  lockedFeaturesTitle: {
+    color: "#F1F2F6",
+    fontSize: "13px",
+    fontWeight: 700,
+    lineHeight: 1.35,
+  },
+  lockedFeaturesText: {
+    color: "#9bb1cb",
+    fontSize: "11px",
+    lineHeight: 1.45,
+  },
+  timerHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    gap: "12px",
+    flexWrap: "wrap",
+  },
+  timerValue: {
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 800,
+    fontSize: "18px",
+    color: "#00D2D3",
+    lineHeight: 1,
+  },
+  timerModeRow: {
+    display: "flex",
+    gap: "10px",
+  },
+  timerModeBtn: {
+    flex: 1,
+    border: "1px solid #365d86",
+    background: "transparent",
+    color: "#b7c8dc",
+    borderRadius: "10px",
+    padding: "10px 12px",
+    cursor: "pointer",
+    fontWeight: 700,
+    fontSize: "13px",
+  },
+  timerModeBtnActive: {
+    background: "#00D2D3",
+    color: "#122038",
+    borderColor: "#00D2D3",
+  },
+  timerPresetGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "10px",
+  },
+  timerPresetBtn: {
+    border: "1px solid #304f75",
+    background: "#111d31",
+    color: "#d9ebff",
+    borderRadius: "12px",
+    padding: "12px",
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "5px",
+    textAlign: "left",
+  },
+  timerPresetBtnActive: {
+    background: "linear-gradient(180deg, rgba(0, 210, 211, 0.18) 0%, rgba(0, 210, 211, 0.06) 100%)",
+    borderColor: "#56d8d8",
+  },
+  timerPresetName: {
+    fontSize: "14px",
+    fontWeight: 700,
+  },
+  timerPresetSeconds: {
+    fontSize: "12px",
+    color: "#9bb7d4",
+  },
+  customTimerRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+  customTimerBtn: {
+    border: "1px solid #365d86",
+    background: "transparent",
+    color: "#b7c8dc",
+    borderRadius: "10px",
+    padding: "10px 12px",
+    cursor: "pointer",
+    fontWeight: 700,
+    fontSize: "13px",
+  },
+  customTimerBtnActive: {
+    background: "#1c3455",
+    color: "#F1F2F6",
+    borderColor: "#58a9d2",
+  },
+  customTimerInput: {
+    width: "100px",
+    borderRadius: "10px",
+    border: "1px solid #365d86",
+    background: "#111d31",
+    color: "#F1F2F6",
+    padding: "10px 12px",
+    fontSize: "14px",
+    outline: "none",
+  },
+  customTimerInputDisabled: {
+    opacity: 0.45,
+    cursor: "not-allowed",
+  },
+  customTimerText: {
+    fontSize: "12px",
+    color: "#90a9c5",
   },
   promptWrap: {
     width: "100%",

@@ -8,7 +8,7 @@ import Discover from "./Discover.jsx";
 import MyGames from "./MyGames.jsx";
 import MyProfile from "./MyProfile.jsx";
 import AuthModal from "./AuthModal.jsx";
-import { getCurrentUser, logout, saveMyGame, checkHealth } from "./api";
+import { getCurrentUser, logout, saveMyGame, checkHealth, createDiscoverPost } from "./api";
 
 const globalStyle = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -214,6 +214,15 @@ export default function App() {
     return saveMyGame(payload);
   };
 
+  const handlePostDiscover = async (payload) => {
+    if (!user) {
+      setIsAuthOpen(true);
+      throw new Error("Please sign in to post on Discover.");
+    }
+
+    return createDiscoverPost(payload);
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -307,9 +316,9 @@ export default function App() {
                   width: 40,
                   height: 40,
                   borderRadius: "50%",
-                  background: "linear-gradient(180deg, #1c3f67 0%, #132a47 100%)",
+                  background: "#13243d",
                   color: "#dbf4ff",
-                  border: "1px solid #4b6f96",
+                  border: "1px solid #2d4d73",
                   cursor: "pointer",
                   fontWeight: 700,
                   display: "grid",
@@ -330,8 +339,7 @@ export default function App() {
                     minWidth: 210,
                     borderRadius: 12,
                     border: "1px solid #2f4f75",
-                    background: "linear-gradient(180deg, #12243d 0%, #0c1a2b 100%)",
-                    boxShadow: "0 16px 32px rgba(0, 0, 0, 0.35)",
+                    background: "#12243d",
                     overflow: "hidden",
                   }}
                 >
@@ -438,12 +446,21 @@ export default function App() {
           onBack={handleRestart}
           intent={intent}
           onSaveGame={handleSaveGame}
+          onPostDiscover={handlePostDiscover}
+          user={user}
         />
       )}
       {page === "quiz"    && <Quiz    quiz={quiz} onRestart={handleRestart} />}
       {page === "host"    && <Host    quiz={quiz} onEnd={handleRestart} />}
       {page === "join"    && <Join    initialPin={joinPin} onExit={handleRestart} />}
-      {page === "discover" && <Discover onBack={handleRestart} onPlay={handlePlayFromDiscover} />}
+      {page === "discover" && (
+        <Discover
+          onBack={handleRestart}
+          onPlay={handlePlayFromDiscover}
+          user={user}
+          onRequireAuth={() => setIsAuthOpen(true)}
+        />
+      )}
       {page === "profile" && (
         <MyProfile
           user={user}

@@ -3,6 +3,17 @@ import { QRCodeSVG } from "qrcode.react";
 import Quiz from "./Quiz.jsx";
 import { buildWebSocketUrl } from "./api.js";
 
+function normalizeTimeControl(quiz) {
+  const seconds = Number(quiz?.timeControl?.secondsPerQuestion);
+  if (!quiz?.timeControl?.enabled || !Number.isFinite(seconds) || seconds < 5) {
+    return null;
+  }
+  return {
+    enabled: true,
+    secondsPerQuestion: Math.min(120, Math.max(5, Math.round(seconds))),
+  };
+}
+
 export default function Host({ quiz, onEnd }) {
   const [pin, setPin] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -13,7 +24,9 @@ export default function Host({ quiz, onEnd }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showConnectionDetails, setShowConnectionDetails] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [questionTimer, setQuestionTimer] = useState(null);
   const ws = useRef(null);
+  const timerSettings = normalizeTimeControl(quiz);
 
     useEffect(() => {
     ws.current = new WebSocket(buildWebSocketUrl("/ws/host"));
@@ -66,7 +79,20 @@ export default function Host({ quiz, onEnd }) {
     setStatus("playing");
     setCurrentQuestionIndex(0);
     ws.current.send(JSON.stringify({ type: "start" }));
-    ws.current.send(JSON.stringify({ type: "next_question", index: 0 }));
+    const nextTimer = timerSettings
+      ? {
+          questionIndex: 0,
+          startedAt: Date.now(),
+          durationSeconds: timerSettings.secondsPerQuestion,
+        }
+      : null;
+    setQuestionTimer(nextTimer);
+    ws.current.send(JSON.stringify({
+      type: "next_question",
+      index: 0,
+      startedAt: nextTimer?.startedAt || null,
+      durationSeconds: nextTimer?.durationSeconds || null,
+    }));
   };
 
   const handleHostNext = () => {
@@ -77,10 +103,24 @@ export default function Host({ quiz, onEnd }) {
     const nextIdx = currentQuestionIndex + 1;
     if (nextIdx >= quiz.questions.length) {
       ws.current.send(JSON.stringify({ type: "end_game" }));
+      setQuestionTimer(null);
       setStatus("results"); // Show the final leaderboard
     } else {
       setCurrentQuestionIndex(nextIdx);
-      ws.current.send(JSON.stringify({ type: "next_question", index: nextIdx }));
+      const nextTimer = timerSettings
+        ? {
+            questionIndex: nextIdx,
+            startedAt: Date.now(),
+            durationSeconds: timerSettings.secondsPerQuestion,
+          }
+        : null;
+      setQuestionTimer(nextTimer);
+      ws.current.send(JSON.stringify({
+        type: "next_question",
+        index: nextIdx,
+        startedAt: nextTimer?.startedAt || null,
+        durationSeconds: nextTimer?.durationSeconds || null,
+      }));
     }
   };
 
@@ -336,6 +376,7 @@ export default function Host({ quiz, onEnd }) {
                hostAnswers={hostAnswers[currentQuestionIndex] || {}}
                onReveal={handleHostNext}
                triggerNextQuestion={handleNext}
+               questionTimer={questionTimer}
             />
          </div>
       )}

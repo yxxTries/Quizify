@@ -91,6 +91,27 @@ def init_user_db() -> None:
                 """
             )
             conn.execute("CREATE INDEX IF NOT EXISTS idx_games_user_id ON games(user_id)")
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS discover_posts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    title TEXT NOT NULL,
+                    category TEXT NOT NULL,
+                    quiz_json TEXT NOT NULL,
+                    questions_count INTEGER NOT NULL,
+                    plays INTEGER NOT NULL DEFAULT 0,
+                    rating REAL NOT NULL DEFAULT 0,
+                    difficulty TEXT NOT NULL DEFAULT 'Medium',
+                    estimated_time TEXT NOT NULL DEFAULT '5 min',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+                """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_discover_posts_created_at ON discover_posts(created_at DESC)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_discover_posts_category ON discover_posts(category)")
             conn.commit()
         finally:
             conn.close()

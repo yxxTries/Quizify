@@ -173,3 +173,22 @@ export function updateMyGameCategory(gameId, category) {
     body: JSON.stringify({ category }),
   });
 }
+
+export function getDiscoverPosts() {
+  return request("/discover", {
+    method: "GET",
+  });
+}
+
+export function createDiscoverPost(payload) {
+  return request("/discover", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteDiscoverPost(postId) {
+  return request(`/discover/${postId}`, {
+    method: "DELETE",
+  });
+}

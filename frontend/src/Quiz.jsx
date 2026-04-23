@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 // Classic Kahoot-inspired answer colors
@@ -8,6 +8,22 @@ const CHOICE_COLORS = [
   { bg: "#d89e00", hover: "#b88200", label: "●" }, // yellow — circle
   { bg: "#26890c", hover: "#1b6408", label: "■" }, // green  — square
 ];
+
+function normalizeTimeControl(quiz) {
+  const seconds = Number(quiz?.timeControl?.secondsPerQuestion);
+  const enabled = Boolean(quiz?.timeControl?.enabled && Number.isFinite(seconds) && seconds >= 5);
+  return {
+    enabled,
+    secondsPerQuestion: enabled ? Math.min(120, Math.max(5, Math.round(seconds))) : 0,
+  };
+}
+
+function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes}:${String(seconds).padStart(2, "0")}` : `${seconds}s`;
+}
 
 const pbStyles = {
   container: {
@@ -145,9 +161,24 @@ const scoreStyles = {
   },
 };
 
-export default function Quiz({ quiz, onRestart, onJoinNew, onAnswerSubmit, currentQuestionIndex = null, leaderboard = null, streaks = null, isHostMode = false, hostAnswers = {}, triggerNextQuestion = null, hostRevealed = false, onReveal = null }) {
+export default function Quiz({
+  quiz,
+  onRestart,
+  onJoinNew,
+  onAnswerSubmit,
+  currentQuestionIndex = null,
+  leaderboard = null,
+  streaks = null,
+  isHostMode = false,
+  hostAnswers = {},
+  triggerNextQuestion = null,
+  hostRevealed = false,
+  onReveal = null,
+  questionTimer = null,
+}) {
   const { questions } = quiz;
   const total = questions.length;
+  const timerSettings = useMemo(() => normalizeTimeControl(quiz), [quiz]);
 
   const isMultiplayer = currentQuestionIndex !== null;
 
@@ -162,11 +193,19 @@ export default function Quiz({ quiz, onRestart, onJoinNew, onAnswerSubmit, curre
   const [streak,    setStreak]    = useState(0);
   const [done,      setDone]      = useState(false);
   const [showConfirmEnd, setShowConfirmEnd] = useState(false);
+  const [soloQuestionStartedAt, setSoloQuestionStartedAt] = useState(() => (
+    !isMultiplayer && timerSettings.enabled ? Date.now() : null
+  ));
+  const [timeLeftMs, setTimeLeftMs] = useState(() => (
+    timerSettings.enabled ? timerSettings.secondsPerQuestion * 1000 : 0
+  ));
 
   const [lockedLeaderboard, setLockedLeaderboard] = useState(leaderboard || {});
   const [lockedStreaks, setLockedStreaks] = useState(streaks || {});
+  const hostAdvanceTimeoutRef = useRef(null);
+  const soloAdvanceTimeoutRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (revealed || done) {
       setLockedLeaderboard(leaderboard || {});
       setLockedStreaks(streaks || {});
@@ -174,23 +213,128 @@ export default function Quiz({ quiz, onRestart, onJoinNew, onAnswerSubmit, curre
   }, [leaderboard, streaks, revealed, done]);
 
   // When host moves to the next question, reset selection state
-  React.useEffect(() => {
-    if (isMultiplayer) {
-      if (current < total) {
-        setSelected(null);
-        setRevealed(false);
-      } else {
-        setDone(true);
+  useEffect(() => {
+    if (current < total) {
+      if (hostAdvanceTimeoutRef.current) {
+        window.clearTimeout(hostAdvanceTimeoutRef.current);
+        hostAdvanceTimeoutRef.current = null;
       }
+      if (soloAdvanceTimeoutRef.current) {
+        window.clearTimeout(soloAdvanceTimeoutRef.current);
+        soloAdvanceTimeoutRef.current = null;
+      }
+      setSelected(null);
+      setRevealed(false);
+      if (!isMultiplayer && timerSettings.enabled) {
+        setSoloQuestionStartedAt(Date.now());
+      }
+    } else {
+      setDone(true);
     }
-  }, [current, total, isMultiplayer]);
+  }, [current, total, isMultiplayer, timerSettings.enabled]);
+
+  const activeTimer = useMemo(() => {
+    if (!timerSettings.enabled || current >= total || done) {
+      return null;
+    }
+
+    if (isMultiplayer) {
+      if (!questionTimer?.startedAt || !questionTimer?.durationSeconds) {
+        return null;
+      }
+      return {
+        startedAt: Number(questionTimer.startedAt),
+        durationSeconds: Number(questionTimer.durationSeconds),
+      };
+    }
+
+    if (!soloQuestionStartedAt) {
+      return null;
+    }
+
+    return {
+      startedAt: soloQuestionStartedAt,
+      durationSeconds: timerSettings.secondsPerQuestion,
+    };
+  }, [timerSettings, current, done, isMultiplayer, questionTimer, soloQuestionStartedAt]);
+
+  useEffect(() => {
+    if (!activeTimer) {
+      setTimeLeftMs(0);
+      return;
+    }
+
+    if (revealed || done) {
+      return;
+    }
+
+    const tick = () => {
+      const remaining = activeTimer.durationSeconds * 1000 - (Date.now() - activeTimer.startedAt);
+      setTimeLeftMs(Math.max(0, remaining));
+    };
+
+    tick();
+    const intervalId = window.setInterval(tick, 200);
+    return () => window.clearInterval(intervalId);
+  }, [activeTimer, revealed, done]);
+
+  useEffect(() => {
+    return () => {
+      if (hostAdvanceTimeoutRef.current) {
+        window.clearTimeout(hostAdvanceTimeoutRef.current);
+      }
+      if (soloAdvanceTimeoutRef.current) {
+        window.clearTimeout(soloAdvanceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const q = questions[current < total ? current : total - 1] || questions[0];
 
   const showResults = isMultiplayer && !isHostMode ? hostRevealed : revealed;
+  const timerExpired = Boolean(activeTimer && timeLeftMs <= 0);
+  const timerText = activeTimer ? formatCountdown(timeLeftMs) : null;
+
+  const revealAndAdvanceHost = () => {
+    if (revealed) return;
+    setRevealed(true);
+    if (onReveal) {
+      onReveal();
+    }
+    if (hostAdvanceTimeoutRef.current) {
+      window.clearTimeout(hostAdvanceTimeoutRef.current);
+    }
+    hostAdvanceTimeoutRef.current = window.setTimeout(() => {
+      if (triggerNextQuestion) {
+        triggerNextQuestion();
+      }
+    }, 3000);
+  };
+
+  useEffect(() => {
+    if (!timerExpired || revealed) {
+      return;
+    }
+
+    if (isHostMode) {
+      revealAndAdvanceHost();
+      return;
+    }
+
+    setStreak(0);
+    setRevealed(true);
+    if (!isMultiplayer) {
+      if (soloAdvanceTimeoutRef.current) {
+        window.clearTimeout(soloAdvanceTimeoutRef.current);
+      }
+      soloAdvanceTimeoutRef.current = window.setTimeout(() => {
+        handleNextLocal();
+      }, 2200);
+    }
+  }, [timerExpired, revealed, isHostMode]);
 
   const handleSelect = (idx) => {
-    if (revealed || isHostMode) return;
+    if (revealed || isHostMode || timerExpired) return;
     setSelected(idx);
     setRevealed(true);
     let newScore = score;
@@ -210,15 +354,7 @@ export default function Quiz({ quiz, onRestart, onJoinNew, onAnswerSubmit, curre
   };
 
   const handleHostNext = () => {
-    setRevealed(true);
-    if (onReveal) {
-      onReveal();
-    }
-    setTimeout(() => {
-       if (triggerNextQuestion) {
-          triggerNextQuestion();
-       }
-    }, 3000);
+    revealAndAdvanceHost();
   };
 
   const handleNextLocal = () => {
@@ -252,6 +388,16 @@ export default function Quiz({ quiz, onRestart, onJoinNew, onAnswerSubmit, curre
               <span style={{ color: "#B0BAC3", fontWeight: "bold", fontSize: "16px", whiteSpace: "nowrap", fontFamily: "'Syne', sans-serif" }}>
                 {Math.min(current + (revealed || isHostMode ? 1 : 0), total)} / {total}
               </span>
+              {activeTimer && (
+                <span
+                  style={{
+                    ...styles.timerChip,
+                    ...(timerExpired ? styles.timerChipExpired : {}),
+                  }}
+                >
+                  {timerExpired ? "Time's up" : timerText}
+                </span>
+              )}
             </div>
             <span style={styles.scoreChip}>
               {isHostMode ? (
@@ -339,7 +485,7 @@ export default function Quiz({ quiz, onRestart, onJoinNew, onAnswerSubmit, curre
                   key={idx}
                   style={{ ...styles.choiceBtn, background: bg, ...extra, position: "relative", overflow: "hidden" }}
                   onClick={() => handleSelect(idx)}
-                  disabled={revealed || isHostMode}
+                  disabled={revealed || isHostMode || timerExpired}
                 >
                   {isHostMode && showResults && (
                      <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${pct}%`, background: "rgba(255, 255, 255, 0.35)", zIndex: 1, transition: "width 0.6s ease-out" }} />
@@ -395,7 +541,9 @@ export default function Quiz({ quiz, onRestart, onJoinNew, onAnswerSubmit, curre
                 style={{ padding: "16px 32px", fontSize: "20px", background: "#00D2D3", color: "#16213E", border: "none", borderRadius: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}
                 onClick={handleHostNext}
               >
-                {current + 1 === total ? "Reveal & End Game" : "Reveal & Next Question \u2192"}
+                {timerExpired
+                  ? (current + 1 === total ? "Time's Up: End Game" : "Time's Up: Next Question \u2192")
+                  : (current + 1 === total ? "Reveal & End Game" : "Reveal & Next Question \u2192")}
               </button>
             </div>
           )}
@@ -514,6 +662,28 @@ const styles = {
     fontSize: "14px",
     color: "#F1F2F6",
     fontWeight: 500,
+  },
+  timerChip: {
+    background: "rgba(0, 210, 211, 0.12)",
+    border: "1px solid rgba(0, 210, 211, 0.35)",
+    borderRadius: "999px",
+    padding: "10px 18px",
+    color: "#c9fbff",
+    fontWeight: 700,
+    fontSize: "15px",
+    whiteSpace: "nowrap",
+    minWidth: "120px",
+    textAlign: "center",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    lineHeight: 1,
+    flexShrink: 0,
+  },
+  timerChipExpired: {
+    background: "rgba(255, 107, 107, 0.12)",
+    border: "1px solid rgba(255, 107, 107, 0.4)",
+    color: "#ffc3cb",
   },
   main: {
     flex: 1,

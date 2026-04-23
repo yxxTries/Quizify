@@ -11,6 +11,7 @@ from quiz_generator import generate_quiz
 from multiplayer import manager
 from core.config import ALLOWED_ORIGINS
 from routes.auth_routes import router as auth_router
+from routes.discover_routes import router as discover_router
 from routes.game_routes import router as game_router
 from services.user_service import init_user_db
 
@@ -27,6 +28,7 @@ app.add_middleware(
 init_user_db()
 app.include_router(auth_router)
 app.include_router(game_router)
+app.include_router(discover_router)
 
 ALLOWED_EXTENSIONS = {".pdf", ".pptx"}
 MAX_FILE_SIZE_MB   = 20
@@ -73,6 +75,8 @@ async def websocket_host(websocket: WebSocket):
                     payload = {"type": msg_type}
                     if msg_type == "next_question":
                         payload["index"] = msg.get("index")
+                        payload["startedAt"] = msg.get("startedAt")
+                        payload["durationSeconds"] = msg.get("durationSeconds")
                     if msg_type == "reveal_answer":
                         payload["correct_answer"] = msg.get("correct_answer")
                     await manager.broadcast_to_players(pin, payload)

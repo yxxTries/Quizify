@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { deleteDiscoverPost, getDiscoverPosts } from "./api";
 
 const CATEGORIES = [
   "All",
@@ -12,50 +13,48 @@ const CATEGORIES = [
   "Other",
 ];
 
-const QUIZ_SHOWROOM = [
-  { id: "q1", title: "Physics Quickfire", category: "Science", author: "Maya", plays: 128, difficulty: "Medium", pin: "741259", estimatedTime: "7 min", questionCount: 8, rating: 4.5 },
-  { id: "q2", title: "Startup Terms 101", category: "Business", author: "Arjun", plays: 83, difficulty: "Easy", pin: "903114", estimatedTime: "5 min", questionCount: 6, rating: 4.2 },
-  { id: "q3", title: "Ancient Civilizations", category: "History", author: "Lena", plays: 204, difficulty: "Hard", pin: "558027", estimatedTime: "10 min", questionCount: 10, rating: 4.8 },
-  { id: "q4", title: "Esports Trivia Pack", category: "Gaming", author: "Noah", plays: 301, difficulty: "Medium", pin: "662845", estimatedTime: "8 min", questionCount: 9, rating: 4.6 },
-  { id: "q5", title: "Spanish Basics", category: "Language", author: "Sofia", plays: 97, difficulty: "Easy", pin: "811736", estimatedTime: "6 min", questionCount: 7, rating: 4.1 },
-  { id: "q6", title: "Algebra Sprint", category: "Math", author: "Kai", plays: 155, difficulty: "Medium", pin: "470192", estimatedTime: "9 min", questionCount: 10, rating: 4.4 },
-];
-
-function difficultyColor(level) {
-  if (level === "Easy") return "#27AE60";
-  if (level === "Hard") return "#E74C3C";
-  return "#F39C12";
-}
-
-function buildSampleQuiz(quiz) {
-  const options = ["Option A", "Option B", "Option C", "Option D"];
-  return {
-    discoverMeta: {
-      title: quiz.title,
-      author: quiz.author,
-      category: quiz.category,
-      difficulty: quiz.difficulty,
-      plays: quiz.plays,
-      estimatedTime: quiz.estimatedTime,
-      questionCount: quiz.questionCount,
-      rating: quiz.rating,
-    },
-    questions: Array.from({ length: quiz.questionCount }, (_, index) => ({
-      question: `${quiz.title} - Question ${index + 1}`,
-      choices: options,
-      correct_index: index % options.length,
-    })),
-  };
-}
-
-export default function Discover({ onBack, onPlay }) {
+export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deleteLoadingId, setDeleteLoadingId] = useState(null);
+  const [feedback, setFeedback] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPosts() {
+      setLoading(true);
+      setError("");
+      try {
+        const payload = await getDiscoverPosts();
+        if (!cancelled) {
+          setPosts(Array.isArray(payload?.posts) ? payload.posts : []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err?.message || "Could not load discover posts.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadPosts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredQuizzes = useMemo(() => {
     const normalized = search.trim().toLowerCase();
 
-    return QUIZ_SHOWROOM.filter((quiz) => {
+    return posts.filter((quiz) => {
       const categoryMatch = category === "All" || quiz.category === category;
       const textMatch =
         !normalized ||
@@ -64,7 +63,30 @@ export default function Discover({ onBack, onPlay }) {
 
       return categoryMatch && textMatch;
     });
-  }, [category, search]);
+  }, [category, posts, search]);
+
+  const handleDeletePost = async (event, post) => {
+    event.stopPropagation();
+    if (!user) {
+      onRequireAuth?.();
+      return;
+    }
+    if (!window.confirm(`Delete "${post.title}" from Discover?`)) {
+      return;
+    }
+
+    setDeleteLoadingId(post.id);
+    setFeedback("");
+    try {
+      await deleteDiscoverPost(post.id);
+      setPosts((prev) => prev.filter((item) => item.id !== post.id));
+      setFeedback(`Deleted "${post.title}" from Discover.`);
+    } catch (err) {
+      setFeedback(err?.message || "Could not delete Discover post.");
+    } finally {
+      setDeleteLoadingId(null);
+    }
+  };
 
   return (
     <div style={styles.page}>
@@ -73,7 +95,7 @@ export default function Discover({ onBack, onPlay }) {
           <div>
             <h1 style={styles.title}>Discover Community Quizzes</h1>
             <p style={styles.subtitle}>
-              Browse public quizzes by category. This page is intentionally barebones so we can add search, ranking, and live data safely.
+              Browse public quizzes shared by the community.
             </p>
           </div>
           <button type="button" onClick={onBack} style={styles.backButton}>
@@ -106,29 +128,41 @@ export default function Discover({ onBack, onPlay }) {
           </div>
         </section>
 
+        {feedback && <div style={styles.feedbackBanner}>{feedback}</div>}
+
         <section style={styles.grid}>
-          {filteredQuizzes.length === 0 && (
+          {loading && (
+            <div style={styles.emptyState}>
+              <h2 style={styles.emptyTitle}>Loading quizzes...</h2>
+            </div>
+          )}
+
+          {!loading && error && (
+            <div style={styles.emptyState}>
+              <h2 style={styles.emptyTitle}>Could not load discover</h2>
+              <p style={styles.emptyText}>{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && filteredQuizzes.length === 0 && (
             <div style={styles.emptyState}>
               <h2 style={styles.emptyTitle}>No quizzes found</h2>
               <p style={styles.emptyText}>Try another category or search term.</p>
             </div>
           )}
 
-          {filteredQuizzes.map((quiz) => (
-            <article key={quiz.id} style={styles.card} onClick={() => onPlay(buildSampleQuiz(quiz))}>
+          {!loading && !error && filteredQuizzes.map((quiz) => (
+            <article key={quiz.id} style={styles.card} onClick={() => onPlay(quiz.quiz)}>
               <div style={styles.cardTop}>
                 <span style={styles.cardCategory}>{quiz.category}</span>
-                <span style={{ ...styles.difficultyBadge, borderColor: difficultyColor(quiz.difficulty), color: difficultyColor(quiz.difficulty) }}>
-                  {quiz.difficulty}
-                </span>
               </div>
 
               <h3 style={styles.cardTitle}>{quiz.title}</h3>
 
               <p style={styles.cardMeta}>by {quiz.author}</p>
               <p style={styles.cardMeta}>{quiz.plays} plays</p>
-              <p style={styles.cardMeta}>{quiz.questionCount} questions</p>
-              <p style={styles.cardMeta}>Estimated time: {quiz.estimatedTime}</p>
+              <p style={styles.cardMeta}>{quiz.questions_count} questions</p>
+              <p style={styles.cardMeta}>Estimated time: {quiz.estimated_time}</p>
               <p style={styles.cardMeta}>Rating: {quiz.rating.toFixed(1)} / 5</p>
               <div style={styles.cardActions}>
                 <button
@@ -136,11 +170,21 @@ export default function Discover({ onBack, onPlay }) {
                   style={styles.secondaryAction}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onPlay(buildSampleQuiz(quiz));
+                    onPlay(quiz.quiz);
                   }}
                 >
                   Play Quiz
                 </button>
+                {user?.id === quiz.user_id && (
+                  <button
+                    type="button"
+                    style={styles.deleteAction}
+                    onClick={(event) => handleDeletePost(event, quiz)}
+                    disabled={deleteLoadingId === quiz.id}
+                  >
+                    {deleteLoadingId === quiz.id ? "Deleting..." : "Delete"}
+                  </button>
+                )}
               </div>
             </article>
           ))}
@@ -237,6 +281,15 @@ const styles = {
     gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
     gap: "14px",
   },
+  feedbackBanner: {
+    borderRadius: "12px",
+    border: "1px solid #2f8f74",
+    background: "#143226",
+    color: "#9ff0cf",
+    padding: "12px 14px",
+    fontSize: "14px",
+    fontWeight: 600,
+  },
   emptyState: {
     gridColumn: "1 / -1",
     border: "1px dashed #2B5A8A",
@@ -262,6 +315,7 @@ const styles = {
     flexDirection: "column",
     gap: "8px",
     cursor: "pointer",
+    height: "100%",
   },
   cardTop: {
     display: "flex",
@@ -295,12 +349,13 @@ const styles = {
     fontSize: "13px",
   },
   cardActions: {
-    marginTop: "8px",
+    marginTop: "auto",
     display: "flex",
     gap: "8px",
+    alignItems: "stretch",
   },
   secondaryAction: {
-    width: "100%",
+    flex: 1,
     borderRadius: "10px",
     border: "1px solid #2B5A8A",
     background: "transparent",
@@ -308,5 +363,17 @@ const styles = {
     padding: "9px 10px",
     cursor: "pointer",
     fontWeight: 600,
+    minHeight: "40px",
+  },
+  deleteAction: {
+    flex: 1,
+    borderRadius: "10px",
+    border: "1px solid #854151",
+    background: "rgba(97, 27, 41, 0.35)",
+    color: "#ffc3cb",
+    padding: "9px 10px",
+    cursor: "pointer",
+    fontWeight: 700,
+    minHeight: "40px",
   },
 };

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getMyGames, setMyGamePinned, deleteMyGame, updateMyGameCategory } from "./api";
+import DiscoverPostModal from "./DiscoverPostModal.jsx";
+import { getMyGames, setMyGamePinned, deleteMyGame, updateMyGameCategory, createDiscoverPost } from "./api";
 
 const MAX_PINNED_GAMES = 5;
 
@@ -34,6 +35,9 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
   const [pinMessage, setPinMessage] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
   const [editingTopicId, setEditingTopicId] = useState(null);
+  const [postMessage, setPostMessage] = useState("");
+  const [postDraft, setPostDraft] = useState(null);
+  const [postLoading, setPostLoading] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = () => setOpenMenuId(null);
@@ -161,7 +165,33 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
   const handlePostDiscover = (e, game) => {
     e.stopPropagation();
     setOpenMenuId(null);
-    alert("Post to Discover coming soon!");
+    setPinMessage("");
+    setPostMessage("");
+    setPostDraft({
+      title: game.title,
+      category: game.category,
+      quiz: game.quiz,
+      questionCount: game.questions_count,
+    });
+  };
+
+  const handleConfirmPost = async ({ title, category }) => {
+    if (!postDraft) return;
+    setPostLoading(true);
+    try {
+      await createDiscoverPost({
+        title,
+        category,
+        quiz: postDraft.quiz,
+      });
+      setPostMessage(`Posted "${title}" to Discover.`);
+      setPostDraft(null);
+    } catch (err) {
+      setPostMessage(err?.message || "Could not post to Discover.");
+      throw err;
+    } finally {
+      setPostLoading(false);
+    }
   };
 
   const startTopicEdit = (e, gameId) => {
@@ -184,9 +214,6 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
 
   return (
     <div style={styles.page}>
-      <div style={styles.bgGlowTop} />
-      <div style={styles.bgGlowBottom} />
-
       <div style={styles.container}>
         <header style={styles.header}>
           <div>
@@ -251,7 +278,7 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
 
               <div style={styles.pinStatusWrap}>
                 <p style={styles.pinStatus}>Pinned: {pinnedGames.length}/{MAX_PINNED_GAMES}</p>
-                {pinMessage && <p style={styles.pinMessage}>{pinMessage}</p>}
+                {(pinMessage || postMessage) && <p style={styles.pinMessage}>{pinMessage || postMessage}</p>}
               </div>
             </section>
 
@@ -382,6 +409,20 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
           </>
         )}
       </div>
+
+      <DiscoverPostModal
+        open={Boolean(postDraft)}
+        initialTitle={postDraft?.title || ""}
+        initialCategory={postDraft?.category || "General"}
+        questionCount={postDraft?.questionCount || 0}
+        loading={postLoading}
+        onClose={() => {
+          if (!postLoading) {
+            setPostDraft(null);
+          }
+        }}
+        onConfirm={handleConfirmPost}
+      />
     </div>
   );
 }
@@ -394,26 +435,6 @@ const styles = {
     color: "#f1f2f6",
     overflow: "hidden",
     padding: "34px 20px",
-  },
-  bgGlowTop: {
-    position: "absolute",
-    top: "-140px",
-    left: "-120px",
-    width: "460px",
-    height: "460px",
-    borderRadius: "50%",
-    background: "radial-gradient(circle, rgba(0, 210, 211, 0.2) 0%, rgba(0, 210, 211, 0) 70%)",
-    pointerEvents: "none",
-  },
-  bgGlowBottom: {
-    position: "absolute",
-    right: "-180px",
-    bottom: "-200px",
-    width: "520px",
-    height: "520px",
-    borderRadius: "50%",
-    background: "radial-gradient(circle, rgba(64, 126, 217, 0.2) 0%, rgba(64, 126, 217, 0) 72%)",
-    pointerEvents: "none",
   },
   container: {
     position: "relative",
@@ -446,7 +467,6 @@ const styles = {
     borderRadius: "8px",
     padding: "4px 0",
     minWidth: "160px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
     zIndex: 10,
     display: "flex",
     flexDirection: "column",
@@ -488,7 +508,7 @@ const styles = {
   },
   backBtn: {
     border: "1px solid #3f6c9b",
-    background: "rgba(24, 44, 74, 0.8)",
+    background: "#142138",
     color: "#d8e7fb",
     borderRadius: "10px",
     padding: "10px 14px",
@@ -497,7 +517,7 @@ const styles = {
   },
   controls: {
     border: "1px solid #2f4e74",
-    background: "rgba(20, 33, 56, 0.8)",
+    background: "#142138",
     borderRadius: "16px",
     padding: "14px",
     display: "flex",
@@ -590,7 +610,7 @@ const styles = {
     gridColumn: "1 / -1",
     border: "1px dashed #3b628f",
     borderRadius: "14px",
-    background: "rgba(20, 33, 56, 0.8)",
+    background: "#142138",
     textAlign: "center",
     padding: "26px",
   },
@@ -604,7 +624,7 @@ const styles = {
   card: {
     borderRadius: "14px",
     border: "1px solid #355980",
-    background: "linear-gradient(180deg, rgba(23, 38, 62, 0.95) 0%, rgba(15, 27, 46, 0.95) 100%)",
+    background: "#16213E",
     padding: "14px",
     display: "flex",
     flexDirection: "column",
@@ -613,7 +633,6 @@ const styles = {
   },
   pinnedCard: {
     border: "1px solid #4c78a6",
-    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
   },
   cardTop: {
     display: "flex",
@@ -704,7 +723,7 @@ const styles = {
   authPrompt: {
     border: "1px solid #3b628f",
     borderRadius: "14px",
-    background: "rgba(20, 33, 56, 0.8)",
+    background: "#142138",
     textAlign: "center",
     padding: "28px",
   },

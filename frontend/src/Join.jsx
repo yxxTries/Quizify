@@ -11,6 +11,7 @@ export default function Join({ onExit, initialPin = "" }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [leaderboard, setLeaderboard] = useState({});
   const [hostRevealed, setHostRevealed] = useState(false);
+  const [questionTimer, setQuestionTimer] = useState(null);
   const ws = useRef(null);
 
   const handleJoin = (e) => {
@@ -38,11 +39,17 @@ export default function Join({ onExit, initialPin = "" }) {
       } else if (data.type === "next_question") {
         setCurrentQuestionIndex(data.index);
         setHostRevealed(false);
+        setQuestionTimer({
+          questionIndex: data.index,
+          startedAt: data.startedAt,
+          durationSeconds: data.durationSeconds,
+        });
       } else if (data.type === "reveal_answer") {
         setHostRevealed(true);
       } else if (data.type === "leaderboard") {
         setLeaderboard(data.scores);
       } else if (data.type === "end_game") {
+        setQuestionTimer(null);
         setCurrentQuestionIndex(quiz?.questions?.length || 1000);
       }
     };
@@ -75,11 +82,13 @@ export default function Join({ onExit, initialPin = "" }) {
             setQuiz(null);
             setCurrentQuestionIndex(0);
             setLeaderboard({});
+            setQuestionTimer(null);
           }}
           onAnswerSubmit={handleAnswerSubmit}
           currentQuestionIndex={currentQuestionIndex}
           leaderboard={leaderboard}
           hostRevealed={hostRevealed}
+          questionTimer={questionTimer}
         />
       </div>
     );
