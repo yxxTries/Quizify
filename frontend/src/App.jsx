@@ -8,7 +8,7 @@ import Discover from "./Discover.jsx";
 import MyGames from "./MyGames.jsx";
 import MyProfile from "./MyProfile.jsx";
 import AuthModal from "./AuthModal.jsx";
-import { getCurrentUser, logout, saveMyGame } from "./api";
+import { getCurrentUser, logout, saveMyGame, checkHealth } from "./api";
 
 const globalStyle = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,6 +45,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authBooting, setAuthBooting] = useState(true);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [serverStatus, setServerStatus] = useState("checking"); // "checking" | "waking" | "ready"
   const profileMenuRef = useRef(null);
 
   const username = user?.username || user?.email?.split("@")[0] || "";
@@ -62,6 +63,42 @@ export default function App() {
   const showFloatingAccountControls = page === "upload";
 
   useEffect(() => {
+    let cancelled = false;
+    let intervalId;
+
+    async function checkServer() {
+      try {
+        const isHealthy = await checkHealth();
+        if (isHealthy) {
+          if (!cancelled) setServerStatus("ready");
+          return;
+        }
+      } catch (e) {}
+
+      if (!cancelled) setServerStatus("waking");
+
+      intervalId = setInterval(async () => {
+        try {
+          const healthy = await checkHealth();
+          if (healthy) {
+            clearInterval(intervalId);
+            if (!cancelled) setServerStatus("ready");
+          }
+        } catch (e) {}
+      }, 3000);
+    }
+
+    checkServer();
+
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (serverStatus !== "ready") return;
+
     let cancelled = false;
 
     async function bootstrapAuth() {
@@ -85,7 +122,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [serverStatus]);
 
   useEffect(() => {
     function handleOutsideClick(event) {
@@ -166,6 +203,41 @@ export default function App() {
     setIsProfileMenuOpen(false);
     setPage("upload");
   };
+
+  if (serverStatus !== "ready") {
+    return (
+      <>
+        <style>{globalStyle}</style>
+        <style>{`
+          .blackout-container {
+            position: fixed; inset: 0; background: #000; color: #fff;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999;
+          }
+          .blackout-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 3.5rem; letter-spacing: 2px; margin-bottom: 1rem;
+          }
+          .blackout-text {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1.1rem; color: #888; animation: pulse 2s infinite;
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+        `}</style>
+        <div className="blackout-container">
+          <h1 className="blackout-title">KuizuAI</h1>
+          {serverStatus === "waking" && (
+            <p className="blackout-text">
+              Please wait while the servers wake up. ETA ~50s
+            </p>
+          )}
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -329,7 +401,7 @@ export default function App() {
                Join a Game
              </button>
            </div>
-           <Upload onQuizReady={handleQuizReady} onHostReady={handleHostReady} />
+           <Upload onQuizReady={handleQuizReady} onHostReady={handleHostReady} user={user} onPlayPinned={handlePlayFromMyGames} />
          </div>
       )}
       {page === "preview" && (

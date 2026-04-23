@@ -103,6 +103,16 @@ export function getCurrentUser() {
   });
 }
 
+// Health check for server wake-up polling
+export async function checkHealth() {
+  try {
+    const res = await fetch(`${BASE_URL}/health`);
+    return res.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
 export function updateProfile(payload) {
   return request("/auth/me", {
     method: "PATCH",
