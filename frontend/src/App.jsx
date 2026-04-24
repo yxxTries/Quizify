@@ -8,7 +8,7 @@ import Discover from "./Discover.jsx";
 import MyGames from "./MyGames.jsx";
 import MyProfile from "./MyProfile.jsx";
 import AuthModal from "./AuthModal.jsx";
-import { getCurrentUser, logout, saveMyGame, checkHealth, createDiscoverPost } from "./api";
+import { getCurrentUser, logout, saveMyGame, checkHealth, createDiscoverPost, getPreferences } from "./api";
 
 const globalStyle = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,6 +64,7 @@ export default function App() {
   const [joinPin, setJoinPin] = useState(() => new URLSearchParams(window.location.search).get("pin") || "");
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [autoReveal, setAutoReveal] = useState(true);
   const [authBooting, setAuthBooting] = useState(true);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [serverStatus, setServerStatus] = useState("checking"); // "checking" | "waking" | "ready"
@@ -127,6 +128,12 @@ export default function App() {
         const currentUser = await getCurrentUser();
         if (!cancelled) {
           setUser(currentUser);
+          try {
+            const prefs = await getPreferences();
+            if (!cancelled) setAutoReveal(prefs.auto_reveal);
+          } catch {
+            // preferences fetch failing is non-fatal; keep default
+          }
         }
       } catch {
         if (!cancelled) {
@@ -230,14 +237,21 @@ export default function App() {
       // Keep UX resilient even if logout API fails.
     }
     setUser(null);
+    setAutoReveal(true);
     setIsProfileMenuOpen(false);
     setPage("upload");
   };
 
-  const handleAuthSuccess = (nextUser) => {
+  const handleAuthSuccess = async (nextUser) => {
     setUser(nextUser);
     setIsProfileMenuOpen(false);
     setPage("upload");
+    try {
+      const prefs = await getPreferences();
+      setAutoReveal(prefs.auto_reveal);
+    } catch {
+      // non-fatal
+    }
   };
 
   if (serverStatus !== "ready") {
@@ -450,8 +464,8 @@ export default function App() {
           user={user}
         />
       )}
-      {page === "quiz"    && <Quiz    quiz={quiz} onRestart={handleRestart} />}
-      {page === "host"    && <Host    quiz={quiz} onEnd={handleRestart} />}
+      {page === "quiz"    && <Quiz    quiz={quiz} onRestart={handleRestart} autoReveal={autoReveal} />}
+      {page === "host"    && <Host    quiz={quiz} onEnd={handleRestart} autoReveal={autoReveal} />}
       {page === "join"    && <Join    initialPin={joinPin} onExit={handleRestart} />}
       {page === "discover" && (
         <Discover
@@ -467,6 +481,8 @@ export default function App() {
           onBack={handleRestart}
           onRequireAuth={() => setIsAuthOpen(true)}
           onUserUpdated={setUser}
+          autoReveal={autoReveal}
+          onAutoRevealChange={setAutoReveal}
         />
       )}
       {page === "games" && (

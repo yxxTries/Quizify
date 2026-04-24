@@ -192,3 +192,14 @@ export function deleteDiscoverPost(postId) {
     method: "DELETE",
   });
 }
+
+export function getPreferences() {
+  return request("/auth/me/preferences", { method: "GET" });
+}
+
+export function updatePreferences(payload) {
+  return request("/auth/me/preferences", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}

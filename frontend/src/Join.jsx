@@ -8,7 +8,7 @@ export default function Join({ onExit, initialPin = "" }) {
   const [status, setStatus] = useState("login"); // login, joining, waiting, playing
   const [quiz, setQuiz] = useState(null);
   const [error, setError] = useState("");
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
   const [leaderboard, setLeaderboard] = useState({});
   const [hostRevealed, setHostRevealed] = useState(false);
   const [questionTimer, setQuestionTimer] = useState(null);
@@ -28,7 +28,13 @@ export default function Join({ onExit, initialPin = "" }) {
     };
 
     ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        console.error("Failed to parse WebSocket message:", event.data);
+        return;
+      }
       if (data.type === "error") {
         setError(data.message);
         setStatus("login");
@@ -68,7 +74,7 @@ export default function Join({ onExit, initialPin = "" }) {
     }
   };
 
-  if (status === "playing" && quiz) {
+  if (status === "playing" && quiz && currentQuestionIndex !== null) {
     return (
       <div style={{ position: "relative" }}>
         {/* We reuse the Quiz component */}
@@ -90,6 +96,14 @@ export default function Join({ onExit, initialPin = "" }) {
           hostRevealed={hostRevealed}
           questionTimer={questionTimer}
         />
+      </div>
+    );
+  }
+
+  if (status === "playing" && quiz && currentQuestionIndex === null) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#B0BAC3", fontSize: 20 }}>
+        Loading first question...
       </div>
     );
   }

@@ -438,6 +438,285 @@ const cardStyles = {
 };
 
 // ─────────────────────────────────────────────
+// Timer settings helpers (mirrors Upload.jsx)
+// ─────────────────────────────────────────────
+
+const TIMER_PRESETS = [
+  { id: "quick",    label: "Quick",    seconds: 10 },
+  { id: "standard", label: "Standard", seconds: 20 },
+  { id: "thinker",  label: "Thinker",  seconds: 30 },
+  { id: "extended", label: "Extended", seconds: 45 },
+];
+
+function normalizeTimeControl(value) {
+  const seconds = Number(value?.secondsPerQuestion);
+  const matchingPreset = TIMER_PRESETS.find((p) => p.seconds === seconds);
+  return {
+    enabled: Boolean(value?.enabled && Number.isFinite(seconds) && seconds >= 5 && seconds <= 120),
+    preset: matchingPreset ? matchingPreset.id : "standard",
+    secondsPerQuestion: Number.isFinite(seconds) ? Math.max(5, Math.min(120, Math.round(seconds))) : 20,
+  };
+}
+
+function buildTimeControlPayload(value) {
+  if (!value?.enabled) return { enabled: false };
+  return {
+    enabled: true,
+    mode: "per_question",
+    secondsPerQuestion: Math.max(5, Math.min(120, Math.round(Number(value.secondsPerQuestion) || 20))),
+  };
+}
+
+function formatTimerSummary(value) {
+  if (!value?.enabled) return "Off";
+  return `${Math.round(value.secondsPerQuestion)}s / question`;
+}
+
+// ─────────────────────────────────────────────
+// SettingsPanel (right sidebar)
+// ─────────────────────────────────────────────
+
+function SettingsPanel({ timeControl, onTimeControlChange }) {
+  return (
+    <aside style={settingsStyles.panel}>
+      <p style={settingsStyles.heading}>Settings</p>
+
+      {/* Timer row */}
+      <div style={settingsStyles.row}>
+        <div style={settingsStyles.rowTop}>
+          <span style={settingsStyles.rowLabel}>Timer</span>
+          <span style={settingsStyles.rowValue}>{formatTimerSummary(timeControl)}</span>
+        </div>
+
+        <div style={settingsStyles.modeRow}>
+          <button
+            type="button"
+            style={{ ...settingsStyles.modeBtn, ...(!timeControl.enabled ? settingsStyles.modeBtnActive : {}) }}
+            onClick={() => onTimeControlChange((prev) => ({ ...prev, enabled: false }))}
+          >
+            Off
+          </button>
+          <button
+            type="button"
+            style={{ ...settingsStyles.modeBtn, ...(timeControl.enabled ? settingsStyles.modeBtnActive : {}) }}
+            onClick={() =>
+              onTimeControlChange((prev) => ({
+                ...prev,
+                enabled: true,
+                preset: prev.preset || "standard",
+                secondsPerQuestion: prev.secondsPerQuestion || 20,
+              }))
+            }
+          >
+            On
+          </button>
+        </div>
+
+        {timeControl.enabled && (
+          <>
+            <div style={settingsStyles.presetGrid}>
+              {TIMER_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  style={{
+                    ...settingsStyles.presetBtn,
+                    ...(timeControl.preset === preset.id ? settingsStyles.presetBtnActive : {}),
+                  }}
+                  onClick={() =>
+                    onTimeControlChange({ enabled: true, preset: preset.id, secondsPerQuestion: preset.seconds })
+                  }
+                >
+                  <span style={settingsStyles.presetName}>{preset.label}</span>
+                  <span style={settingsStyles.presetSec}>{preset.seconds}s</span>
+                </button>
+              ))}
+            </div>
+
+            <div style={settingsStyles.customRow}>
+              <button
+                type="button"
+                style={{
+                  ...settingsStyles.customBtn,
+                  ...(timeControl.preset === "custom" ? settingsStyles.customBtnActive : {}),
+                }}
+                onClick={() => onTimeControlChange((prev) => ({ ...prev, enabled: true, preset: "custom" }))}
+              >
+                Custom
+              </button>
+              <input
+                type="number"
+                min={5}
+                max={120}
+                value={timeControl.secondsPerQuestion}
+                disabled={timeControl.preset !== "custom"}
+                onChange={(e) =>
+                  onTimeControlChange({
+                    enabled: true,
+                    preset: "custom",
+                    secondsPerQuestion: Math.max(5, Math.min(120, Number(e.target.value) || 5)),
+                  })
+                }
+                style={{
+                  ...settingsStyles.customInput,
+                  ...(timeControl.preset !== "custom" ? settingsStyles.customInputDisabled : {}),
+                }}
+              />
+              <span style={settingsStyles.customSuffix}>s</span>
+            </div>
+          </>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+const settingsStyles = {
+  panel: {
+    width: "400px",
+    flexShrink: 0,
+    paddingTop: "32px",
+    paddingLeft: "20px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    position: "sticky",
+    top: "61px",
+    alignSelf: "flex-start",
+  },
+  heading: {
+    margin: 0,
+    fontFamily: "'Syne', sans-serif",
+    fontWeight: 700,
+    fontSize: "11px",
+    color: "#8080a8",
+    textTransform: "uppercase",
+    letterSpacing: "0.8px",
+  },
+  row: {
+    background: "#16213E",
+    border: "1px solid #1e1e2e",
+    borderRadius: "14px",
+    padding: "14px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  rowTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  rowLabel: {
+    fontSize: "12px",
+    fontWeight: 600,
+    color: "#B0BAC3",
+  },
+  rowValue: {
+    fontSize: "11px",
+    color: "#00D2D3",
+    fontWeight: 600,
+  },
+  modeRow: {
+    display: "flex",
+    gap: "6px",
+  },
+  modeBtn: {
+    flex: 1,
+    padding: "6px 0",
+    borderRadius: "7px",
+    border: "1px solid #0F3460",
+    background: "#1A1A2E",
+    color: "#B0BAC3",
+    fontSize: "12px",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.15s",
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  modeBtnActive: {
+    background: "#00D2D3",
+    color: "#16213E",
+    borderColor: "#00D2D3",
+  },
+  presetGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "5px",
+  },
+  presetBtn: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "8px 4px",
+    borderRadius: "8px",
+    border: "1px solid #0F3460",
+    background: "#1A1A2E",
+    color: "#B0BAC3",
+    cursor: "pointer",
+    transition: "all 0.15s",
+    fontFamily: "'DM Sans', sans-serif",
+    gap: "1px",
+  },
+  presetBtnActive: {
+    background: "rgba(0,210,211,0.1)",
+    borderColor: "#00D2D3",
+    color: "#00D2D3",
+  },
+  presetName: {
+    fontSize: "11px",
+    fontWeight: 600,
+  },
+  presetSec: {
+    fontSize: "10px",
+    opacity: 0.65,
+  },
+  customRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  customBtn: {
+    flex: "0 0 auto",
+    padding: "6px 8px",
+    borderRadius: "7px",
+    border: "1px solid #0F3460",
+    background: "#1A1A2E",
+    color: "#B0BAC3",
+    fontSize: "11px",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.15s",
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  customBtnActive: {
+    background: "rgba(0,210,211,0.1)",
+    borderColor: "#00D2D3",
+    color: "#00D2D3",
+  },
+  customInput: {
+    width: "60px",
+    background: "#1A1A2E",
+    border: "1px solid #0F3460",
+    borderRadius: "7px",
+    color: "#F1F2F6",
+    fontSize: "12px",
+    padding: "6px 6px",
+    outline: "none",
+    fontFamily: "'DM Sans', sans-serif",
+    minWidth: 0,
+  },
+  customInputDisabled: {
+    opacity: 0.35,
+    cursor: "not-allowed",
+  },
+  customSuffix: {
+    fontSize: "11px",
+    color: "#B0BAC3",
+  },
+};
+
+// ─────────────────────────────────────────────
 // Preview (main component)
 // ─────────────────────────────────────────────
 
@@ -449,6 +728,7 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
   const [errorBanner, setErrorBanner]   = useState("");
   const [saveLoading, setSaveLoading]   = useState(false);
   const [saveMessage, setSaveMessage]   = useState("");
+  const [timeControl, setTimeControl]   = useState(() => normalizeTimeControl(quiz?.timeControl));
   const discoverMeta = quiz?.discoverMeta || null;
 
   // Drag state
@@ -610,9 +890,9 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
       return;
     }
 
-    // Strip internal _id before passing to quiz
+    // Strip internal _id before passing to quiz, preserve all other quiz fields (e.g. timeControl)
     const clean = questions.map(({ _id, ...rest }) => rest);
-    onStart({ questions: clean });
+    onStart({ ...quiz, questions: clean, timeControl: buildTimeControlPayload(timeControl) });
   };
 
   const handleSaveGame = async () => {
@@ -649,7 +929,7 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
       await onSaveGame({
         title,
         category,
-        quiz: { questions: clean, discoverMeta: discoverMeta || undefined },
+        quiz: { ...quiz, questions: clean, timeControl: buildTimeControlPayload(timeControl), discoverMeta: discoverMeta || undefined },
       });
       setSaveMessage("Saved to My Games.");
     } catch (err) {
@@ -684,6 +964,7 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
         </div>
       )}
 
+      <div style={styles.body}>
       <main style={styles.main}>
         {/* Controls row */}
         <div style={styles.controlsRow}>
@@ -775,6 +1056,9 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
         </button>
       </main>
 
+      <SettingsPanel timeControl={timeControl} onTimeControlChange={setTimeControl} />
+      </div>
+
       <style>{`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(20px); }
@@ -798,6 +1082,13 @@ const styles = {
     fontFamily: "'DM Sans', sans-serif",
     display: "flex",
     flexDirection: "column",
+  },
+  body: {
+    display: "flex",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "flex-start",
+    padding: "0 20px",
   },
   header: {
     display: "flex",
@@ -873,11 +1164,9 @@ const styles = {
     fontWeight: 500,
   },
   main: {
-    flex: 1,
-    maxWidth: "720px",
-    width: "100%",
-    margin: "0 auto",
-    padding: "32px 20px 60px",
+    width: "720px",
+    flexShrink: 0,
+    padding: "32px 0 60px",
     animation: "fadeUp 0.4s ease both",
   },
   controlsRow: {
@@ -1017,7 +1306,7 @@ const styles = {
   backLink: {
     background: "none",
     border: "none",
-    color: "#4a4a5e",
+    color: "#7a7a9a",
     fontSize: "13px",
     cursor: "pointer",
     display: "block",

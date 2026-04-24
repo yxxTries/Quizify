@@ -37,6 +37,9 @@ def _ensure_username_column(conn: sqlite3.Connection) -> None:
     if "username" not in columns:
         conn.execute("ALTER TABLE users ADD COLUMN username TEXT")
 
+    if "auto_reveal" not in columns:
+        conn.execute("ALTER TABLE users ADD COLUMN auto_reveal INTEGER NOT NULL DEFAULT 1")
+
     existing_rows = conn.execute(
         "SELECT username FROM users WHERE username IS NOT NULL AND TRIM(username) <> ''"
     ).fetchall()
@@ -165,8 +168,39 @@ def get_user_by_id(user_id: int) -> dict[str, Any] | None:
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         try:
-            row = conn.execute("SELECT id, email, username FROM users WHERE id = ?", (user_id,)).fetchone()
+            row = conn.execute("SELECT id, email, username, auto_reveal FROM users WHERE id = ?", (user_id,)).fetchone()
             return dict(row) if row else None
+        finally:
+            conn.close()
+
+
+def get_user_preferences(user_id: int) -> dict[str, Any] | None:
+    with _DB_LOCK:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        try:
+            row = conn.execute("SELECT auto_reveal FROM users WHERE id = ?", (user_id,)).fetchone()
+            if row is None:
+                return None
+            return {"auto_reveal": bool(row["auto_reveal"])}
+        finally:
+            conn.close()
+
+
+def update_user_preferences(user_id: int, auto_reveal: bool) -> dict[str, Any]:
+    with _DB_LOCK:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        try:
+            conn.execute(
+                "UPDATE users SET auto_reveal = ? WHERE id = ?",
+                (1 if auto_reveal else 0, user_id),
+            )
+            conn.commit()
+            row = conn.execute("SELECT auto_reveal FROM users WHERE id = ?", (user_id,)).fetchone()
+            if row is None:
+                raise RuntimeError("User not found.")
+            return {"auto_reveal": bool(row["auto_reveal"])}
         finally:
             conn.close()
 

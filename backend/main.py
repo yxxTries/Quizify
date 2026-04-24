@@ -40,12 +40,9 @@ def health():
 
 @app.websocket("/ws/host")
 async def websocket_host(websocket: WebSocket):
-    print("WebSocket connecting...")
     try:
         await websocket.accept()
-        print("WebSocket accepted.")
-    except Exception as e:
-        print(f"Error accepting websocket: {e}")
+    except Exception:
         return
     try:
         data = await websocket.receive_json()
@@ -152,8 +149,8 @@ async def websocket_join(websocket: WebSocket, pin: str, name: str):
                         "questionIndex": q_idx,
                         "optionIndex": o_idx
                     })
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"Warning: could not forward answer_submit to host: {e}")
     except WebSocketDisconnect:
         await manager.remove_player(pin, name)
         room = manager.get_room(pin)

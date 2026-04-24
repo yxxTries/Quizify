@@ -14,7 +14,7 @@ function normalizeTimeControl(quiz) {
   };
 }
 
-export default function Host({ quiz, onEnd }) {
+export default function Host({ quiz, onEnd, autoReveal = true }) {
   const [pin, setPin] = useState(null);
   const [players, setPlayers] = useState([]);
   const [scores, setScores] = useState({});
@@ -28,7 +28,7 @@ export default function Host({ quiz, onEnd }) {
   const ws = useRef(null);
   const timerSettings = normalizeTimeControl(quiz);
 
-    useEffect(() => {
+  useEffect(() => {
     ws.current = new WebSocket(buildWebSocketUrl("/ws/host"));
     
     ws.current.onopen = () => {
@@ -41,7 +41,7 @@ export default function Host({ quiz, onEnd }) {
         setPin(data.pin);
         setStatus("lobby");
       } else if (data.type === "player_joined") {
-        setPlayers(p => [...p, data.name]);
+        setPlayers(p => p.includes(data.name) ? p : [...p, data.name]);
         setScores(s => ({ ...s, [data.name]: 0 }));
         setStreaks(s => ({ ...s, [data.name]: 0 }));
       } else if (data.type === "player_left") {
@@ -50,27 +50,26 @@ export default function Host({ quiz, onEnd }) {
         setScores(data.scores);
         if (data.streaks) setStreaks(data.streaks);
       } else if (data.type === "answer_submit") {
-          console.log("Host received answer_submit!", data);
-          setHostAnswers(prev => {
-            const qIdx = String(data.questionIndex);
-            const oIdx = String(data.optionIndex);
-            const currentQ = prev[qIdx] || {};
-            const currentO = currentQ[oIdx] || 0;
-            return {
-              ...prev,
-              [qIdx]: {
-                ...currentQ,
-                [oIdx]: currentO + 1
-              }
-            };
-          });
-        }
-      };
+        setHostAnswers(prev => {
+          const qIdx = String(data.questionIndex);
+          const oIdx = String(data.optionIndex);
+          const currentQ = prev[qIdx] || {};
+          const currentO = currentQ[oIdx] || 0;
+          return {
+            ...prev,
+            [qIdx]: {
+              ...currentQ,
+              [oIdx]: currentO + 1
+            }
+          };
+        });
+      }
+    };
 
-      ws.current.onerror = (err) => {
+    ws.current.onerror = (err) => {
       console.error("WebSocket Error:", err);
       setStatus("error");
-    }
+    };
 
     return () => ws.current?.close();
   }, [quiz]);
@@ -363,12 +362,12 @@ export default function Host({ quiz, onEnd }) {
 
       {status === "playing" && (
          <div style={{ flex: 1, position: "relative", textAlign: "left" }}>
-            <Quiz 
-               quiz={quiz} 
+            <Quiz
+               quiz={quiz}
                isHostMode={true}
-               onRestart={() => { 
-                 if(ws.current) ws.current.send(JSON.stringify({ type: "end_game" })); 
-                 onEnd(); 
+               onRestart={() => {
+                 if(ws.current) ws.current.send(JSON.stringify({ type: "end_game" }));
+                 onEnd();
                }}
                currentQuestionIndex={currentQuestionIndex}
                leaderboard={scores}
@@ -377,6 +376,7 @@ export default function Host({ quiz, onEnd }) {
                onReveal={handleHostNext}
                triggerNextQuestion={handleNext}
                questionTimer={questionTimer}
+               autoReveal={autoReveal}
             />
          </div>
       )}
