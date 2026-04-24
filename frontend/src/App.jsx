@@ -769,15 +769,16 @@ function TypewriterOverlay({ onDismiss }) {
     "",
     "During my experience as an educator, I found myself spending countless hours crafting quizzes from lecture slides and reading materials, time that could be better spent actually teaching. I wanted a tool that could instantly transform my PDFs and presentations into engaging, high quality quizzes without cutting corners on academic rigor, while being straightforward and uncomplicated for anyone to use.",
     "",
-    "Most importantly, I believed great quizzes shouldn't stay locked in one classroom. That's why I built in a community hub where educators and students can share, discover, and remix each other's content.",
+    "Most importantly, I believed ed resources shouldn't stay locked in one classroom. That's why I built in a community hub where educators and students can share, discover, and remix each other's content.",
     "",
     "Kuizu is completely free and still very very early and I am also welcoming contributors. If you're interested in helping out, please reach out!",
     "",
     "Contact Details",
     "---------------",
-    "Email:    yxx.tweaks@gmail.com",
-    "LinkedIn: https://www.linkedin.com/in/amilshahul/",
-    "GitHub:   https://github.com/yxxTries"
+    "Support Email:    yxx.tweaks@gmail.com",
+    "Email:            amil.shahul777@gmail.com",
+    "LinkedIn:         https://www.linkedin.com/in/amilshahul/",
+    "GitHub:           https://github.com/yxxTries"
   ].join("\n");
   const [displayed, setDisplayed] = useState("");
 
