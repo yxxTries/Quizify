@@ -279,9 +279,16 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
   };
 
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="mygames-page">
+      <style>{`
+        @media (max-width: 768px) {
+          .mygames-page { padding-top: 116px !important; }
+          .mygames-header { flex-direction: column-reverse !important; align-items: stretch !important; }
+          .mygames-back-btn { width: 100% !important; text-align: center; }
+        }
+      `}</style>
       <div style={styles.container}>
-        <header style={styles.header}>
+        <header style={styles.header} className="mygames-header">
           <div>
             <p style={styles.kicker}>Library</p>
             <h1 style={styles.title}>My Games</h1>
@@ -290,7 +297,7 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
             </p>
           </div>
 
-          <button type="button" onClick={onBack} style={styles.backBtn}>
+          <button type="button" onClick={onBack} style={styles.backBtn} className="mygames-back-btn">
             Back to Home
           </button>
         </header>
@@ -428,7 +435,7 @@ const styles = {
     background: "#161b33",
     color: "#f1f2f6",
     overflow: "hidden",
-    padding: "34px 20px",
+    padding: "clamp(16px, 4vw, 34px) clamp(14px, 3vw, 20px)",
   },
   container: {
     position: "relative",
@@ -438,7 +445,7 @@ const styles = {
     margin: "0 auto",
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: "16px",
   },
   menuIconBtn: {
     background: "transparent",
@@ -446,10 +453,12 @@ const styles = {
     color: "#b6c3d8",
     fontSize: "24px",
     cursor: "pointer",
-    padding: "0 8px",
+    padding: "0 10px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    minHeight: "44px",
+    minWidth: "44px",
   },
   dropdownMenu: {
     position: "absolute",
@@ -490,7 +499,7 @@ const styles = {
     fontWeight: 700,
   },
   title: {
-    fontSize: "40px",
+    fontSize: "clamp(26px, 6vw, 40px)",
     lineHeight: 1.05,
     marginTop: "6px",
   },
@@ -508,6 +517,8 @@ const styles = {
     padding: "10px 14px",
     cursor: "pointer",
     fontWeight: 700,
+    minHeight: 44,
+    whiteSpace: "nowrap",
   },
   controls: {
     border: "1px solid #2f4e74",
@@ -563,10 +574,13 @@ const styles = {
     background: "transparent",
     color: "#b9cae0",
     borderRadius: "999px",
-    padding: "7px 12px",
+    padding: "10px 14px",
     cursor: "pointer",
     fontSize: "14px",
     fontWeight: 600,
+    minHeight: 44,
+    display: "inline-flex",
+    alignItems: "center",
   },
   filterBtnActive: {
     background: "#00d2d3",
@@ -597,8 +611,8 @@ const styles = {
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-    gap: "14px",
+    gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 250px), 1fr))",
+    gap: "12px",
   },
   emptyState: {
     gridColumn: "1 / -1",
@@ -687,10 +701,11 @@ const styles = {
     border: "1px solid #3d6794",
     background: "transparent",
     color: "#c9dff8",
-    padding: "8px 9px",
+    padding: "11px 9px",
     cursor: "pointer",
     fontWeight: 700,
     fontSize: "13px",
+    minHeight: "44px",
   },
   pinAction: {
     flex: 1,
@@ -698,10 +713,11 @@ const styles = {
     border: "1px solid #4f77a4",
     background: "rgba(0, 210, 211, 0.14)",
     color: "#aaf4f0",
-    padding: "8px 9px",
+    padding: "11px 9px",
     cursor: "pointer",
     fontWeight: 700,
     fontSize: "13px",
+    minHeight: "44px",
   },
   pinActionActive: {
     flex: 1,
@@ -709,10 +725,11 @@ const styles = {
     border: "1px solid #6c8cb0",
     background: "rgba(93, 132, 174, 0.2)",
     color: "#e0eeff",
-    padding: "8px 9px",
+    padding: "11px 9px",
     cursor: "pointer",
     fontWeight: 700,
     fontSize: "13px",
+    minHeight: "44px",
   },
   authPrompt: {
     border: "1px solid #3b628f",

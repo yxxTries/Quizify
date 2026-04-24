@@ -21,8 +21,9 @@ const globalStyle = `
     -webkit-font-smoothing: antialiased;
   }
   button { font-family: inherit; }
-  input  { font-family: inherit; }
-  textarea { font-family: inherit; }
+  input  { font-family: inherit; font-size: max(16px, 1em); }
+  textarea { font-family: inherit; font-size: max(16px, 1em); }
+  select { font-family: inherit; }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Syne', sans-serif;
@@ -48,24 +49,111 @@ const globalStyle = `
   .nav-button {
     white-space: nowrap;
     transition: all 0.2s ease;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
+  /* Mobile header shell — hidden on desktop */
+  .mobile-header { display: none; }
+  /* Desktop profile controls */
+  .profile-controls-desktop { display: flex; }
+
   @media (max-width: 768px) {
-    .nav-buttons-container {
-      top: 75px;
-      max-width: 100vw;
-      width: 100%;
-      flex-wrap: nowrap;
-      justify-content: flex-start;
-      overflow-x: auto;
-      padding: 0 20px 10px;
-      -webkit-overflow-scrolling: touch;
+    /* Hide desktop nav strip and desktop profile controls */
+    .nav-buttons-container { display: none !important; }
+    .profile-controls-desktop { display: none !important; }
+
+    /* Show the mobile header */
+    .mobile-header {
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(20, 24, 48, 0.97);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid #1e2d4e;
+      z-index: 40;
     }
-    .nav-buttons-container::-webkit-scrollbar {
-      display: none;
+
+    /* Top bar: wordmark + auth button */
+    .mobile-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      gap: 10px;
     }
-    .nav-button {
-      font-size: 13px;
-      padding: 6px 12px !important;
+    .mobile-wordmark {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #00D2D3;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
+    /* Auth button in top bar */
+    .mobile-auth-btn {
+      padding: 9px 18px;
+      background: #00D2D3;
+      color: #0E1A2B;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 40px;
+      white-space: nowrap;
+    }
+    .mobile-avatar-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #13243d;
+      color: #dbf4ff;
+      border: 1px solid #2d4d73;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Nav button grid: 2 columns, full width */
+    .mobile-nav-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 0 10px 10px;
+    }
+    .mobile-nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      border: 1px solid #2B5A8A;
+      background: rgba(15, 52, 96, 0.55);
+      color: #E2E8F0;
+      transition: opacity 0.15s;
+    }
+    .mobile-nav-btn:active { opacity: 0.75; }
+    .mobile-nav-btn-accent {
+      background: #00D2D3;
+      color: #0E1A2B;
+      border-color: #6FF4F0;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0,210,211,0.3);
     }
   }
 `;
@@ -469,7 +557,7 @@ function UploadPageContent({
         onClick={() => navigate("/discover")}
         className="nav-button"
         style={{
-          padding: "8px 16px",
+          padding: "10px 16px",
           background: "rgba(15, 52, 96, 0.55)",
           color: "#E2E8F0",
           border: "1px solid #2B5A8A",
@@ -484,7 +572,7 @@ function UploadPageContent({
         onClick={() => navigate("/games")}
         className="nav-button"
         style={{
-          padding: "8px 16px",
+          padding: "10px 16px",
           background: "rgba(36, 73, 121, 0.65)",
           color: "#E2E8F0",
           border: "1px solid #3E6EA3",
@@ -499,7 +587,7 @@ function UploadPageContent({
         onClick={() => navigate("/join")}
         className="nav-button"
         style={{
-          padding: "8px 16px",
+          padding: "10px 16px",
           background: "#00D2D3",
           color: "#0E1A2B",
           border: "1px solid #6FF4F0",
@@ -514,9 +602,10 @@ function UploadPageContent({
       <button
         onMouseEnter={() => setShowAbout(true)}
         onMouseLeave={() => setShowAbout(false)}
+        onClick={() => setShowAbout((v) => !v)}
         className="nav-button"
         style={{
-          padding: "8px 16px",
+          padding: "10px 16px",
           background: "rgba(15, 52, 96, 0.55)",
           color: "#E2E8F0",
           border: "1px solid #2B5A8A",
@@ -527,18 +616,41 @@ function UploadPageContent({
       >
         About Kuizu
       </button>
+
+    </div>
+  );
+
+  const mobileHeader = (
+    <div className="mobile-header">
+      <div className="mobile-header-top">
+        <span className="mobile-wordmark">Kuizu</span>
+        {!authBooting && !user && (
+          <button className="mobile-auth-btn" onClick={onAuthOpen}>Sign In</button>
+        )}
+        {!authBooting && user && (
+          <button className="mobile-avatar-btn" onClick={onProfileMenuToggle} aria-label="Open profile menu">
+            {profileInitial}
+          </button>
+        )}
+      </div>
+      <div className="mobile-nav-grid">
+        <button className="mobile-nav-btn" onClick={() => navigate("/discover")}>Discover</button>
+        <button className="mobile-nav-btn" onClick={() => navigate("/games")}>My Games</button>
+        <button className="mobile-nav-btn mobile-nav-btn-accent" onClick={() => navigate("/join")}>Join a Game</button>
+        <button className="mobile-nav-btn" onClick={() => setShowAbout((v) => !v)}>About Kuizu</button>
+      </div>
     </div>
   );
 
   const profileControls = (
     <div
       ref={profileMenuRef}
+      className="profile-controls-desktop"
       style={{
         position: "fixed",
-        top: 18,
-        right: 20,
+        top: 12,
+        right: 14,
         zIndex: 50,
-        display: "flex",
         gap: 8,
         alignItems: "center",
       }}
@@ -547,13 +659,15 @@ function UploadPageContent({
         <button
           onClick={onAuthOpen}
           style={{
-            padding: "8px 14px",
+            padding: "10px 16px",
+            minHeight: 44,
             background: "#13243d",
             color: "#e3eefc",
             border: "1px solid #2d4d73",
             borderRadius: 8,
             cursor: "pointer",
             fontWeight: 700,
+            fontSize: 14,
           }}
         >
           Sign In
@@ -561,83 +675,84 @@ function UploadPageContent({
       )}
 
       {!authBooting && user && (
-        <>
-          <button
-            onClick={onProfileMenuToggle}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              background: "#13243d",
-              color: "#dbf4ff",
-              border: "1px solid #2d4d73",
-              cursor: "pointer",
-              fontWeight: 700,
-              display: "grid",
-              placeItems: "center",
-              fontSize: 16,
-            }}
-            aria-label="Open profile menu"
-          >
-            {profileInitial}
-          </button>
-
-          {isProfileMenuOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: 48,
-                right: 0,
-                minWidth: 210,
-                borderRadius: 12,
-                border: "1px solid #2f4f75",
-                background: "#12243d",
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ padding: "12px 12px 10px", borderBottom: "1px solid #264363" }}>
-                <div style={{ color: "#d7e8ff", fontWeight: 700, fontSize: 14 }}>{username}</div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => { navigate("/profile"); onProfileMenuToggle(); }}
-                style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer" }}
-              >
-                My Profile
-              </button>
-              <button
-                type="button"
-                onClick={() => { navigate("/games"); onProfileMenuToggle(); }}
-                style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer" }}
-              >
-                My Games
-              </button>
-              <button
-                type="button"
-                onClick={onLogout}
-                style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", borderTop: "1px solid #264363", background: "transparent", color: "#ffb7bf", cursor: "pointer" }}
-              >
-                Sign Out
-              </button>
-            </div>
-          )}
-        </>
+        <button
+          onClick={onProfileMenuToggle}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: "50%",
+            background: "#13243d",
+            color: "#dbf4ff",
+            border: "1px solid #2d4d73",
+            cursor: "pointer",
+            fontWeight: 700,
+            display: "grid",
+            placeItems: "center",
+            fontSize: 16,
+          }}
+          aria-label="Open profile menu"
+        >
+          {profileInitial}
+        </button>
       )}
     </div>
   );
 
+  const profileDropdown = isProfileMenuOpen && user && (
+    <div
+      style={{
+        position: "fixed",
+        top: 60,
+        right: 14,
+        minWidth: 210,
+        borderRadius: 12,
+        border: "1px solid #2f4f75",
+        background: "#12243d",
+        overflow: "hidden",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+        zIndex: 51,
+      }}
+    >
+      <div style={{ padding: "14px 14px 12px", borderBottom: "1px solid #264363" }}>
+        <div style={{ color: "#d7e8ff", fontWeight: 700, fontSize: 14 }}>{username}</div>
+      </div>
+      <button
+        type="button"
+        onClick={() => { navigate("/profile"); onProfileMenuToggle(); }}
+        style={{ width: "100%", textAlign: "left", padding: "14px 14px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer", fontSize: 15 }}
+      >
+        My Profile
+      </button>
+      <button
+        type="button"
+        onClick={() => { navigate("/games"); onProfileMenuToggle(); }}
+        style={{ width: "100%", textAlign: "left", padding: "14px 14px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer", fontSize: 15 }}
+      >
+        My Games
+      </button>
+      <button
+        type="button"
+        onClick={onLogout}
+        style={{ width: "100%", textAlign: "left", padding: "14px 14px", border: "none", borderTop: "1px solid #264363", background: "transparent", color: "#ffb7bf", cursor: "pointer", fontSize: 15 }}
+      >
+        Sign Out
+      </button>
+    </div>
+  );
+
   return (
-    <div style={{ position: "relative" }}>
+    <div ref={profileMenuRef} style={{ position: "relative" }}>
       {navigationButtons}
       {profileControls}
+      {mobileHeader}
+      {profileDropdown}
       <Upload onQuizReady={onQuizReady} onHostReady={onHostReady} user={user} onPlayPinned={onPlayPinned} />
-      {showAbout && <TypewriterOverlay />}
+      {showAbout && <TypewriterOverlay onDismiss={() => setShowAbout(false)} />}
     </div>
   );
 }
 
-function TypewriterOverlay() {
+function TypewriterOverlay({ onDismiss }) {
   const fullText = [
     "About",
     "=======================",
@@ -668,11 +783,15 @@ function TypewriterOverlay() {
   }, [fullText]);
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", zIndex: 9998, pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(16px, 5vmin, 40px)" }}>
-      <div style={{ whiteSpace: "pre-wrap", color: "#00D2D3", fontSize: "clamp(10px, 2.5vmin, 22px)", fontFamily: "monospace", textAlign: "left", width: "100%", maxWidth: "800px", lineHeight: 1.5 }}>
+    <div
+      onClick={onDismiss}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", zIndex: 9998, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(16px, 5vmin, 40px)", cursor: "pointer" }}
+    >
+      <div style={{ whiteSpace: "pre-wrap", color: "#00D2D3", fontSize: "clamp(13px, 2.8vmin, 22px)", fontFamily: "monospace", textAlign: "left", width: "100%", maxWidth: "800px", lineHeight: 1.7, overflowY: "auto", maxHeight: "80vh" }}>
         {displayed}
         <span style={{ animation: "cursorBlink 1s step-end infinite" }}>_</span>
       </div>
+      <p style={{ marginTop: "clamp(12px, 3vmin, 28px)", color: "rgba(255,255,255,0.45)", fontSize: "13px", fontFamily: "monospace", flexShrink: 0 }}>Tap anywhere to close</p>
       <style>{`
         @keyframes cursorBlink {
           0%, 100% { opacity: 1; }
