@@ -266,7 +266,7 @@ export default function App() {
           }
         `}</style>
         <div className="blackout-container">
-          <h1 className="blackout-title">KuizuAI</h1>
+          <h1 className="blackout-title">Kuizu</h1>
           <p className="blackout-text">
             Please wait while the servers wake up. ETA ~50s
           </p>
