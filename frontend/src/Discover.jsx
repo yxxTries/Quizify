@@ -89,16 +89,23 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
   };
 
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="discover-page">
+      <style>{`
+        @media (max-width: 768px) {
+          .discover-page { padding-top: 116px !important; }
+          .discover-header { flex-direction: column-reverse !important; align-items: stretch !important; }
+          .discover-back-btn { width: 100% !important; text-align: center; }
+        }
+      `}</style>
       <div style={styles.container}>
-        <header style={styles.header}>
+        <header style={styles.header} className="discover-header">
           <div>
             <h1 style={styles.title}>Discover Community Quizzes</h1>
             <p style={styles.subtitle}>
               Browse public quizzes shared by the community.
             </p>
           </div>
-          <button type="button" onClick={onBack} style={styles.backButton}>
+          <button type="button" onClick={onBack} style={styles.backButton} className="discover-back-btn">
             Back to Home
           </button>
         </header>
@@ -199,7 +206,7 @@ const styles = {
     minHeight: "100vh",
     background: "#1A1A2E",
     color: "#F1F2F6",
-    padding: "32px 20px",
+    padding: "clamp(16px, 4vw, 32px) clamp(14px, 3vw, 20px)",
   },
   container: {
     width: "100%",
@@ -207,7 +214,7 @@ const styles = {
     margin: "0 auto",
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: "16px",
   },
   header: {
     display: "flex",
@@ -217,16 +224,16 @@ const styles = {
     flexWrap: "wrap",
   },
   title: {
-    fontSize: "34px",
+    fontSize: "clamp(20px, 5vw, 34px)",
     lineHeight: 1.1,
     margin: 0,
     color: "#F1F2F6",
   },
   subtitle: {
-    marginTop: "10px",
+    marginTop: "8px",
     color: "#B0BAC3",
     maxWidth: "740px",
-    fontSize: "15px",
+    fontSize: "clamp(13px, 3vw, 15px)",
   },
   backButton: {
     border: "1px solid #2B5A8A",
@@ -236,15 +243,18 @@ const styles = {
     padding: "10px 14px",
     cursor: "pointer",
     fontWeight: 600,
+    minHeight: 44,
+    whiteSpace: "nowrap",
+    alignSelf: "flex-start",
   },
   controlsRow: {
     border: "1px solid #0F3460",
     background: "#20233D",
     borderRadius: "16px",
-    padding: "16px",
+    padding: "14px",
     display: "flex",
     flexDirection: "column",
-    gap: "14px",
+    gap: "12px",
   },
   searchInput: {
     width: "100%",
@@ -254,7 +264,8 @@ const styles = {
     color: "#F1F2F6",
     padding: "12px 14px",
     outline: "none",
-    fontSize: "15px",
+    fontSize: "16px",
+    boxSizing: "border-box",
   },
   categoriesWrap: {
     display: "flex",
@@ -266,9 +277,12 @@ const styles = {
     background: "transparent",
     color: "#B0BAC3",
     borderRadius: "999px",
-    padding: "8px 12px",
+    padding: "10px 14px",
     fontSize: "14px",
     cursor: "pointer",
+    minHeight: 44,
+    display: "inline-flex",
+    alignItems: "center",
   },
   categoryChipActive: {
     background: "#00D2D3",
@@ -278,8 +292,8 @@ const styles = {
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-    gap: "14px",
+    gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 240px), 1fr))",
+    gap: "12px",
   },
   feedbackBanner: {
     borderRadius: "12px",
@@ -360,10 +374,11 @@ const styles = {
     border: "1px solid #2B5A8A",
     background: "transparent",
     color: "#B0BAC3",
-    padding: "9px 10px",
+    padding: "11px 10px",
     cursor: "pointer",
     fontWeight: 600,
-    minHeight: "40px",
+    minHeight: "44px",
+    fontSize: "14px",
   },
   deleteAction: {
     flex: 1,
@@ -371,9 +386,10 @@ const styles = {
     border: "1px solid #854151",
     background: "rgba(97, 27, 41, 0.35)",
     color: "#ffc3cb",
-    padding: "9px 10px",
+    padding: "11px 10px",
     cursor: "pointer",
     fontWeight: 700,
-    minHeight: "40px",
+    minHeight: "44px",
+    fontSize: "14px",
   },
 };

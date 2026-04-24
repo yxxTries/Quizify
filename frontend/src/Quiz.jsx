@@ -101,7 +101,7 @@ function ScoreScreen({ score, total, onRestart, onJoinNew, leaderboard, isMultip
   const emoji = pct === 100 ? "🏆" : pct >= 70 ? "🎉" : pct >= 40 ? "🙂" : "😅";
 
   return (
-    <div style={{ ...scoreStyles.wrap, padding: "40px", boxSizing: "border-box" }}>
+    <div style={{ ...scoreStyles.wrap, padding: "clamp(20px, 5vw, 40px)", boxSizing: "border-box" }}>
       <div style={scoreStyles.emoji}>{emoji}</div>
       <h1 style={scoreStyles.h1}>Quiz complete!</h1>
       <div style={scoreStyles.scoreBox}>
@@ -111,19 +111,19 @@ function ScoreScreen({ score, total, onRestart, onJoinNew, leaderboard, isMultip
       <div style={scoreStyles.pct}>{pct}% correct</div>
 
       {isMultiplayer && leaderboard && Object.keys(leaderboard).length > 0 && (
-        <div style={{ marginTop: "32px", width: "100%", maxWidth: "500px", background: "#252A4A", borderRadius: "16px", padding: "24px", border: "1px solid #0F3460", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "40vh", overflowY: "auto" }}>
+        <div style={{ marginTop: "24px", width: "100%", maxWidth: "500px", background: "#252A4A", borderRadius: "16px", padding: "clamp(14px, 4vw, 24px)", border: "1px solid #0F3460", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "40vh", overflowY: "auto" }}>
            <h2 style={{ color: "#F1F2F6", margin: "0 0 16px 0", fontSize: "24px", fontFamily: "'Syne', sans-serif", borderBottom: "1px solid #16213E", paddingBottom: "12px" }}>Final Leaderboard</h2>
            {Object.entries(leaderboard)
              .sort(([, a], [, b]) => b - a)
              .map(([name, pts], i) => (
-                <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "12px", borderBottom: i < Object.entries(leaderboard).length - 1 ? "1px solid #16213E" : "none", alignItems: "center" }}>
+                <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", borderBottom: i < Object.entries(leaderboard).length - 1 ? "1px solid #16213E" : "none", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{ color: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#B0BAC3", fontWeight: i < 3 ? "bold" : "normal", fontSize: "20px", width: "30px" }}>
+                    <span style={{ color: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#B0BAC3", fontWeight: i < 3 ? "bold" : "normal", fontSize: "clamp(14px, 3.5vw, 20px)", width: "30px" }}>
                       {i + 1}.
                     </span>
-                    <span style={{ color: i === 0 ? "#00D2D3" : "#F1F2F6", fontWeight: i < 3 ? "bold" : "normal", fontSize: "20px" }}>{name}</span>
+                    <span style={{ color: i === 0 ? "#00D2D3" : "#F1F2F6", fontWeight: i < 3 ? "bold" : "normal", fontSize: "clamp(14px, 3.5vw, 20px)" }}>{name}</span>
                   </div>
-                  <span style={{ color: "#B0BAC3", fontWeight: "bold", fontSize: "20px" }}>{pts} pts</span>
+                  <span style={{ color: "#B0BAC3", fontWeight: "bold", fontSize: "clamp(14px, 3.5vw, 20px)" }}>{pts} pts</span>
                 </div>
              ))}
         </div>
@@ -630,32 +630,32 @@ export default function Quiz({
                     const isOnStreak = playerStreak >= 2;
                     
                     return (
-                      <div key={name} style={{ 
-                        display: "flex", 
-                        justifyContent: "space-between", 
-                        alignItems: "center", 
-                        padding: "20px", 
-                        background: isOnStreak ? "linear-gradient(90deg, rgba(255,159,67,0.1), rgba(255,107,107,0.1))" : "#16213E", 
+                      <div key={name} style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "clamp(12px, 2vw, 20px)",
+                        background: isOnStreak ? "linear-gradient(90deg, rgba(255,159,67,0.1), rgba(255,107,107,0.1))" : "#16213E",
                         borderRadius: "16px",
                         border: isOnStreak ? "1px solid #FF9F43" : "1px solid #0F3460",
                         position: "relative",
                         animation: isOnStreak ? "firePulse 1.5s infinite alternate" : "none"
                       }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                          <span style={{ 
-                            fontSize: "24px", 
-                            fontWeight: "bold", 
+                        <div style={{ display: "flex", alignItems: "center", gap: "clamp(8px, 1.5vw, 16px)", minWidth: 0 }}>
+                          <span style={{
+                            fontSize: "clamp(16px, 2.5vw, 24px)",
+                            fontWeight: "bold",
                             color: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#B0BAC3",
-                            width: "36px"
+                            flexShrink: 0,
                           }}>
                             {i + 1}.
                           </span>
-                          <span style={{ fontSize: "24px", fontWeight: "600", color: "#F1F2F6" }}>
+                          <span style={{ fontSize: "clamp(16px, 2.5vw, 24px)", fontWeight: "600", color: "#F1F2F6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {name}
                           </span>
-                          {isOnStreak && <span style={{ fontSize: "20px", filter: "drop-shadow(0 0 4px rgba(255,159,67,0.8))" }}>🔥 {playerStreak}</span>}
+                          {isOnStreak && <span style={{ fontSize: "clamp(14px, 2vw, 20px)", filter: "drop-shadow(0 0 4px rgba(255,159,67,0.8))", flexShrink: 0 }}>🔥 {playerStreak}</span>}
                         </div>
-                        <span style={{ fontSize: "24px", fontWeight: "bold", color: "#00D2D3" }}>
+                        <span style={{ fontSize: "clamp(16px, 2.5vw, 24px)", fontWeight: "bold", color: "#00D2D3", flexShrink: 0 }}>
                           {score}
                         </span>
                       </div>

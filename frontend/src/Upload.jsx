@@ -167,7 +167,7 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
         <span style={styles.tagline}>slides → quiz in seconds</span>
       </header>
 
-      <main style={styles.main}>
+      <main style={styles.main} className="upload-page-main">
         {!user && (
           <>
             <h1 style={styles.h1}>
@@ -189,9 +189,9 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
           </div>
         )}
         
-        <div style={styles.cardContainer}>
+        <div style={styles.cardContainer} className="upload-card-container">
           {/* Left Column */}
-          <div style={styles.leftColumn}>
+          <div style={styles.leftColumn} className="upload-left-col">
             {/* Drop zone */}
             <div
               style={{
@@ -309,7 +309,7 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
           </div>
 
           {/* Right Column */}
-          <div style={styles.rightColumn}>
+          <div style={styles.rightColumn} className="upload-right-col">
             {/* Question count slider */}
             <div style={styles.sliderWrap}>
               <div style={styles.sliderHeader}>
@@ -495,6 +495,25 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
           from { opacity: 0; transform: translateY(15px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @media (max-width: 768px) {
+          .upload-page-main {
+            padding-top: 120px !important;
+            justify-content: flex-start !important;
+          }
+          .upload-card-container {
+            flex-direction: column !important;
+          }
+          .upload-left-col, .upload-right-col {
+            width: 100% !important;
+            align-items: stretch !important;
+          }
+          .upload-left-col > *, .upload-right-col > * {
+            max-width: 100% !important;
+          }
+        }
+        input[type=number] {
+          font-size: 16px;
+        }
         input[type=range] {
           -webkit-appearance: none;
           appearance: none;
@@ -546,7 +565,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "12px",
-    padding: "24px 40px",
+    padding: "20px 24px",
     borderBottom: "1px solid #1e1e2e",
   },
   logo: {
@@ -567,7 +586,7 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    padding: "clamp(20px, 4vh, 60px) 24px",
+    padding: "clamp(16px, 4vh, 60px) clamp(16px, 3vw, 24px)",
     animation: "fadeUp 0.5s ease both",
     width: "100%",
     boxSizing: "border-box",
@@ -575,7 +594,7 @@ const styles = {
   cardContainer: {
     display: "flex",
     flexDirection: "row",
-    gap: "clamp(20px, 4vh, 40px)",
+    gap: "clamp(16px, 3vh, 32px)",
     width: "100%",
     maxWidth: "1000px",
     alignItems: "stretch",
@@ -583,14 +602,16 @@ const styles = {
     flexWrap: "wrap",
   },
   leftColumn: {
-    flex: "1 1 500px",
+    flex: "1 1 min(100%, 480px)",
+    minWidth: 0,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "flex-start",
   },
   rightColumn: {
-    flex: "1 1 350px",
+    flex: "1 1 min(100%, 300px)",
+    minWidth: 0,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -628,7 +649,7 @@ const styles = {
   h1: {
     fontFamily: "'Syne', sans-serif",
     fontWeight: 800,
-    fontSize: "clamp(36px, 5vw, 56px)",
+    fontSize: "clamp(30px, 5vw, 56px)",
     lineHeight: 1.1,
     textAlign: "center",
     marginBottom: "clamp(10px, 2vh, 20px)",

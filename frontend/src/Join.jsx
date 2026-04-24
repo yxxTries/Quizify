@@ -109,20 +109,20 @@ export default function Join({ onExit, initialPin = "" }) {
   }
 
   return (
-    <div style={{ 
-      minHeight: "100vh", 
-      display: "flex", 
-      alignItems: "center", 
-      justifyContent: "center", 
-      padding: "20px",
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "clamp(16px, 4vw, 24px)",
       background: "transparent"
     }}>
-      <div style={{ 
-        background: "#252A4A", 
-        padding: "48px", 
-        borderRadius: "24px", 
-        width: "100%", 
-        maxWidth: "440px", 
+      <div style={{
+        background: "#252A4A",
+        padding: "clamp(24px, 6vw, 48px)",
+        borderRadius: "clamp(16px, 3vw, 24px)",
+        width: "100%",
+        maxWidth: "440px",
         textAlign: "center",
         boxShadow: "0 12px 48px rgba(0,0,0,0.3)",
         border: "1px solid #0F3460",
@@ -196,22 +196,22 @@ export default function Join({ onExit, initialPin = "" }) {
           </div>
         ) : (
           <form onSubmit={handleJoin} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <h1 style={{ margin: "0 0 10px 0", fontSize: "36px", fontFamily: "'Syne', sans-serif", color: "#F1F2F6" }}>Join Game</h1>
+            <h1 style={{ margin: "0 0 10px 0", fontSize: "clamp(26px, 7vw, 36px)", fontFamily: "'Syne', sans-serif", color: "#F1F2F6" }}>Join Game</h1>
             
             <div style={{ position: "relative" }}>
-              <input 
-                placeholder="Game PIN" 
+              <input
+                placeholder="Game PIN"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
                 required
-                style={{ 
-                  width: "100%", 
-                  padding: "20px 24px", 
-                  borderRadius: "16px", 
-                  border: "2px solid #0F3460", 
-                  background: "#16213E", 
-                  color: "#F1F2F6", 
-                  fontSize: "20px", 
+                style={{
+                  width: "100%",
+                  padding: "clamp(14px, 4vw, 20px) clamp(16px, 4vw, 24px)",
+                  borderRadius: "16px",
+                  border: "2px solid #0F3460",
+                  background: "#16213E",
+                  color: "#F1F2F6",
+                  fontSize: "clamp(16px, 4.5vw, 20px)",
                   textAlign: "center",
                   outline: "none",
                   transition: "all 0.2s",
@@ -225,19 +225,19 @@ export default function Join({ onExit, initialPin = "" }) {
             </div>
             
             <div style={{ position: "relative" }}>
-              <input 
-                placeholder="Nickname" 
+              <input
+                placeholder="Nickname"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                style={{ 
-                  width: "100%", 
-                  padding: "20px 24px", 
-                  borderRadius: "16px", 
-                  border: "2px solid #0F3460", 
-                  background: "#16213E", 
-                  color: "#F1F2F6", 
-                  fontSize: "20px", 
+                style={{
+                  width: "100%",
+                  padding: "clamp(14px, 4vw, 20px) clamp(16px, 4vw, 24px)",
+                  borderRadius: "16px",
+                  border: "2px solid #0F3460",
+                  background: "#16213E",
+                  color: "#F1F2F6",
+                  fontSize: "clamp(16px, 4.5vw, 20px)",
                   textAlign: "center",
                   outline: "none",
                   transition: "all 0.2s",
@@ -263,18 +263,18 @@ export default function Join({ onExit, initialPin = "" }) {
               </div>
             )}
             
-            <button 
+            <button
               type="submit"
               disabled={status === "joining" || !pin || !name}
-              style={{ 
-                width: "100%", 
-                padding: "20px", 
-                background: (!pin || !name) ? "#0F3460" : "#00D2D3", 
-                color: (!pin || !name) ? "#B0BAC3" : "#16213E", 
-                border: "none", 
-                borderRadius: "16px", 
-                cursor: (status === "joining" || !pin || !name) ? "not-allowed" : "pointer", 
-                fontSize: "20px",
+              style={{
+                width: "100%",
+                padding: "clamp(14px, 4vw, 20px)",
+                background: (!pin || !name) ? "#0F3460" : "#00D2D3",
+                color: (!pin || !name) ? "#B0BAC3" : "#16213E",
+                border: "none",
+                borderRadius: "16px",
+                cursor: (status === "joining" || !pin || !name) ? "not-allowed" : "pointer",
+                fontSize: "clamp(16px, 4.5vw, 20px)",
                 fontWeight: "bold",
                 marginTop: "10px",
                 transition: "all 0.2s",
