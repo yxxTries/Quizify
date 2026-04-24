@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Routes, Route, useNavigate, useSearchParams, Navigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useSearchParams, useParams, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Upload from "./Upload.jsx";
 import Preview from "./Preview.jsx";
@@ -157,6 +157,11 @@ const globalStyle = `
     }
   }
 `;
+
+function JoinRoute({ onExit }) {
+  const { pin } = useParams();
+  return <Join initialPin={pin || ""} onExit={onExit} />;
+}
 
 export default function App() {
   const navigate = useNavigate();
@@ -471,7 +476,7 @@ export default function App() {
         />
         <Route
           path="/join/:pin?"
-          element={<Join initialPin={searchParams.get("pin") || ""} onExit={() => navigate("/")} />}
+          element={<JoinRoute onExit={() => navigate("/")} />}
         />
         <Route
           path="/discover"

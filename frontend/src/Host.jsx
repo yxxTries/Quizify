@@ -123,7 +123,7 @@ export default function Host({ quiz, onEnd, autoReveal = true }) {
     }
   };
 
-  const joinUrl = `${window.location.protocol}//${window.location.host}/?pin=${pin}`;
+  const joinUrl = `${window.location.protocol}//${window.location.host}/join/${pin}`;
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(joinUrl).then(() => {
