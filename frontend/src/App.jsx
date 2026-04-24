@@ -267,11 +267,9 @@ export default function App() {
         `}</style>
         <div className="blackout-container">
           <h1 className="blackout-title">KuizuAI</h1>
-          {serverStatus === "waking" && (
-            <p className="blackout-text">
-              Please wait while the servers wake up. ETA ~50s
-            </p>
-          )}
+          <p className="blackout-text">
+            Please wait while the servers wake up. ETA ~50s
+          </p>
         </div>
       </>
     );
@@ -645,9 +643,9 @@ function TypewriterOverlay() {
     "=======================",
     "The motivation behind Kuizu",
     "",
-    "During my experience as an educator, I found myself spending countless hours crafting quizzes from lecture slides and reading materials, time that could be better spent actually teaching. I wanted a tool that could instantly transform my PDFs and presentations into engaging, high quality quizzes without cutting corners on academic rigor.",
+    "During my experience as an educator, I found myself spending countless hours crafting quizzes from lecture slides and reading materials, time that could be better spent actually teaching. I wanted a tool that could instantly transform my PDFs and presentations into engaging, high quality quizzes without cutting corners on academic rigor, while being straightforward and uncomplicated for anyone to use.",
     "",
-    "Most importantly, I believe resources like this shouldn't stay locked. That's also why I built in a community hub where educators and students can share, discover, and remix each other's content.",
+    "Most importantly, I believed great quizzes shouldn't stay locked in one classroom. That's why I built in a community hub where educators and students can share, discover, and remix each other's content.",
     "",
     "Kuizu is completely free and still very very early and I am also welcoming contributors. If you're interested in helping out, please reach out!",
     "",
@@ -670,7 +668,7 @@ function TypewriterOverlay() {
   }, [fullText]);
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 9998, pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(16px, 5vmin, 40px)" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", zIndex: 9998, pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(16px, 5vmin, 40px)" }}>
       <div style={{ whiteSpace: "pre-wrap", color: "#00D2D3", fontSize: "clamp(10px, 2.5vmin, 22px)", fontFamily: "monospace", textAlign: "left", width: "100%", maxWidth: "800px", lineHeight: 1.5 }}>
         {displayed}
         <span style={{ animation: "cursorBlink 1s step-end infinite" }}>_</span>
