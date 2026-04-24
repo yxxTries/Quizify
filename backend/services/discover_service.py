@@ -1,3 +1,4 @@
+import hashlib
 import json
 import sqlite3
 from datetime import UTC, datetime, timedelta
@@ -86,24 +87,27 @@ def create_discover_post(user_id: int, author: str, title: str, category: str, q
                     )
 
             duplicate_cutoff = (datetime.now(UTC) - timedelta(hours=RECENT_DUPLICATE_WINDOW_HOURS)).isoformat()
-            serialized_quiz = json.dumps(stored_quiz)
-            duplicate_post = conn.execute(
+            serialized_quiz = json.dumps(stored_quiz, sort_keys=True)
+            quiz_hash = hashlib.sha256(serialized_quiz.encode()).hexdigest()
+            recent_posts = conn.execute(
                 """
-                SELECT id
+                SELECT quiz_json
                 FROM discover_posts
                 WHERE user_id = ?
                   AND LOWER(title) = LOWER(?)
-                  AND quiz_json = ?
                   AND created_at >= ?
-                LIMIT 1
                 """,
-                (user_id, clean_title, serialized_quiz, duplicate_cutoff),
-            ).fetchone()
-            if duplicate_post is not None:
-                raise HTTPException(
-                    status_code=409,
-                    detail="This quiz is already posted to Discover. Delete the existing post if you want to replace it.",
-                )
+                (user_id, clean_title, duplicate_cutoff),
+            ).fetchall()
+            for post_row in recent_posts:
+                existing_hash = hashlib.sha256(
+                    json.dumps(json.loads(post_row["quiz_json"]), sort_keys=True).encode()
+                ).hexdigest()
+                if existing_hash == quiz_hash:
+                    raise HTTPException(
+                        status_code=409,
+                        detail="This quiz is already posted to Discover. Delete the existing post if you want to replace it.",
+                    )
 
             cursor = conn.execute(
                 """

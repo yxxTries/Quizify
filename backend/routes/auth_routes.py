@@ -1,6 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, Depends, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from pydantic import BaseModel
 
 from controllers import auth_controller
 from core.config import REFRESH_TOKEN_COOKIE
@@ -17,6 +18,15 @@ from schemas.auth import (
     UpdateProfileRequest,
     UserResponse,
 )
+from services.user_service import get_user_preferences, update_user_preferences
+
+
+class PreferencesResponse(BaseModel):
+    auto_reveal: bool
+
+
+class UpdatePreferencesRequest(BaseModel):
+    auto_reveal: bool
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -99,3 +109,17 @@ def forgot_password(request: ForgotPasswordRequest):
 def reset_password(request: ResetPasswordRequest):
     data = auth_controller.reset_password_controller(token=request.token, new_password=request.new_password)
     return MessageResponse.model_validate(data)
+
+
+@router.get("/me/preferences", response_model=PreferencesResponse)
+def get_preferences(current_user: CurrentUser):
+    prefs = get_user_preferences(current_user["id"])
+    if prefs is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+    return PreferencesResponse(auto_reveal=prefs["auto_reveal"])
+
+
+@router.patch("/me/preferences", response_model=PreferencesResponse)
+def update_preferences(request: UpdatePreferencesRequest, current_user: CurrentUser):
+    prefs = update_user_preferences(current_user["id"], auto_reveal=request.auto_reveal)
+    return PreferencesResponse(auto_reveal=prefs["auto_reveal"])

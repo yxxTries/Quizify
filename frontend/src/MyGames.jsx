@@ -15,6 +15,72 @@ const AVAILABLE_TOPICS = [
   "Other",
 ];
 
+function GameCard({ game, isPinned, editingTopicId, onPlay, onTogglePin, onToggleMenu, onEdit, onStartTopicEdit, onPostDiscover, onDelete, onTopicSave, openMenuId }) {
+  return (
+    <article
+      style={isPinned ? { ...styles.card, ...styles.pinnedCard } : styles.card}
+      onClick={() => editingTopicId !== game.id && onPlay(game.quiz)}
+    >
+      <div style={styles.cardTop}>
+        {editingTopicId === game.id ? (
+          <select
+            style={styles.inlineSelect}
+            value={game.category}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => onTopicSave(e, game, e.target.value)}
+            onBlur={() => onTopicSave({ stopPropagation: () => {} }, game, game.category)}
+            autoFocus
+          >
+            {AVAILABLE_TOPICS.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        ) : (
+          <span style={styles.category}>{game.category}</span>
+        )}
+        {isPinned
+          ? <span style={styles.pinBadge}>Pinned</span>
+          : game.pinned
+            ? <span style={styles.pinBadge}>Pinned</span>
+            : <span style={styles.pinBadgeMuted}>Saved</span>
+        }
+      </div>
+
+      <h3 style={styles.cardTitle}>{game.title}</h3>
+
+      <div style={styles.metaGrid}>
+        <p style={styles.metaItem}>Questions: <span style={styles.metaValue}>{game.questions_count}</span></p>
+        <p style={styles.metaItem}>Plays: <span style={styles.metaValue}>{game.plays}</span></p>
+        <p style={styles.metaItem}>Updated: <span style={styles.metaValue}>{formatDate(game.updated_at)}</span></p>
+      </div>
+
+      <div style={styles.actions}>
+        <button type="button" style={styles.secondaryAction} onClick={(e) => { e.stopPropagation(); onPlay(game.quiz); }}>Play</button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onTogglePin(game); }}
+          style={game.pinned ? styles.pinActionActive : styles.pinAction}
+        >
+          {game.pinned ? "Unpin" : "Pin"}
+        </button>
+        <div style={{ position: "relative" }}>
+          <button type="button" style={styles.menuIconBtn} onClick={(e) => onToggleMenu(e, game.id)}>
+            &#8942;
+          </button>
+          {openMenuId === game.id && (
+            <div style={styles.dropdownMenu}>
+              <button type="button" style={styles.dropdownItem} onClick={(e) => onEdit(e, game)}>Edit</button>
+              <button type="button" style={styles.dropdownItem} onClick={(e) => onStartTopicEdit(e, game.id)}>Change Topic</button>
+              <button type="button" style={styles.dropdownItem} onClick={(e) => onPostDiscover(e, game)}>Post to Discover</button>
+              <button type="button" style={{ ...styles.dropdownItem, color: "#ff6b81" }} onClick={(e) => onDelete(e, game.id)}>Delete</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function formatDate(isoDate) {
   const date = new Date(isoDate);
   return date.toLocaleDateString(undefined, {
@@ -152,7 +218,7 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
       await deleteMyGame(gameId);
       setGames(prev => prev.filter(g => g.id !== gameId));
     } catch (err) {
-      alert(err.message || "Could not delete game");
+      setError(err.message || "Could not delete game");
     }
   };
 
@@ -208,7 +274,7 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
       const updated = await updateMyGameCategory(game.id, newTopic);
       setGames((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
     } catch (err) {
-      alert(err.message || "Could not change topic");
+      setError(err.message || "Could not change topic");
     }
   };
 
@@ -287,53 +353,21 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
                 <h2 style={styles.sectionTitle}>Pinned Games</h2>
                 <div style={styles.grid}>
                   {pinnedGames.map((game) => (
-<article key={`pinned-${game.id}`} style={{ ...styles.card, ...styles.pinnedCard }} onClick={() => editingTopicId !== game.id && onPlay(game.quiz)}>
-                    <div style={styles.cardTop}>
-                      {editingTopicId === game.id ? (
-                        <select
-                          style={styles.inlineSelect}
-                          value={game.category}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => handleTopicSave(e, game, e.target.value)}
-                          onBlur={(e) => setEditingTopicId(null)}
-                          autoFocus
-                        >
-                          {AVAILABLE_TOPICS.map((t) => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span style={styles.category}>{game.category}</span>
-                      )}
-                        <span style={styles.pinBadge}>Pinned</span>
-                      </div>
-
-                      <h3 style={styles.cardTitle}>{game.title}</h3>
-
-                      <div style={styles.metaGrid}>
-                        <p style={styles.metaItem}>Questions: <span style={styles.metaValue}>{game.questions_count}</span></p>
-                        <p style={styles.metaItem}>Plays: <span style={styles.metaValue}>{game.plays}</span></p>
-                        <p style={styles.metaItem}>Updated: <span style={styles.metaValue}>{formatDate(game.updated_at)}</span></p>
-                      </div>
-
-                      <div style={styles.actions}>
-                        <button type="button" style={styles.secondaryAction} onClick={(event) => { event.stopPropagation(); onPlay(game.quiz); }}>Play</button>
-                        <button type="button" style={styles.pinActionActive} onClick={(event) => { event.stopPropagation(); togglePin(game); }}>Unpin</button>
-                        <div style={{ position: "relative" }}>
-                          <button type="button" style={styles.menuIconBtn} onClick={(e) => toggleMenu(e, game.id)}>
-                            &#8942;
-                          </button>
-                          {openMenuId === game.id && (
-                            <div style={styles.dropdownMenu}>
-                              <button type="button" style={styles.dropdownItem} onClick={(e) => handleEdit(e, game)}>Edit</button>
-                              <button type="button" style={styles.dropdownItem} onClick={(e) => startTopicEdit(e, game.id)}>Change Topic</button>
-                              <button type="button" style={styles.dropdownItem} onClick={(e) => handlePostDiscover(e, game)}>Post to Discover</button>
-                              <button type="button" style={{...styles.dropdownItem, color: "#ff6b81"}} onClick={(e) => handleDelete(e, game.id)}>Delete</button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </article>
+                    <GameCard
+                      key={`pinned-${game.id}`}
+                      game={game}
+                      isPinned
+                      editingTopicId={editingTopicId}
+                      onPlay={onPlay}
+                      onTogglePin={togglePin}
+                      onToggleMenu={toggleMenu}
+                      onEdit={handleEdit}
+                      onStartTopicEdit={startTopicEdit}
+                      onPostDiscover={handlePostDiscover}
+                      onDelete={handleDelete}
+                      onTopicSave={handleTopicSave}
+                      openMenuId={openMenuId}
+                    />
                   ))}
                 </div>
               </section>
@@ -348,62 +382,22 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
                   <p style={styles.emptyText}>Save a quiz from the preview screen to see it here.</p>
                 </div>
               )}
-
               {!loading && !error && filteredGames.map((game) => (
-                <article key={game.id} style={styles.card} onClick={() => editingTopicId !== game.id && onPlay(game.quiz)}>
-                  <div style={styles.cardTop}>
-                    {editingTopicId === game.id ? (
-                      <select
-                        style={styles.inlineSelect}
-                        value={game.category}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => handleTopicSave(e, game, e.target.value)}
-                        onBlur={(e) => setEditingTopicId(null)}
-                        autoFocus
-                      >
-                        {AVAILABLE_TOPICS.map((t) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span style={styles.category}>{game.category}</span>
-                    )}
-                    {game.pinned ? <span style={styles.pinBadge}>Pinned</span> : <span style={styles.pinBadgeMuted}>Saved</span>}
-                  </div>
-
-                  <h3 style={styles.cardTitle}>{game.title}</h3>
-
-                  <div style={styles.metaGrid}>
-                    <p style={styles.metaItem}>Questions: <span style={styles.metaValue}>{game.questions_count}</span></p>
-                    <p style={styles.metaItem}>Plays: <span style={styles.metaValue}>{game.plays}</span></p>
-                    <p style={styles.metaItem}>Updated: <span style={styles.metaValue}>{formatDate(game.updated_at)}</span></p>
-                  </div>
-
-                  <div style={styles.actions}>
-                    <button type="button" style={styles.secondaryAction} onClick={(event) => { event.stopPropagation(); onPlay(game.quiz); }}>Play</button>
-                    <button
-                      type="button"
-                      onClick={(event) => { event.stopPropagation(); togglePin(game); }}
-                      style={game.pinned ? styles.pinActionActive : styles.pinAction}
-                    >
-                      {game.pinned ? "Unpin" : "Pin"}
-                    </button>
-
-                    <div style={{ position: "relative" }}>
-                      <button type="button" style={styles.menuIconBtn} onClick={(e) => toggleMenu(e, game.id)}>
-                        &#8942;
-                      </button>
-                      {openMenuId === game.id && (
-                        <div style={styles.dropdownMenu}>
-                          <button type="button" style={styles.dropdownItem} onClick={(e) => handleEdit(e, game)}>Edit</button>
-                          <button type="button" style={styles.dropdownItem} onClick={(e) => startTopicEdit(e, game.id)}>Change Topic</button>
-                          <button type="button" style={styles.dropdownItem} onClick={(e) => handlePostDiscover(e, game)}>Post to Discover</button>
-                          <button type="button" style={{...styles.dropdownItem, color: "#ff6b81"}} onClick={(e) => handleDelete(e, game.id)}>Delete</button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </article>
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  isPinned={false}
+                  editingTopicId={editingTopicId}
+                  onPlay={onPlay}
+                  onTogglePin={togglePin}
+                  onToggleMenu={toggleMenu}
+                  onEdit={handleEdit}
+                  onStartTopicEdit={startTopicEdit}
+                  onPostDiscover={handlePostDiscover}
+                  onDelete={handleDelete}
+                  onTopicSave={handleTopicSave}
+                  openMenuId={openMenuId}
+                />
               ))}
             </section>
           </>

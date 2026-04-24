@@ -61,7 +61,7 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
   useEffect(() => {
     if (user) {
       getMyGames()
-        .then((games) => setPinnedGames(games.filter((g) => g.pinned)))
+        .then((payload) => setPinnedGames((payload?.games ?? []).filter((g) => g.pinned)))
         .catch((err) => console.error("Failed to load pinned games:", err));
     }
   }, [user]);
@@ -338,7 +338,7 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
             {user && (
               <div style={styles.timerWrap}>
                 <div style={styles.timerHeader}>
-                  <span style={styles.sliderLabel}>Question timer (under maintenance right now)</span>
+                  <span style={styles.sliderLabel}>Question timer</span>
                   <span style={styles.timerValue}>{formatTimerSummary(timeControl)}</span>
                 </div>
 
@@ -467,9 +467,9 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
           </div>
         </div>
 
-        <a href="#" style={{ position: "absolute", bottom: "16px", right: "24px", fontSize: "12px", color: "#B0BAC3", opacity: 0.5, textDecoration: "none", cursor: "default" }}>
+        <span style={{ position: "absolute", bottom: "16px", right: "24px", fontSize: "12px", color: "#B0BAC3", opacity: 0.5 }}>
           made by Amil
-        </a>
+        </span>
       </main>
 
         <style>{`

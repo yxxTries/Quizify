@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { changePassword, getMyGames, updateProfile } from "./api";
+import { changePassword, getMyGames, updateProfile, updatePreferences } from "./api";
 
 const profileStyles = `
   .account-page {
@@ -250,7 +250,7 @@ function buildFeedback(message = "", tone = "") {
   return { message, tone };
 }
 
-export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated }) {
+export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, autoReveal = true, onAutoRevealChange }) {
   const [savedQuizCount, setSavedQuizCount] = useState(0);
   const [loadingCount, setLoadingCount] = useState(Boolean(user));
   const [countError, setCountError] = useState("");
@@ -266,6 +266,8 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated }
 
   const [profileState, setProfileState] = useState({ saving: false, feedback: buildFeedback() });
   const [passwordState, setPasswordState] = useState({ saving: false, feedback: buildFeedback() });
+  const [prefsSaving, setPrefsSaving] = useState(false);
+  const [prefsFeedback, setPrefsFeedback] = useState(buildFeedback());
 
   useEffect(() => {
     setProfileForm({
@@ -314,6 +316,21 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated }
   }, [user]);
 
   const avatarInitial = (user?.username || user?.email || "Q")[0]?.toUpperCase() || "Q";
+
+  const handleAutoRevealToggle = async (newValue) => {
+    if (!onAutoRevealChange) return;
+    setPrefsSaving(true);
+    setPrefsFeedback(buildFeedback());
+    try {
+      await updatePreferences({ auto_reveal: newValue });
+      onAutoRevealChange(newValue);
+      setPrefsFeedback(buildFeedback("Preference saved.", "success"));
+    } catch (err) {
+      setPrefsFeedback(buildFeedback(err?.message || "Could not save preference.", "error"));
+    } finally {
+      setPrefsSaving(false);
+    }
+  };
 
   const handleProfileSubmit = async (event) => {
     event.preventDefault();
@@ -426,6 +443,58 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated }
               )}
             </div>
           </section>
+
+          <article className="account-card account-panel">
+            <div>
+              <h2 className="account-panel-title">Quiz Preferences</h2>
+              <p className="account-panel-copy">
+                Control how your quizzes behave when using the timer.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+              <div>
+                <div style={{ fontWeight: 600, color: "#d7e8ff", marginBottom: 4 }}>Auto-reveal answer when time runs out</div>
+                <div style={{ fontSize: 13, color: "#9fb2c8" }}>
+                  When off, answers are locked but not shown — you control the reveal.
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={prefsSaving}
+                onClick={() => handleAutoRevealToggle(!autoReveal)}
+                style={{
+                  flexShrink: 0,
+                  width: 52,
+                  height: 28,
+                  borderRadius: 14,
+                  border: "none",
+                  background: autoReveal ? "#00d2d3" : "#274262",
+                  cursor: prefsSaving ? "wait" : "pointer",
+                  position: "relative",
+                  transition: "background 0.2s",
+                }}
+                aria-label={autoReveal ? "Disable auto-reveal" : "Enable auto-reveal"}
+              >
+                <span style={{
+                  position: "absolute",
+                  top: 3,
+                  left: autoReveal ? 26 : 3,
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  transition: "left 0.2s",
+                }} />
+              </button>
+            </div>
+
+            {prefsFeedback.message && (
+              <p className={`account-feedback ${prefsFeedback.tone === "success" ? "account-feedback-success" : "account-feedback-error"}`}>
+                {prefsFeedback.message}
+              </p>
+            )}
+          </article>
 
           <section className="account-grid">
             <article className="account-card account-panel">

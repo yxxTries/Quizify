@@ -14,12 +14,8 @@ OLLAMA_URL   = os.getenv("OLLAMA_URL",   "http://localhost:11434/api/generate")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL   = os.getenv("GROQ_MODEL",   "llama3-8b-8192")
-# Wait, Render is using the old env var if we had it set in render!
-# Let's completely force the model without using os.getenv just in case Render has GROQ_MODEL set to the old one in its environment variables!
-REAL_GROQ_MODEL = os.getenv("GROQ_MODEL", "llama3-8b-8192")
-if REAL_GROQ_MODEL == "llama3-8b-8192":
-    REAL_GROQ_MODEL = "llama-3.1-8b-instant"
+_groq_model_env = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+GROQ_MODEL = "llama-3.1-8b-instant" if _groq_model_env == "llama3-8b-8192" else _groq_model_env
 
 GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
 
@@ -82,13 +78,9 @@ Document content:
 {document_text}"""
 
 
-def generate_quiz(document_text: str, num_questions: int = 10, custom_instructions: str = None) -> dict: # type: ignore
+def generate_quiz(document_text: str, num_questions: int = 10, custom_instructions: str | None = None) -> dict:
     num_questions = max(1, min(num_questions, 20))
     truncated = document_text[:MAX_TEXT_CHARS]
-    
-    print("----- EXTRACTED TEXT -----")
-    print(truncated)
-    print("--------------------------")
     
     ins_block = ""
     if custom_instructions:
@@ -123,6 +115,7 @@ def _call_ollama(prompt: str) -> str:
 def _call_groq(prompt: str) -> str:
     if not GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY is not set in the environment.")
+    resp = None
     try:
         resp = requests.post(
             GROQ_URL,
@@ -131,7 +124,7 @@ def _call_groq(prompt: str) -> str:
                 "Content-Type": "application/json",
             },
             json={
-                "model": REAL_GROQ_MODEL,
+                "model": GROQ_MODEL,
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.1,
                 "max_tokens": 2500,
@@ -142,7 +135,7 @@ def _call_groq(prompt: str) -> str:
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]
     except requests.RequestException as e:
-        error_details = resp.text if 'resp' in locals() else str(e) # type: ignore
+        error_details = resp.text if resp is not None else str(e)
         raise RuntimeError(f"Groq request failed: {e}. Details: {error_details}") from e
 
 
@@ -162,10 +155,10 @@ def _parse_quiz(raw: str, num_questions: int = 10) -> dict:
     except Exception as e:
         raise ValueError(f"Invalid JSON from LLM: {e}. Extracted JSON: {json_str[:500]}... Raw: {raw[:500]}") from e
 
-    if "questions" not in data or not isinstance(data["questions"], list): # type: ignore
+    if not isinstance(data, dict) or "questions" not in data or not isinstance(data["questions"], list):
         raise ValueError("LLM response missing 'questions' list.")
     valid = []
-    for item in data["questions"]: # type: ignore
+    for item in data["questions"]:
         if not isinstance(item, dict):
             continue
         q = item.get("question", "").strip()

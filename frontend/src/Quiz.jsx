@@ -175,6 +175,7 @@ export default function Quiz({
   hostRevealed = false,
   onReveal = null,
   questionTimer = null,
+  autoReveal = true,
 }) {
   const { questions } = quiz;
   const total = questions.length;
@@ -204,6 +205,7 @@ export default function Quiz({
   const [lockedStreaks, setLockedStreaks] = useState(streaks || {});
   const hostAdvanceTimeoutRef = useRef(null);
   const soloAdvanceTimeoutRef = useRef(null);
+  const timerFiredForRef = useRef(-1);
 
   useEffect(() => {
     if (revealed || done) {
@@ -212,7 +214,7 @@ export default function Quiz({
     }
   }, [leaderboard, streaks, revealed, done]);
 
-  // When host moves to the next question, reset selection state
+  // When question changes, reset all per-question state
   useEffect(() => {
     if (current < total) {
       if (hostAdvanceTimeoutRef.current) {
@@ -223,15 +225,19 @@ export default function Quiz({
         window.clearTimeout(soloAdvanceTimeoutRef.current);
         soloAdvanceTimeoutRef.current = null;
       }
+      timerFiredForRef.current = -1;
       setSelected(null);
       setRevealed(false);
-      if (!isMultiplayer && timerSettings.enabled) {
-        setSoloQuestionStartedAt(Date.now());
+      if (timerSettings.enabled) {
+        setTimeLeftMs(timerSettings.secondsPerQuestion * 1000);
+        if (!isMultiplayer) {
+          setSoloQuestionStartedAt(Date.now());
+        }
       }
     } else {
       setDone(true);
     }
-  }, [current, total, isMultiplayer, timerSettings.enabled]);
+  }, [current, total, isMultiplayer, timerSettings.enabled, timerSettings.secondsPerQuestion]);
 
   const activeTimer = useMemo(() => {
     if (!timerSettings.enabled || current >= total || done) {
@@ -264,19 +270,21 @@ export default function Quiz({
       return;
     }
 
-    if (revealed || done) {
+    // In solo, stop ticking after reveal (no point counting down). In multiplayer, keep running.
+    if (!isMultiplayer && (revealed || done)) {
       return;
     }
 
-    const tick = () => {
-      const remaining = activeTimer.durationSeconds * 1000 - (Date.now() - activeTimer.startedAt);
-      setTimeLeftMs(Math.max(0, remaining));
-    };
+    if (done) {
+      return;
+    }
 
-    tick();
-    const intervalId = window.setInterval(tick, 200);
+    const calc = () => Math.max(0, activeTimer.durationSeconds * 1000 - (Date.now() - activeTimer.startedAt));
+
+    setTimeLeftMs(calc());
+    const intervalId = window.setInterval(() => setTimeLeftMs(calc()), 200);
     return () => window.clearInterval(intervalId);
-  }, [activeTimer, revealed, done]);
+  }, [activeTimer, revealed, done, isMultiplayer]);
 
   useEffect(() => {
     return () => {
@@ -315,23 +323,33 @@ export default function Quiz({
     if (!timerExpired || revealed) {
       return;
     }
+    // Prevent firing more than once per question
+    if (timerFiredForRef.current === current) {
+      return;
+    }
+    timerFiredForRef.current = current;
 
     if (isHostMode) {
-      revealAndAdvanceHost();
+      if (autoReveal) revealAndAdvanceHost();
       return;
     }
 
     setStreak(0);
-    setRevealed(true);
+    setSoloQuestionStartedAt(null);
+
+    if (autoReveal) {
+      setRevealed(true);
+    }
+
     if (!isMultiplayer) {
       if (soloAdvanceTimeoutRef.current) {
         window.clearTimeout(soloAdvanceTimeoutRef.current);
       }
       soloAdvanceTimeoutRef.current = window.setTimeout(() => {
-        handleNextLocal();
+        setLocalCurrent((c) => c + 1);
       }, 2200);
     }
-  }, [timerExpired, revealed, isHostMode]);
+  }, [timerExpired, revealed, isHostMode, autoReveal, current]);
 
   const handleSelect = (idx) => {
     if (revealed || isHostMode || timerExpired) return;
@@ -358,13 +376,7 @@ export default function Quiz({
   };
 
   const handleNextLocal = () => {
-    if (localCurrent + 1 >= total) {
-      setDone(true);
-    } else {
-      setLocalCurrent((c) => c + 1);
-      setSelected(null);
-      setRevealed(false);
-    }
+    setLocalCurrent((c) => c + 1);
   };
 
   if (done) {

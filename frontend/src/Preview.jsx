@@ -610,9 +610,9 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
       return;
     }
 
-    // Strip internal _id before passing to quiz
+    // Strip internal _id before passing to quiz, preserve all other quiz fields (e.g. timeControl)
     const clean = questions.map(({ _id, ...rest }) => rest);
-    onStart({ questions: clean });
+    onStart({ ...quiz, questions: clean });
   };
 
   const handleSaveGame = async () => {

@@ -28,5 +28,5 @@ ALLOWED_ORIGINS = [
 ]
 
 ENABLE_INSECURE_RESET_TOKEN_RESPONSE = (
-    os.getenv("ENABLE_INSECURE_RESET_TOKEN_RESPONSE", "true").lower() == "true"
+    os.getenv("ENABLE_INSECURE_RESET_TOKEN_RESPONSE", "false").lower() == "true"
 )
