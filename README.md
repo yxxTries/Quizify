@@ -1,58 +1,25 @@
 # Kuizu
 
-Generate quizzes from PDF/PPTX files and play them in either:
-- Solo mode** (single player), or
-- Multiplayer host/join mode** with a PIN and live leaderboard.
-- Community with shareable content.
+Turn slides, PDFs, and notes into interactive quizzes in seconds. Play solo, host live multiplayer games, and share your creations with the community.
 
-built this as an assistant for my classes to make a fast, interactive quiz for students, without compromising on quality.
-## Project Scope
-
-Quizify is a full-stack app that:
-- uploads course slides/documents (`.pdf`, `.pptx`)
-- extracts text content on the backend
-- uses an LLM to generate multiple-choice questions
-- lets users review/edit quiz questions before starting
-- supports live multiplayer sessions over WebSockets
-
-The project includes:
-- a **FastAPI backend** for file processing, quiz generation, and multiplayer sockets
-- a **React + Vite frontend** for upload, preview, gameplay, host, and join flows
-
----
+## Features
+- 📄 **AI Quiz Generation**: Upload PDFs, PPTXs, or paste custom text/instructions.
+- 🎮 **Multiplayer & Solo Modes**: Host live games with a PIN and real-time leaderboards, or practice solo with timers.
+- 🌍 **Community Hub**: Publish quizzes to the "Discover" board and explore community content.
+- 🛠️ **Edit & Customize**: Review, edit, and tweak generated questions before starting.
+- 💾 **Account & Library**: Save your favorite quizzes and manage your profile.
 
 ## Tech Stack
-
-### Frontend
-- React 18
-- Vite 5
-- qrcode.react (join URL QR code for multiplayer)
-
-### Backend
-- Python 3.10+
-- FastAPI + Uvicorn
-- pdfplumber (PDF extraction)
-- python-pptx (PowerPoint extraction)
-- requests (LLM API calls)
-- python-dotenv (environment loading)
-- json-repair (LLM JSON recovery)
-
-### AI Providers
-- **Groq** (default in code if no `.env` override)
-- **Ollama** (local model option)
+- **Frontend**: React 18, Vite, React Router, WebSockets
+- **Backend**: Python 3.10+, FastAPI, SQLite, WebSockets
+- **AI Providers**: Groq API (default) or Ollama (local)
 
 ---
 
-## Installation
+## How to Run Locally
 
-### Prerequisites
-- Node.js 18+
-- Python 3.10+
-- One AI backend configured:
-  - Groq API key, or
-  - Ollama installed locally
-
-### 1) Backend setup
+### 1. Backend Setup
+Requires Python 3.10+.
 
 ```bash
 cd backend
