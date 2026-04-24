@@ -484,7 +484,7 @@ function formatTimerSummary(value) {
 
 function SettingsPanel({ timeControl, onTimeControlChange, onSaveGame, saveLoading, saveMessage, onPostDiscover, discoverLoading, discoverMessage, loggedIn, onRequireAuth }) {
   return (
-    <aside style={settingsStyles.panel}>
+    <aside style={settingsStyles.panel} className="preview-sidebar">
       <p style={settingsStyles.heading}>Settings</p>
 
       {/* Save Game */}
@@ -644,7 +644,8 @@ function SettingsPanel({ timeControl, onTimeControlChange, onSaveGame, saveLoadi
 
 const settingsStyles = {
   panel: {
-    width: "400px",
+    width: "100%",
+    maxWidth: "400px",
     flexShrink: 0,
     paddingTop: "32px",
     paddingLeft: "20px",
@@ -1098,7 +1099,7 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
   return (
     <div style={styles.page}>
       {/* Header */}
-      <header style={styles.header}>
+      <header style={styles.header} className="preview-header">
         <span style={styles.logo}>Kuizu</span>
         <span style={styles.title}>Review Questions</span>
         <div style={styles.headerActions}>
@@ -1115,8 +1116,8 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
         </div>
       )}
 
-      <div style={styles.body}>
-      <main style={styles.main}>
+      <div style={styles.body} className="preview-body">
+      <main style={styles.main} className="preview-main">
         {/* Controls row */}
         <div style={styles.controlsRow}>
           <span style={styles.countLabel}>
@@ -1231,6 +1232,29 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
           box-shadow: 0 0 0 2px #00D2D322;
         }
         button[data-iconbtn]:hover { opacity: 1 !important; background: #1e1e2e; }
+        @media (max-width: 1024px) {
+          .preview-body {
+            flex-direction: column-reverse !important;
+            align-items: center !important;
+            padding: 0 16px !important;
+          }
+          .preview-main {
+            width: 100% !important;
+            padding-top: 20px !important;
+          }
+          .preview-sidebar {
+            position: relative !important;
+            top: 0 !important;
+            max-width: 100% !important;
+            padding-left: 0 !important;
+            padding-top: 20px !important;
+          }
+        }
+        @media (max-width: 600px) {
+          .preview-header {
+            padding: 14px 16px !important;
+          }
+        }
       `}</style>
     </div>
   );
@@ -1278,6 +1302,9 @@ const styles = {
     fontSize: "18px",
     color: "#F1F2F6",
     letterSpacing: "-0.3px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   headerActions: {
     display: "flex",
@@ -1327,7 +1354,8 @@ const styles = {
     fontWeight: 500,
   },
   main: {
-    width: "720px",
+    width: "100%",
+    maxWidth: "720px",
     flexShrink: 0,
     padding: "32px 0 60px",
     animation: "fadeUp 0.4s ease both",
