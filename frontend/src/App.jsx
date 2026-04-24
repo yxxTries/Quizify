@@ -33,18 +33,18 @@ const globalStyle = `
   }
 
   .nav-buttons-container {
-    position: absolute;
-    top: 24px;
+    position: fixed;
+    top: 16px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
     justify-content: center;
-    max-width: calc(100vw - 140px);
+    max-width: calc(100vw - 160px);
     padding: 0 4px;
     align-items: center;
-    z-index: 10;
+    z-index: 40;
   }
   .nav-button {
     white-space: nowrap;
@@ -605,9 +605,7 @@ function UploadPageContent({
         Join a Game
       </button>
       <button
-        onMouseEnter={() => setShowAbout(true)}
-        onMouseLeave={() => setShowAbout(false)}
-        onClick={() => setShowAbout((v) => !v)}
+        onClick={(e) => { e.stopPropagation(); setShowAbout((v) => !v); }}
         className="nav-button"
         style={{
           padding: "10px 16px",
@@ -642,7 +640,7 @@ function UploadPageContent({
         <button className="mobile-nav-btn" onClick={() => navigate("/discover")}>Discover</button>
         <button className="mobile-nav-btn" onClick={() => navigate("/games")}>My Games</button>
         <button className="mobile-nav-btn mobile-nav-btn-accent" onClick={() => navigate("/join")}>Join a Game</button>
-        <button className="mobile-nav-btn" onClick={() => setShowAbout((v) => !v)}>About Kuizu</button>
+        <button className="mobile-nav-btn" onClick={(e) => { e.stopPropagation(); setShowAbout((v) => !v); }}>About Kuizu</button>
       </div>
     </div>
   );
@@ -758,6 +756,12 @@ function UploadPageContent({
 }
 
 function TypewriterOverlay({ onDismiss }) {
+  const readyRef = useRef(false);
+  useEffect(() => {
+    const t = setTimeout(() => { readyRef.current = true; }, 50);
+    return () => clearTimeout(t);
+  }, []);
+
   const fullText = [
     "About",
     "=======================",
@@ -789,7 +793,7 @@ function TypewriterOverlay({ onDismiss }) {
 
   return (
     <div
-      onClick={onDismiss}
+      onClick={() => { if (readyRef.current) onDismiss(); }}
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", zIndex: 9998, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(16px, 5vmin, 40px)", cursor: "pointer" }}
     >
       <div style={{ whiteSpace: "pre-wrap", color: "#00D2D3", fontSize: "clamp(13px, 2.8vmin, 22px)", fontFamily: "monospace", textAlign: "left", width: "100%", maxWidth: "800px", lineHeight: 1.7, overflowY: "auto", maxHeight: "80vh" }}>
