@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useCallback, useEffect } from "react";
+﻿﻿import React, { useState, useRef, useCallback, useEffect } from "react";
 import { generateQuiz, getMyGames } from "./api.js";
 
 const ALLOWED = [".pdf", ".pptx"];
@@ -8,6 +8,13 @@ const TIMER_PRESETS = [
   { id: "standard", label: "Standard", seconds: 20 },
   { id: "thinker", label: "Thinker", seconds: 30 },
   { id: "extended", label: "Extended", seconds: 45 },
+];
+
+const LOCKED_FEATURES = [
+  "⏱️ Question Timers",
+  "💾 Save Quizzes",
+  "🌍 Publish to Discover",
+  "📌 Pin Favorites",
 ];
 
 function normalizeTimeControl(value) {
@@ -55,6 +62,7 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
   const [prompt, setPrompt]           = useState("");
   const [pinnedGames, setPinnedGames] = useState([]);
   const [timeControl, setTimeControl] = useState(() => normalizeTimeControl({ enabled: false }));
+  const [featureIndex, setFeatureIndex] = useState(0);
   const inputRef                      = useRef();
   const username = user?.username || user?.email?.split("@")[0] || "";
 
@@ -63,6 +71,11 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
       getMyGames()
         .then((payload) => setPinnedGames((payload?.games ?? []).filter((g) => g.pinned)))
         .catch((err) => console.error("Failed to load pinned games:", err));
+    } else {
+      const interval = setInterval(() => {
+        setFeatureIndex((prev) => (prev + 1) % LOCKED_FEATURES.length);
+      }, 2500);
+      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -325,7 +338,11 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
 
             {!user && (
               <div style={styles.lockedFeaturesCard}>
-                <div style={styles.lockedFeaturesIcon}>LOCK</div>
+                <div style={styles.lockedFeaturesIcon}>
+                  <div key={featureIndex} style={styles.lockedFeatureText}>
+                    {LOCKED_FEATURES[featureIndex]}
+                  </div>
+                </div>
                 <div style={styles.lockedFeaturesContent}>
                   <div style={styles.lockedFeaturesTitle}>Log in to access more features</div>
                   <div style={styles.lockedFeaturesText}>
@@ -466,16 +483,16 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
 
           </div>
         </div>
-
-        <span style={{ position: "absolute", bottom: "16px", right: "24px", fontSize: "12px", color: "#B0BAC3", opacity: 0.5 }}>
-          made by Amil
-        </span>
       </main>
 
         <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(24px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInUp {
+          from { opacity: 0; transform: translateY(15px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         input[type=range] {
@@ -561,7 +578,7 @@ const styles = {
     gap: "40px",
     width: "100%",
     maxWidth: "1000px",
-    alignItems: "flex-start",
+    alignItems: "stretch",
     justifyContent: "space-between",
     flexWrap: "wrap",
   },
@@ -764,42 +781,51 @@ const styles = {
     background: "#16213E",
     border: "1px solid #2B5A8A",
     borderRadius: "12px",
-    padding: "12px 14px",
+    padding: "32px 24px",
     boxSizing: "border-box",
     display: "flex",
-    alignItems: "flex-start",
-    gap: "12px",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "20px",
+    flex: 1,
   },
   lockedFeaturesIcon: {
     flexShrink: 0,
-    minWidth: "42px",
-    height: "42px",
-    borderRadius: "10px",
+    width: "180px",
+    height: "48px",
+    borderRadius: "16px",
     background: "#122038",
     border: "1px solid #2B5A8A",
-    display: "grid",
-    placeItems: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     color: "#8deeed",
-    fontSize: "11px",
-    fontWeight: 800,
-    textTransform: "uppercase",
-    letterSpacing: "0.7px",
+    fontSize: "13px",
+    fontWeight: 700,
+    letterSpacing: "0.3px",
+    overflow: "hidden",
+  },
+  lockedFeatureText: {
+    animation: "slideInUp 0.4s ease-out forwards",
+    whiteSpace: "nowrap",
   },
   lockedFeaturesContent: {
     display: "flex",
     flexDirection: "column",
-    gap: "3px",
-    paddingTop: "2px",
+    gap: "8px",
+    alignItems: "center",
+    textAlign: "center",
   },
   lockedFeaturesTitle: {
     color: "#F1F2F6",
-    fontSize: "13px",
+    fontSize: "16px",
     fontWeight: 700,
     lineHeight: 1.35,
   },
   lockedFeaturesText: {
     color: "#9bb1cb",
-    fontSize: "11px",
+    fontSize: "14px",
     lineHeight: 1.45,
   },
   timerHeader: {
@@ -1066,8 +1092,3 @@ const styles = {
     color: "#00D2D3",
   },
 };
-
-
-
-
-

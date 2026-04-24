@@ -11,7 +11,9 @@
     "@formkit/auto-animate": "^0.9.0",
     "qrcode.react": "^3.2.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-helmet-async": "^3.0.0",
+    "react-router-dom": "^6.30.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",

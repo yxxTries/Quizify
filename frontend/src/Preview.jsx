@@ -222,7 +222,7 @@ const cardStyles = {
   card: {
     position: "relative",
     background: "#16213E",
-    border: "1px solid #1e1e2e",
+    border: "1px solid #2B5A8A",
     borderRadius: "16px",
     padding: "22px 24px",
     marginBottom: "12px",
@@ -263,6 +263,9 @@ const cardStyles = {
     fontWeight: 700,
     fontSize: "12px",
     color: "#00D2D3",
+    background: "rgba(0, 210, 211, 0.15)",
+    padding: "4px 10px",
+    borderRadius: "12px",
     letterSpacing: "0.5px",
   },
   actions: {
@@ -270,16 +273,19 @@ const cardStyles = {
     gap: "6px",
   },
   iconBtn: {
-    background: "none",
-    border: "none",
+    background: "rgba(15, 52, 96, 0.55)",
+    border: "1px solid #2B5A8A",
+    color: "#E2E8F0",
     cursor: "pointer",
-    fontSize: "16px",
-    padding: "4px 6px",
-    borderRadius: "6px",
+    fontSize: "14px",
+    padding: "6px 10px",
+    borderRadius: "8px",
     opacity: 0.9,
     transition: "opacity 0.15s, background 0.15s",
   },
   deleteBtn: {
+    background: "rgba(255, 107, 107, 0.1)",
+    border: "1px solid rgba(255, 107, 107, 0.3)",
     opacity: 1,
     color: "#FF6B6B",
   },
@@ -311,9 +317,9 @@ const cardStyles = {
     color: "#5dd87a",
   },
   choiceNeutral: {
-    background: "#18181f",
-    border: "1px solid #1e1e2e",
-    color: "#9090a8",
+    background: "#1A2235",
+    border: "1px solid #2B5A8A",
+    color: "#B0BAC3",
   },
   choiceDot: {
     fontWeight: 700,
@@ -545,83 +551,91 @@ function SettingsPanel({ timeControl, onTimeControlChange, onSaveGame, saveLoadi
           <span style={settingsStyles.rowValue}>{formatTimerSummary(timeControl)}</span>
         </div>
 
-        <div style={settingsStyles.modeRow}>
-          <button
-            type="button"
-            style={{ ...settingsStyles.modeBtn, ...(!timeControl.enabled ? settingsStyles.modeBtnActive : {}) }}
-            onClick={() => onTimeControlChange((prev) => ({ ...prev, enabled: false }))}
-          >
-            Off
-          </button>
-          <button
-            type="button"
-            style={{ ...settingsStyles.modeBtn, ...(timeControl.enabled ? settingsStyles.modeBtnActive : {}) }}
-            onClick={() =>
-              onTimeControlChange((prev) => ({
-                ...prev,
-                enabled: true,
-                preset: prev.preset || "standard",
-                secondsPerQuestion: prev.secondsPerQuestion || 20,
-              }))
-            }
-          >
-            On
-          </button>
-        </div>
-
-        {timeControl.enabled && (
+        {loggedIn ? (
           <>
-            <div style={settingsStyles.presetGrid}>
-              {TIMER_PRESETS.map((preset) => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  style={{
-                    ...settingsStyles.presetBtn,
-                    ...(timeControl.preset === preset.id ? settingsStyles.presetBtnActive : {}),
-                  }}
-                  onClick={() =>
-                    onTimeControlChange({ enabled: true, preset: preset.id, secondsPerQuestion: preset.seconds })
-                  }
-                >
-                  <span style={settingsStyles.presetName}>{preset.label}</span>
-                  <span style={settingsStyles.presetSec}>{preset.seconds}s</span>
-                </button>
-              ))}
-            </div>
-
-            <div style={settingsStyles.customRow}>
+            <div style={settingsStyles.modeRow}>
               <button
                 type="button"
-                style={{
-                  ...settingsStyles.customBtn,
-                  ...(timeControl.preset === "custom" ? settingsStyles.customBtnActive : {}),
-                }}
-                onClick={() => onTimeControlChange((prev) => ({ ...prev, enabled: true, preset: "custom" }))}
+                style={{ ...settingsStyles.modeBtn, ...(!timeControl.enabled ? settingsStyles.modeBtnActive : {}) }}
+                onClick={() => onTimeControlChange((prev) => ({ ...prev, enabled: false }))}
               >
-                Custom
+                Off
               </button>
-              <input
-                type="number"
-                min={5}
-                max={120}
-                value={timeControl.secondsPerQuestion}
-                disabled={timeControl.preset !== "custom"}
-                onChange={(e) =>
-                  onTimeControlChange({
+              <button
+                type="button"
+                style={{ ...settingsStyles.modeBtn, ...(timeControl.enabled ? settingsStyles.modeBtnActive : {}) }}
+                onClick={() =>
+                  onTimeControlChange((prev) => ({
+                    ...prev,
                     enabled: true,
-                    preset: "custom",
-                    secondsPerQuestion: Math.max(5, Math.min(120, Number(e.target.value) || 5)),
-                  })
+                    preset: prev.preset || "standard",
+                    secondsPerQuestion: prev.secondsPerQuestion || 20,
+                  }))
                 }
-                style={{
-                  ...settingsStyles.customInput,
-                  ...(timeControl.preset !== "custom" ? settingsStyles.customInputDisabled : {}),
-                }}
-              />
-              <span style={settingsStyles.customSuffix}>s</span>
+              >
+                On
+              </button>
             </div>
+
+            {timeControl.enabled && (
+              <>
+                <div style={settingsStyles.presetGrid}>
+                  {TIMER_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      style={{
+                        ...settingsStyles.presetBtn,
+                        ...(timeControl.preset === preset.id ? settingsStyles.presetBtnActive : {}),
+                      }}
+                      onClick={() =>
+                        onTimeControlChange({ enabled: true, preset: preset.id, secondsPerQuestion: preset.seconds })
+                      }
+                    >
+                      <span style={settingsStyles.presetName}>{preset.label}</span>
+                      <span style={settingsStyles.presetSec}>{preset.seconds}s</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div style={settingsStyles.customRow}>
+                  <button
+                    type="button"
+                    style={{
+                      ...settingsStyles.customBtn,
+                      ...(timeControl.preset === "custom" ? settingsStyles.customBtnActive : {}),
+                    }}
+                    onClick={() => onTimeControlChange((prev) => ({ ...prev, enabled: true, preset: "custom" }))}
+                  >
+                    Custom
+                  </button>
+                  <input
+                    type="number"
+                    min={5}
+                    max={120}
+                    value={timeControl.secondsPerQuestion}
+                    disabled={timeControl.preset !== "custom"}
+                    onChange={(e) =>
+                      onTimeControlChange({
+                        enabled: true,
+                        preset: "custom",
+                        secondsPerQuestion: Math.max(5, Math.min(120, Number(e.target.value) || 5)),
+                      })
+                    }
+                    style={{
+                      ...settingsStyles.customInput,
+                      ...(timeControl.preset !== "custom" ? settingsStyles.customInputDisabled : {}),
+                    }}
+                  />
+                  <span style={settingsStyles.customSuffix}>s</span>
+                </div>
+              </>
+            )}
           </>
+        ) : (
+          <button type="button" style={settingsStyles.signInBtn} onClick={onRequireAuth}>
+            Sign in to use timer
+          </button>
         )}
       </div>
     </aside>
@@ -646,13 +660,14 @@ const settingsStyles = {
     fontFamily: "'Syne', sans-serif",
     fontWeight: 700,
     fontSize: "11px",
-    color: "#8080a8",
+    color: "#00D2D3",
     textTransform: "uppercase",
     letterSpacing: "0.8px",
   },
   row: {
     background: "#16213E",
-    border: "1px solid #1e1e2e",
+    border: "1px solid #2B5A8A",
+    borderLeft: "4px solid #00D2D3",
     borderRadius: "14px",
     padding: "14px",
     display: "flex",
@@ -1292,6 +1307,7 @@ const styles = {
     cursor: "pointer",
     fontFamily: "'DM Sans', sans-serif",
     whiteSpace: "nowrap",
+    boxShadow: "0 4px 14px rgba(0, 210, 211, 0.35)",
   },
   saveBanner: {
     background: "#10243d",
@@ -1437,12 +1453,12 @@ const styles = {
   },
   addBtn: {
     width: "100%",
-    background: "transparent",
-    border: "2px dashed #0F3460",
+    background: "rgba(0, 210, 211, 0.05)",
+    border: "2px dashed #00D2D3",
     borderRadius: "14px",
-    color: "#B0BAC3",
-    fontSize: "14px",
-    fontWeight: 500,
+    color: "#00D2D3",
+    fontSize: "15px",
+    fontWeight: 600,
     padding: "16px",
     cursor: "pointer",
     marginTop: "4px",
@@ -1462,4 +1478,3 @@ const styles = {
     padding: "4px",
   },
 };
-

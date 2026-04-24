@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Routes, Route, useNavigate, useSearchParams, Navigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import Upload from "./Upload.jsx";
 import Preview from "./Preview.jsx";
 import Quiz from "./Quiz.jsx";
@@ -28,46 +30,57 @@ const globalStyle = `
   @media (max-width: 520px) {
     .quiz-grid { grid-template-columns: 1fr !important; }
   }
+
+  .nav-buttons-container {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100vw - 140px);
+    padding: 0 4px;
+    align-items: center;
+    z-index: 10;
+  }
+  .nav-button {
+    white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+  @media (max-width: 768px) {
+    .nav-buttons-container {
+      top: 75px;
+      max-width: 100vw;
+      width: 100%;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      overflow-x: auto;
+      padding: 0 20px 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .nav-buttons-container::-webkit-scrollbar {
+      display: none;
+    }
+    .nav-button {
+      font-size: 13px;
+      padding: 6px 12px !important;
+    }
+  }
 `;
 
 export default function App() {
-  // "upload" | "preview" | "quiz" | "host" | "join" | "discover" | "profile" | "games"
-  const [page, _setPage] = useState(() => {
-    if (window.history.state?.page) {
-      return window.history.state.page;
-    }
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("pin")) return "join";
-    return "upload";
-  });
-
-  const setPage = (newPage) => {
-    window.history.pushState({ page: newPage }, "");
-    _setPage(newPage);
-  };
-
-  useEffect(() => {
-    const handlePopState = (event) => {
-      if (event.state?.page) {
-        _setPage(event.state.page);
-      } else {
-        const params = new URLSearchParams(window.location.search);
-        _setPage(params.get("pin") ? "join" : "upload");
-      }
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-  
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [quiz, setQuiz] = useState(null);
   const [intent, setIntent] = useState("solo");
-  const [joinPin, setJoinPin] = useState(() => new URLSearchParams(window.location.search).get("pin") || "");
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [autoReveal, setAutoReveal] = useState(true);
   const [authBooting, setAuthBooting] = useState(true);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [serverStatus, setServerStatus] = useState("checking"); // "checking" | "waking" | "ready"
+  const [serverStatus, setServerStatus] = useState("checking");
   const profileMenuRef = useRef(null);
 
   const username = user?.username || user?.email?.split("@")[0] || "";
@@ -82,8 +95,7 @@ export default function App() {
     return "P";
   }, [username, user]);
 
-  const showFloatingAccountControls = page === "upload";
-
+  // Server health check
   useEffect(() => {
     let cancelled = false;
     let intervalId;
@@ -118,6 +130,7 @@ export default function App() {
     };
   }, []);
 
+  // Auth bootstrap
   useEffect(() => {
     if (serverStatus !== "ready") return;
 
@@ -152,6 +165,7 @@ export default function App() {
     };
   }, [serverStatus]);
 
+  // Handle outside clicks for profile menu
   useEffect(() => {
     function handleOutsideClick(event) {
       if (!profileMenuRef.current) {
@@ -166,50 +180,48 @@ export default function App() {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
+  // Handle joining via pin from query params (legacy support)
+  useEffect(() => {
+    const pin = searchParams.get("pin");
+    if (pin) {
+      navigate(`/join/${pin}`);
+    }
+  }, [searchParams, navigate]);
+
   const handleQuizReady = (quizData) => {
     setQuiz(quizData);
     setIntent("solo");
-    setPage("preview");
+    navigate("/preview");
   };
 
   const handleHostReady = (quizData) => {
     setQuiz(quizData);
     setIntent("host");
-    setPage("preview");
-  }
+    navigate("/preview");
+  };
 
-  const handleStartReview = (editedQuiz) => {
-    setQuiz(editedQuiz);
-    if (intent === "host") {
-      setPage("host");
-    } else {
-      setPage("quiz");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // Keep UX resilient even if logout API fails.
     }
+    setUser(null);
+    setAutoReveal(true);
+    setIsProfileMenuOpen(false);
+    navigate("/");
   };
 
-  const handleRestart = () => {
-    setQuiz(null);
-    setJoinPin("");
-    setPage("upload");
-    window.history.replaceState({ page: "upload" }, document.title, window.location.pathname);
-  };
-
-  const handlePlayFromDiscover = (quizData) => {
-    setQuiz(quizData);
-    setIntent("solo");
-    setPage("preview");
-  };
-
-  const handlePlayFromMyGames = (quizData) => {
-    setQuiz(quizData);
-    setIntent("solo");
-    setPage("preview");
-  };
-
-  const handleEditFromMyGames = (game) => {
-    setQuiz(game.quiz);
-    setIntent("solo");
-    setPage("preview");
+  const handleAuthSuccess = async (nextUser) => {
+    setUser(nextUser);
+    setIsProfileMenuOpen(false);
+    navigate("/");
+    try {
+      const prefs = await getPreferences();
+      setAutoReveal(prefs.auto_reveal);
+    } catch {
+      // non-fatal
+    }
   };
 
   const handleSaveGame = async (payload) => {
@@ -228,30 +240,6 @@ export default function App() {
     }
 
     return createDiscoverPost(payload);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch {
-      // Keep UX resilient even if logout API fails.
-    }
-    setUser(null);
-    setAutoReveal(true);
-    setIsProfileMenuOpen(false);
-    setPage("upload");
-  };
-
-  const handleAuthSuccess = async (nextUser) => {
-    setUser(nextUser);
-    setIsProfileMenuOpen(false);
-    setPage("upload");
-    try {
-      const prefs = await getPreferences();
-      setAutoReveal(prefs.auto_reveal);
-    } catch {
-      // non-fatal
-    }
   };
 
   if (serverStatus !== "ready") {
@@ -289,212 +277,166 @@ export default function App() {
     );
   }
 
+  const pageMeta = {
+    "/": { title: "Kuizu — Turn slides into quizzes", description: "Upload a PDF or PPTX and instantly generate an AI-powered quiz. Play solo or host a live multiplayer game." },
+    "/preview": { title: "Review Questions — Kuizu", description: "Edit, reorder, and customise your generated quiz questions before playing." },
+    "/quiz": { title: "Playing Quiz — Kuizu", description: "Answer questions, track your streak, and see your score." },
+    "/host": { title: "Host a Game — Kuizu", description: "Host a live multiplayer quiz. Share the PIN with friends and watch the leaderboard." },
+    "/join": { title: "Join a Game — Kuizu", description: "Enter a game PIN and nickname to join a live Kuizu multiplayer session." },
+    "/discover": { title: "Discover Quizzes — Kuizu", description: "Browse and play community-created quizzes across dozens of topics." },
+    "/profile": { title: "My Profile — Kuizu", description: "View and manage your Kuizu account settings." },
+    "/games": { title: "My Games — Kuizu", description: "Access your saved quizzes and pin your favourites for quick play." },
+  };
+
+  // Get current meta based on path
+  const currentPath = Object.keys(pageMeta).find(
+    key => window.location.pathname === key || 
+    (key === "/join" && window.location.pathname.startsWith("/join"))
+  ) || "/";
+  const meta = pageMeta[currentPath] ?? pageMeta["/"];
+  const ogImage = "/og-image.png";
+
   return (
     <>
+      <Helmet>
+        <title>{meta.title}</title>
+        <meta name="description" content={meta.description} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={meta.title} />
+        <meta property="og:description" content={meta.description} />
+        <meta property="og:image" content={ogImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={meta.title} />
+        <meta name="twitter:description" content={meta.description} />
+        <meta name="twitter:image" content={ogImage} />
+      </Helmet>
       <style>{globalStyle}</style>
-      {showFloatingAccountControls && (
-        <div
-          ref={profileMenuRef}
-          style={{
-            position: "fixed",
-            top: 18,
-            right: 20,
-            zIndex: 50,
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-          }}
-        >
-          {!authBooting && !user && (
-            <button
-              onClick={() => setIsAuthOpen(true)}
-              style={{
-                padding: "8px 14px",
-                background: "#13243d",
-                color: "#e3eefc",
-                border: "1px solid #2d4d73",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: 700,
+
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <UploadPageContent
+              user={user}
+              onQuizReady={handleQuizReady}
+              onHostReady={handleHostReady}
+              onPlayPinned={(quizData) => {
+                setQuiz(quizData);
+                setIntent("solo");
+                navigate("/preview");
               }}
-            >
-              Sign In
-            </button>
-          )}
-
-          {!authBooting && user && (
-            <>
-              <button
-                onClick={() => setIsProfileMenuOpen((open) => !open)}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  background: "#13243d",
-                  color: "#dbf4ff",
-                  border: "1px solid #2d4d73",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                  display: "grid",
-                  placeItems: "center",
-                  fontSize: 16,
+              isProfileMenuOpen={isProfileMenuOpen}
+              profileMenuRef={profileMenuRef}
+              username={username}
+              profileInitial={profileInitial}
+              authBooting={authBooting}
+              onProfileMenuToggle={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              onAuthOpen={() => setIsAuthOpen(true)}
+              onLogout={handleLogout}
+              navigate={navigate}
+            />
+          }
+        />
+        <Route
+          path="/preview"
+          element={
+            quiz ? (
+              <Preview
+                quiz={quiz}
+                onStart={(editedQuiz) => {
+                  setQuiz(editedQuiz);
+                  if (intent === "host") {
+                    navigate("/host");
+                  } else {
+                    navigate("/quiz");
+                  }
                 }}
-                aria-label="Open profile menu"
-              >
-                {profileInitial}
-              </button>
+                onBack={() => navigate("/")}
+                intent={intent}
+                onSaveGame={handleSaveGame}
+                onPostDiscover={handlePostDiscover}
+                user={user}
+                onRequireAuth={() => setIsAuthOpen(true)}
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="/quiz"
+          element={
+            quiz ? (
+              <Quiz quiz={quiz} onRestart={() => navigate("/")} autoReveal={autoReveal} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="/host"
+          element={
+            quiz ? (
+              <Host quiz={quiz} onEnd={() => navigate("/")} autoReveal={autoReveal} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="/join/:pin?"
+          element={<Join initialPin={searchParams.get("pin") || ""} onExit={() => navigate("/")} />}
+        />
+        <Route
+          path="/discover"
+          element={
+            <Discover
+              onBack={() => navigate("/")}
+              onPlay={(quizData) => {
+                setQuiz(quizData);
+                setIntent("solo");
+                navigate("/preview");
+              }}
+              user={user}
+              onRequireAuth={() => setIsAuthOpen(true)}
+            />
+          }
+        />
+        <Route
+          path="/games"
+          element={
+            <MyGames
+              onBack={() => navigate("/")}
+              username={username}
+              onPlay={(quizData) => {
+                setQuiz(quizData);
+                setIntent("solo");
+                navigate("/preview");
+              }}
+              onRequireAuth={() => setIsAuthOpen(true)}
+              onEdit={(game) => {
+                setQuiz(game.quiz);
+                setIntent("solo");
+                navigate("/preview");
+              }}
+            />
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <MyProfile
+              user={user}
+              onBack={() => navigate("/")}
+              onRequireAuth={() => setIsAuthOpen(true)}
+              onUserUpdated={setUser}
+              autoReveal={autoReveal}
+              onAutoRevealChange={setAutoReveal}
+            />
+          }
+        />
+      </Routes>
 
-              {isProfileMenuOpen && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 48,
-                    right: 0,
-                    minWidth: 210,
-                    borderRadius: 12,
-                    border: "1px solid #2f4f75",
-                    background: "#12243d",
-                    overflow: "hidden",
-                  }}
-                >
-                  <div style={{ padding: "12px 12px 10px", borderBottom: "1px solid #264363" }}>
-                    <div style={{ color: "#d7e8ff", fontWeight: 700, fontSize: 14 }}>{username}</div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => { setPage("profile"); setIsProfileMenuOpen(false); }}
-                    style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer" }}
-                  >
-                    My Profile
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setPage("games"); setIsProfileMenuOpen(false); }}
-                    style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer" }}
-                  >
-                    My Games
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", borderTop: "1px solid #264363", background: "transparent", color: "#ffb7bf", cursor: "pointer" }}
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
-      {page === "upload"  && (
-         <div style={{ position: "relative" }}>
-           <div
-             style={{
-               position: "absolute",
-               top: 24,
-               left: "50%",
-               transform: "translateX(-50%)",
-               display: "flex",
-               gap: "10px",
-               flexWrap: "wrap",
-               justifyContent: "center",
-               maxWidth: "calc(100vw - 140px)",
-               padding: "0 4px",
-               alignItems: "center",
-             }}
-           >
-             <button
-               onClick={() => setPage("discover")}
-               style={{
-                 padding: "8px 16px",
-                 background: "rgba(15, 52, 96, 0.55)",
-                 color: "#E2E8F0",
-                 border: "1px solid #2B5A8A",
-                 borderRadius: 8,
-                 cursor: "pointer",
-                 fontWeight: 600,
-               }}
-             >
-               Discover
-             </button>
-             <button
-               onClick={() => setPage("games")}
-               style={{
-                 padding: "8px 16px",
-                 background: "rgba(36, 73, 121, 0.65)",
-                 color: "#E2E8F0",
-                 border: "1px solid #3E6EA3",
-                 borderRadius: 8,
-                 cursor: "pointer",
-                 fontWeight: 700,
-               }}
-             >
-               My Games
-             </button>
-             <button
-               onClick={() => setPage("join")}
-               style={{
-                 padding: "8px 16px",
-                 background: "#00D2D3",
-                 color: "#0E1A2B",
-                 border: "1px solid #6FF4F0",
-                 borderRadius: 8,
-                 cursor: "pointer",
-                 fontWeight: 700,
-                 boxShadow: "0 6px 14px rgba(0, 210, 211, 0.35)",
-               }}
-             >
-               Join a Game
-             </button>
-           </div>
-           <Upload onQuizReady={handleQuizReady} onHostReady={handleHostReady} user={user} onPlayPinned={handlePlayFromMyGames} />
-         </div>
-      )}
-      {page === "preview" && (
-        <Preview
-          quiz={quiz}
-          onStart={handleStartReview}
-          onBack={handleRestart}
-          intent={intent}
-          onSaveGame={handleSaveGame}
-          onPostDiscover={handlePostDiscover}
-          user={user}
-          onRequireAuth={() => setIsAuthOpen(true)}
-        />
-      )}
-      {page === "quiz"    && <Quiz    quiz={quiz} onRestart={handleRestart} autoReveal={autoReveal} />}
-      {page === "host"    && <Host    quiz={quiz} onEnd={handleRestart} autoReveal={autoReveal} />}
-      {page === "join"    && <Join    initialPin={joinPin} onExit={handleRestart} />}
-      {page === "discover" && (
-        <Discover
-          onBack={handleRestart}
-          onPlay={handlePlayFromDiscover}
-          user={user}
-          onRequireAuth={() => setIsAuthOpen(true)}
-        />
-      )}
-      {page === "profile" && (
-        <MyProfile
-          user={user}
-          onBack={handleRestart}
-          onRequireAuth={() => setIsAuthOpen(true)}
-          onUserUpdated={setUser}
-          autoReveal={autoReveal}
-          onAutoRevealChange={setAutoReveal}
-        />
-      )}
-      {page === "games" && (
-        <MyGames
-          onBack={handleRestart}
-          username={username}
-          onPlay={handlePlayFromMyGames}
-          onRequireAuth={() => setIsAuthOpen(true)}
-          onEdit={handleEditFromMyGames}
-        />
-      )}
       {isAuthOpen && (
         <AuthModal
           onClose={() => setIsAuthOpen(false)}
@@ -505,3 +447,240 @@ export default function App() {
   );
 }
 
+// Upload Page Content Component
+function UploadPageContent({
+  user,
+  onQuizReady,
+  onHostReady,
+  onPlayPinned,
+  isProfileMenuOpen,
+  profileMenuRef,
+  username,
+  profileInitial,
+  authBooting,
+  onProfileMenuToggle,
+  onAuthOpen,
+  onLogout,
+  navigate
+}) {
+  const [showAbout, setShowAbout] = useState(false);
+
+  const navigationButtons = (
+    <div className="nav-buttons-container">
+      <button
+        onClick={() => navigate("/discover")}
+        className="nav-button"
+        style={{
+          padding: "8px 16px",
+          background: "rgba(15, 52, 96, 0.55)",
+          color: "#E2E8F0",
+          border: "1px solid #2B5A8A",
+          borderRadius: 8,
+          cursor: "pointer",
+          fontWeight: 600,
+        }}
+      >
+        Discover
+      </button>
+      <button
+        onClick={() => navigate("/games")}
+        className="nav-button"
+        style={{
+          padding: "8px 16px",
+          background: "rgba(36, 73, 121, 0.65)",
+          color: "#E2E8F0",
+          border: "1px solid #3E6EA3",
+          borderRadius: 8,
+          cursor: "pointer",
+          fontWeight: 700,
+        }}
+      >
+        My Games
+      </button>
+      <button
+        onClick={() => navigate("/join")}
+        className="nav-button"
+        style={{
+          padding: "8px 16px",
+          background: "#00D2D3",
+          color: "#0E1A2B",
+          border: "1px solid #6FF4F0",
+          borderRadius: 8,
+          cursor: "pointer",
+          fontWeight: 700,
+          boxShadow: "0 6px 14px rgba(0, 210, 211, 0.35)",
+        }}
+      >
+        Join a Game
+      </button>
+      <button
+        onMouseEnter={() => setShowAbout(true)}
+        onMouseLeave={() => setShowAbout(false)}
+        className="nav-button"
+        style={{
+          padding: "8px 16px",
+          background: "rgba(15, 52, 96, 0.55)",
+          color: "#E2E8F0",
+          border: "1px solid #2B5A8A",
+          borderRadius: 8,
+          cursor: "pointer",
+          fontWeight: 600,
+        }}
+      >
+        About Kuizu
+      </button>
+    </div>
+  );
+
+  const profileControls = (
+    <div
+      ref={profileMenuRef}
+      style={{
+        position: "fixed",
+        top: 18,
+        right: 20,
+        zIndex: 50,
+        display: "flex",
+        gap: 8,
+        alignItems: "center",
+      }}
+    >
+      {!authBooting && !user && (
+        <button
+          onClick={onAuthOpen}
+          style={{
+            padding: "8px 14px",
+            background: "#13243d",
+            color: "#e3eefc",
+            border: "1px solid #2d4d73",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontWeight: 700,
+          }}
+        >
+          Sign In
+        </button>
+      )}
+
+      {!authBooting && user && (
+        <>
+          <button
+            onClick={onProfileMenuToggle}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              background: "#13243d",
+              color: "#dbf4ff",
+              border: "1px solid #2d4d73",
+              cursor: "pointer",
+              fontWeight: 700,
+              display: "grid",
+              placeItems: "center",
+              fontSize: 16,
+            }}
+            aria-label="Open profile menu"
+          >
+            {profileInitial}
+          </button>
+
+          {isProfileMenuOpen && (
+            <div
+              style={{
+                position: "absolute",
+                top: 48,
+                right: 0,
+                minWidth: 210,
+                borderRadius: 12,
+                border: "1px solid #2f4f75",
+                background: "#12243d",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ padding: "12px 12px 10px", borderBottom: "1px solid #264363" }}>
+                <div style={{ color: "#d7e8ff", fontWeight: 700, fontSize: 14 }}>{username}</div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { navigate("/profile"); onProfileMenuToggle(); }}
+                style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer" }}
+              >
+                My Profile
+              </button>
+              <button
+                type="button"
+                onClick={() => { navigate("/games"); onProfileMenuToggle(); }}
+                style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer" }}
+              >
+                My Games
+              </button>
+              <button
+                type="button"
+                onClick={onLogout}
+                style={{ width: "100%", textAlign: "left", padding: "10px 12px", border: "none", borderTop: "1px solid #264363", background: "transparent", color: "#ffb7bf", cursor: "pointer" }}
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{ position: "relative" }}>
+      {navigationButtons}
+      {profileControls}
+      <Upload onQuizReady={onQuizReady} onHostReady={onHostReady} user={user} onPlayPinned={onPlayPinned} />
+      {showAbout && <TypewriterOverlay />}
+    </div>
+  );
+}
+
+function TypewriterOverlay() {
+  const fullText = [
+    "About",
+    "=======================",
+    "The motivation behind Kuizu",
+    "",
+    "During my experience as an educator, I found myself spending countless hours crafting quizzes from lecture slides and reading materials, time that could be better spent actually teaching. I wanted a tool that could instantly transform my PDFs and presentations into engaging, high quality quizzes without cutting corners on academic rigor.",
+    "",
+    "Most importantly, I believe resources like this shouldn't stay locked. That's also why I built in a community hub where educators and students can share, discover, and remix each other's content.",
+    "",
+    "Kuizu is completely free and still very very early and I am also welcoming contributors. If you're interested in helping out, please reach out!",
+    "",
+    "Contact Details",
+    "---------------",
+    "Email:    yxx.tweaks@gmail.com",
+    "LinkedIn: https://www.linkedin.com/in/amilshahul/",
+    "GitHub:   https://github.com/yxxTries"
+  ].join("\n");
+  const [displayed, setDisplayed] = useState("");
+
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      i += 1;
+      setDisplayed(fullText.substring(0, i));
+      if (i > fullText.length) clearInterval(interval);
+    }, 10);
+    return () => clearInterval(interval);
+  }, [fullText]);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 9998, pointerEvents: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(16px, 5vmin, 40px)" }}>
+      <div style={{ whiteSpace: "pre-wrap", color: "#00D2D3", fontSize: "clamp(10px, 2.5vmin, 22px)", fontFamily: "monospace", textAlign: "left", width: "100%", maxWidth: "800px", lineHeight: 1.5 }}>
+        {displayed}
+        <span style={{ animation: "cursorBlink 1s step-end infinite" }}>_</span>
+      </div>
+      <style>{`
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
