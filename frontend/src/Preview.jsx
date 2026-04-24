@@ -476,10 +476,67 @@ function formatTimerSummary(value) {
 // SettingsPanel (right sidebar)
 // ─────────────────────────────────────────────
 
-function SettingsPanel({ timeControl, onTimeControlChange }) {
+function SettingsPanel({ timeControl, onTimeControlChange, onSaveGame, saveLoading, saveMessage, onPostDiscover, discoverLoading, discoverMessage, loggedIn, onRequireAuth }) {
   return (
     <aside style={settingsStyles.panel}>
       <p style={settingsStyles.heading}>Settings</p>
+
+      {/* Save Game */}
+      <div style={settingsStyles.row}>
+        <div style={settingsStyles.rowTop}>
+          <span style={settingsStyles.rowLabel}>Save Game</span>
+        </div>
+        {loggedIn ? (
+          <>
+            <button
+              type="button"
+              style={settingsStyles.actionBtn}
+              disabled={saveLoading}
+              onClick={onSaveGame}
+            >
+              {saveLoading ? "Saving…" : "Save to My Games"}
+            </button>
+            {saveMessage && (
+              <p style={{ ...settingsStyles.feedback, color: saveMessage.startsWith("Could") ? "#ff7070" : "#00D2D3" }}>
+                {saveMessage}
+              </p>
+            )}
+          </>
+        ) : (
+          <button type="button" style={settingsStyles.signInBtn} onClick={onRequireAuth}>
+            Sign in to save
+          </button>
+        )}
+      </div>
+
+      {/* Post to Discover */}
+      <div style={settingsStyles.row}>
+        <div style={settingsStyles.rowTop}>
+          <span style={settingsStyles.rowLabel}>Post to Discover</span>
+        </div>
+        <p style={settingsStyles.rowHint}>Share this quiz publicly with the community.</p>
+        {loggedIn ? (
+          <>
+            <button
+              type="button"
+              style={{ ...settingsStyles.actionBtn, ...settingsStyles.discoverBtn }}
+              disabled={discoverLoading}
+              onClick={onPostDiscover}
+            >
+              {discoverLoading ? "Posting…" : "Publish"}
+            </button>
+            {discoverMessage && (
+              <p style={{ ...settingsStyles.feedback, color: discoverMessage.startsWith("Could") ? "#ff7070" : "#00D2D3" }}>
+                {discoverMessage}
+              </p>
+            )}
+          </>
+        ) : (
+          <button type="button" style={settingsStyles.signInBtn} onClick={onRequireAuth}>
+            Sign in to publish
+          </button>
+        )}
+      </div>
 
       {/* Timer row */}
       <div style={settingsStyles.row}>
@@ -714,21 +771,65 @@ const settingsStyles = {
     fontSize: "11px",
     color: "#B0BAC3",
   },
+  actionBtn: {
+    width: "100%",
+    padding: "8px 0",
+    borderRadius: "8px",
+    border: "1px solid #0F3460",
+    background: "#1A1A2E",
+    color: "#B0BAC3",
+    fontSize: "12px",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.15s",
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  discoverBtn: {
+    borderColor: "rgba(0,210,211,0.3)",
+    color: "#00D2D3",
+    background: "rgba(0,210,211,0.06)",
+  },
+  rowHint: {
+    margin: 0,
+    fontSize: "11px",
+    color: "#6a6a8a",
+    lineHeight: 1.4,
+  },
+  feedback: {
+    margin: 0,
+    fontSize: "11px",
+    fontWeight: 600,
+  },
+  signInBtn: {
+    width: "100%",
+    padding: "8px 0",
+    borderRadius: "8px",
+    border: "1px dashed #2a2a4a",
+    background: "transparent",
+    color: "#6a6a9a",
+    fontSize: "12px",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "'DM Sans', sans-serif",
+    transition: "all 0.15s",
+  },
 };
 
 // ─────────────────────────────────────────────
 // Preview (main component)
 // ─────────────────────────────────────────────
 
-export default function Preview({ quiz, onStart, onBack, intent = "solo", onSaveGame }) {
-  const [questions, setQuestions]       = useState(() => cloneQuestions(quiz.questions));
-  const [showAnswers, setShowAnswers]   = useState(false);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [globalErrors, setGlobalErrors] = useState({}); // { _id: { field: msg } }
-  const [errorBanner, setErrorBanner]   = useState("");
-  const [saveLoading, setSaveLoading]   = useState(false);
-  const [saveMessage, setSaveMessage]   = useState("");
-  const [timeControl, setTimeControl]   = useState(() => normalizeTimeControl(quiz?.timeControl));
+export default function Preview({ quiz, onStart, onBack, intent = "solo", onSaveGame, onPostDiscover, user, onRequireAuth }) {
+  const [questions, setQuestions]         = useState(() => cloneQuestions(quiz.questions));
+  const [showAnswers, setShowAnswers]     = useState(false);
+  const [editingIndex, setEditingIndex]   = useState(null);
+  const [globalErrors, setGlobalErrors]   = useState({});
+  const [errorBanner, setErrorBanner]     = useState("");
+  const [saveLoading, setSaveLoading]     = useState(false);
+  const [saveMessage, setSaveMessage]     = useState("");
+  const [discoverLoading, setDiscoverLoading] = useState(false);
+  const [discoverMessage, setDiscoverMessage] = useState("");
+  const [timeControl, setTimeControl]     = useState(() => normalizeTimeControl(quiz?.timeControl));
   const discoverMeta = quiz?.discoverMeta || null;
 
   // Drag state
@@ -939,6 +1040,46 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
     }
   };
 
+  const handlePostToDiscover = async () => {
+    if (!onPostDiscover) return;
+
+    if (questions.length === 0) {
+      setErrorBanner("Add at least one question before posting.");
+      return;
+    }
+
+    const newErrors = {};
+    questions.forEach((q) => {
+      const errs = validateCard(q);
+      if (hasErrors(errs)) newErrors[q._id] = errs;
+    });
+    if (Object.keys(newErrors).length > 0) {
+      setGlobalErrors(newErrors);
+      setErrorBanner("Fix question issues before posting.");
+      return;
+    }
+
+    const clean = questions.map(({ _id, ...rest }) => rest);
+    const fallbackTitle = clean[0]?.question?.slice(0, 60) || "Untitled Quiz";
+    const title = discoverMeta?.title || fallbackTitle;
+    const category = discoverMeta?.category || "General";
+
+    setDiscoverLoading(true);
+    setDiscoverMessage("");
+    try {
+      await onPostDiscover({
+        title,
+        category,
+        quiz: { ...quiz, questions: clean, timeControl: buildTimeControlPayload(timeControl), discoverMeta: discoverMeta || undefined },
+      });
+      setDiscoverMessage("Posted to Discover!");
+    } catch (err) {
+      setDiscoverMessage(err?.message || "Could not post to Discover.");
+    } finally {
+      setDiscoverLoading(false);
+    }
+  };
+
   return (
     <div style={styles.page}>
       {/* Header */}
@@ -946,16 +1087,11 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
         <span style={styles.logo}>Kuizu</span>
         <span style={styles.title}>Review Questions</span>
         <div style={styles.headerActions}>
-          <button style={styles.saveBtn} onClick={handleSaveGame} disabled={saveLoading}>
-            {saveLoading ? "Saving..." : "Save Game"}
-          </button>
           <button style={styles.startBtn} onClick={handleStart}>
             {intent === "host" ? "Create Lobby \u2192" : "Start Quiz \u2192"}
           </button>
         </div>
       </header>
-
-      {saveMessage && <div style={styles.saveBanner}>{saveMessage}</div>}
 
       {/* Error banner */}
       {errorBanner && (
@@ -1056,7 +1192,18 @@ export default function Preview({ quiz, onStart, onBack, intent = "solo", onSave
         </button>
       </main>
 
-      <SettingsPanel timeControl={timeControl} onTimeControlChange={setTimeControl} />
+      <SettingsPanel
+        timeControl={timeControl}
+        onTimeControlChange={setTimeControl}
+        onSaveGame={handleSaveGame}
+        saveLoading={saveLoading}
+        saveMessage={saveMessage}
+        onPostDiscover={handlePostToDiscover}
+        discoverLoading={discoverLoading}
+        discoverMessage={discoverMessage}
+        loggedIn={Boolean(user)}
+        onRequireAuth={onRequireAuth}
+      />
       </div>
 
       <style>{`

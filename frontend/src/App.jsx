@@ -462,6 +462,7 @@ export default function App() {
           onSaveGame={handleSaveGame}
           onPostDiscover={handlePostDiscover}
           user={user}
+          onRequireAuth={() => setIsAuthOpen(true)}
         />
       )}
       {page === "quiz"    && <Quiz    quiz={quiz} onRestart={handleRestart} autoReveal={autoReveal} />}
