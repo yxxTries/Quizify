@@ -23,7 +23,7 @@ DB_PATH = BASE_DIR / "users.db"
 
 ALLOWED_ORIGINS = [
     origin.strip()
-    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,https://www.kuizu.online,https://kuizu.online").split(",")
     if origin.strip()
 ]
 
