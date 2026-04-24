@@ -10,6 +10,13 @@ const TIMER_PRESETS = [
   { id: "extended", label: "Extended", seconds: 45 },
 ];
 
+const LOCKED_FEATURES = [
+  "⏱️ Question Timers",
+  "💾 Save Quizzes",
+  "🌍 Publish to Discover",
+  "📌 Pin Favorites",
+];
+
 function normalizeTimeControl(value) {
   const seconds = Number(value?.secondsPerQuestion);
   const matchingPreset = TIMER_PRESETS.find((preset) => preset.seconds === seconds);
@@ -55,6 +62,7 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
   const [prompt, setPrompt]           = useState("");
   const [pinnedGames, setPinnedGames] = useState([]);
   const [timeControl, setTimeControl] = useState(() => normalizeTimeControl({ enabled: false }));
+  const [featureIndex, setFeatureIndex] = useState(0);
   const inputRef                      = useRef();
   const username = user?.username || user?.email?.split("@")[0] || "";
 
@@ -63,6 +71,11 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
       getMyGames()
         .then((payload) => setPinnedGames((payload?.games ?? []).filter((g) => g.pinned)))
         .catch((err) => console.error("Failed to load pinned games:", err));
+    } else {
+      const interval = setInterval(() => {
+        setFeatureIndex((prev) => (prev + 1) % LOCKED_FEATURES.length);
+      }, 2500);
+      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -325,7 +338,11 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
 
             {!user && (
               <div style={styles.lockedFeaturesCard}>
-                <div style={styles.lockedFeaturesIcon}>LOCK</div>
+                <div style={styles.lockedFeaturesIcon}>
+                  <div key={featureIndex} style={styles.lockedFeatureText}>
+                    {LOCKED_FEATURES[featureIndex]}
+                  </div>
+                </div>
                 <div style={styles.lockedFeaturesContent}>
                   <div style={styles.lockedFeaturesTitle}>Log in to access more features</div>
                   <div style={styles.lockedFeaturesText}>
@@ -476,6 +493,10 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(24px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInUp {
+          from { opacity: 0; transform: translateY(15px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         input[type=range] {
@@ -775,18 +796,23 @@ const styles = {
   },
   lockedFeaturesIcon: {
     flexShrink: 0,
-    width: "64px",
-    height: "64px",
+    width: "180px",
+    height: "48px",
     borderRadius: "16px",
     background: "#122038",
     border: "1px solid #2B5A8A",
-    display: "grid",
-    placeItems: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     color: "#8deeed",
-    fontSize: "14px",
-    fontWeight: 800,
-    textTransform: "uppercase",
-    letterSpacing: "0.7px",
+    fontSize: "13px",
+    fontWeight: 700,
+    letterSpacing: "0.3px",
+    overflow: "hidden",
+  },
+  lockedFeatureText: {
+    animation: "slideInUp 0.4s ease-out forwards",
+    whiteSpace: "nowrap",
   },
   lockedFeaturesContent: {
     display: "flex",
