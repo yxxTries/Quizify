@@ -297,6 +297,7 @@ export default function CreateDashboard({
   const [numQuestions, setNumQuestions] = useState(initialQuiz?.questions?.length || 5);
   const [timeControl, setTimeControl] = useState(() => normalizeTimeControl(initialQuiz?.timeControl));
   const inputRef = useRef();
+  const promptRef = useRef(null);
 
   // Generation state
   const [loading, setLoading] = useState(false);
@@ -338,6 +339,14 @@ export default function CreateDashboard({
   const rateLimited = !isUnlimited && remaining === 0;
   const hasContent = questions.length > 0;
   const loggedIn = Boolean(user);
+
+  // Auto-resize prompt textarea
+  useEffect(() => {
+    if (promptRef.current) {
+      promptRef.current.style.height = "auto";
+      promptRef.current.style.height = `${promptRef.current.scrollHeight}px`;
+    }
+  }, [prompt]);
 
   // ── File handling ──
   const pickFile = (f) => {
@@ -760,9 +769,9 @@ export default function CreateDashboard({
                 </div>
               ) : (
                 <div style={styles.dropPrompt}>
-                  <div style={styles.dropIcon}>⬆</div>
-                  <div style={styles.dropText}>{dragging ? "Drop it!" : "Drag & drop or click to browse"}</div>
-                  <div style={styles.dropMeta}>PDF · PPTX · max 20 MB</div>
+                  <div style={styles.dropIcon}>＋</div>
+                  <div style={styles.dropText}>{dragging ? "Drop file here" : "Upload document"}</div>
+                  <div style={styles.dropMeta}>PDF, PPTX (max 20MB)</div>
                 </div>
               )}
             </div>
@@ -779,6 +788,7 @@ export default function CreateDashboard({
                 </span>
               </div>
               <textarea
+                ref={promptRef}
                 style={{
                   ...styles.textarea,
                   borderColor: prompt.length >= 4000 ? COLORS.coral : COLORS.border,
@@ -788,6 +798,7 @@ export default function CreateDashboard({
                 onChange={(e) => setPrompt(e.target.value)}
                 disabled={loading}
                 placeholder="Steer the quiz: topic, focus areas, tone, difficulty…"
+                rows={1}
               />
             </div>
 
@@ -1095,20 +1106,20 @@ const styles = {
     margin: "6px 0 18px",
   },
   dropzone: {
-    border: `2px dashed ${COLORS.border}`,
-    borderRadius: 14,
-    background: COLORS.creamWarm,
-    padding: 20,
+    border: `1px dashed ${COLORS.inkMuted}`,
+    borderRadius: 12,
+    background: "transparent",
+    padding: 24,
     cursor: "pointer",
-    minHeight: 110,
+    minHeight: 90,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    transition: "border-color 0.15s, background 0.15s",
+    transition: "all 0.2s ease",
   },
   dropzoneDragging: {
     borderColor: COLORS.blueDark,
-    background: COLORS.blueSoft,
+    background: COLORS.creamWarm,
   },
   dropzoneHasFile: {
     borderStyle: "solid",
@@ -1116,22 +1127,25 @@ const styles = {
     background: COLORS.sageSoft,
   },
   dropPrompt: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
     textAlign: "center",
-    color: COLORS.inkSoft,
   },
   dropIcon: {
-    fontSize: 24,
-    color: COLORS.blueDark,
-    marginBottom: 4,
+    fontSize: 20,
+    color: COLORS.inkMuted,
+    lineHeight: 1,
   },
   dropText: {
     fontWeight: 600,
     fontSize: 14,
+    color: COLORS.ink,
   },
   dropMeta: {
     fontSize: 12,
     color: COLORS.inkMuted,
-    marginTop: 4,
   },
   fileInfo: {
     display: "flex",
@@ -1186,7 +1200,7 @@ const styles = {
   },
   textarea: {
     width: "100%",
-    minHeight: 120,
+    minHeight: 48,
     background: COLORS.creamSoft,
     color: COLORS.ink,
     border: `1px solid ${COLORS.border}`,
@@ -1194,7 +1208,8 @@ const styles = {
     padding: "12px 14px",
     fontSize: 14,
     lineHeight: 1.5,
-    resize: "vertical",
+    resize: "none",
+    overflow: "hidden",
     fontFamily: "inherit",
     transition: "border-color 0.15s, box-shadow 0.15s",
   },
