@@ -65,10 +65,10 @@ const profileStyles = `
   }
 
   .account-summary {
-    padding: 24px;
+    padding: 32px 28px;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 20px;
+    gap: 24px;
     align-items: center;
   }
 
@@ -108,7 +108,7 @@ const profileStyles = `
 
   .account-count {
     min-width: 180px;
-    padding: 18px 20px;
+    padding: 22px 24px;
     border-radius: 18px;
     border: 1px solid #E5DCC2;
     background: rgba(251, 246, 233, 0.95);
@@ -136,10 +136,10 @@ const profileStyles = `
   }
 
   .account-panel {
-    padding: 22px;
+    padding: 28px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 18px;
   }
 
   .account-panel-title {
@@ -156,12 +156,12 @@ const profileStyles = `
   .account-form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 18px;
   }
 
   .account-label {
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     font-size: 13px;
     font-weight: 600;
     color: #8A95A3;
@@ -173,7 +173,7 @@ const profileStyles = `
     border: 1px solid #E5DCC2;
     background: #FBF6E9;
     color: #2A3340;
-    padding: 12px 13px;
+    padding: 14px 16px;
     outline: none;
     font-size: 15px;
   }
@@ -184,14 +184,16 @@ const profileStyles = `
   }
 
   .account-button {
-    align-self: flex-start;
+    width: 100%;
     border-radius: 10px;
     border: 1px solid #7FA3C9;
     background: #5A7FA8;
     color: #FBF6E9;
     font-weight: 800;
+    font-size: 15px;
     cursor: pointer;
-    padding: 11px 16px;
+    padding: 14px 20px;
+    min-height: 48px;
   }
 
   .account-button:disabled {
@@ -214,7 +216,7 @@ const profileStyles = `
   }
 
   .account-empty {
-    padding: 22px;
+    padding: 28px;
     color: #8A95A3;
     line-height: 1.6;
   }

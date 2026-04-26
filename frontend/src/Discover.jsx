@@ -114,7 +114,7 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
     <div style={styles.page} className="discover-page">
       <style>{`
         @media (max-width: 768px) {
-          .discover-page { padding-top: 116px !important; }
+          .discover-page { padding-top: 124px !important; }
           .discover-header { flex-direction: column-reverse !important; align-items: stretch !important; }
           .discover-back-btn { width: 100% !important; text-align: center; }
         }
@@ -358,6 +358,8 @@ const styles = {
     minHeight: 44,
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
+    flex: "1 1 auto",
   },
   categoryChipActive: {
     background: "#5A7FA8",

@@ -644,7 +644,7 @@ export default function CreateDashboard({
   };
 
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="dash-page">
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeUp {
@@ -717,6 +717,12 @@ export default function CreateDashboard({
           .dash-grid {
             grid-template-columns: 1fr !important;
             max-width: 720px !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .dash-page { padding-top: 124px !important; }
+          .dash-grid {
+            padding-bottom: 100px !important;
           }
         }
         @media (max-width: 600px) {

@@ -265,7 +265,7 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
     <div style={styles.page} className="mygames-page">
       <style>{`
         @media (max-width: 768px) {
-          .mygames-page { padding-top: 116px !important; }
+          .mygames-page { padding-top: 124px !important; }
           .mygames-header { flex-direction: column-reverse !important; align-items: stretch !important; }
           .mygames-back-btn { width: 100% !important; text-align: center; }
         }
@@ -470,6 +470,7 @@ const styles = {
     cursor: "pointer",
     fontSize: "14px",
     transition: "background 0.2s",
+    width: "100%",
   },
   header: {
     display: "flex",
@@ -568,6 +569,8 @@ const styles = {
     minHeight: 44,
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
+    flex: "1 1 auto",
   },
   filterBtnActive: {
     background: "#5A7FA8",
@@ -751,6 +754,7 @@ const styles = {
     fontWeight: 700,
     padding: "10px 14px",
     cursor: "pointer",
+    width: "100%",
   },
   inlineSelect: {
     padding: "4px 8px",

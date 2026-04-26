@@ -50,17 +50,17 @@ const globalStyle = `
   .nav-button {
     white-space: nowrap;
     transition: all 0.15s ease;
-    min-height: 40px;
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
-    padding: 8px 14px;
+    padding: 10px 20px;
     background: ${COLORS.creamSoft};
     color: ${COLORS.ink};
     border: 1px solid ${COLORS.border};
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 14px;
   }
   .nav-button:hover { background: ${COLORS.yellowSoft}; }
   .nav-button-active {
@@ -72,8 +72,8 @@ const globalStyle = `
   .nav-button-active:hover { background: ${COLORS.sageDark}; color: ${COLORS.creamSoft}; }
 
   .nav-button-home {
-    border-radius: 20px;
-    padding: 8px 18px;
+    border-radius: 22px;
+    padding: 10px 24px;
   }
 
   .mobile-header { display: none; }
@@ -137,6 +137,10 @@ const globalStyle = `
       background: ${COLORS.creamSoft};
       border-bottom: 1px solid ${COLORS.border};
       z-index: 40;
+      transition: box-shadow 0.2s ease;
+    }
+    .mobile-header.scrolled {
+      box-shadow: 0 4px 16px rgba(42, 51, 64, 0.08);
     }
 
     .mobile-header-top {
@@ -186,17 +190,26 @@ const globalStyle = `
     }
 
     .mobile-nav-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      padding: 0 10px 10px;
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      overflow-x: auto;
+      gap: 8px;
+      padding: 0 14px 12px;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .mobile-nav-grid::-webkit-scrollbar {
+      display: none;
     }
     .mobile-nav-btn {
-      display: flex;
+      display: inline-flex;
+      flex: 0 0 auto;
       align-items: center;
       justify-content: center;
       min-height: 42px;
-      border-radius: 8px;
+      padding: 0 18px;
+      border-radius: 10px;
       font-family: inherit;
       font-size: 14px;
       font-weight: 600;
@@ -215,7 +228,7 @@ const globalStyle = `
       font-weight: 700;
     }
     .mobile-nav-btn-home {
-      border-radius: 20px;
+      border-radius: 22px;
     }
   }
 `;
@@ -687,11 +700,16 @@ function MainLayout({
   );
 
   const mobileHeader = (
-    <div className="mobile-header">
+    <div className={`mobile-header ${isScrolled ? "scrolled" : ""}`}>
       <div className="mobile-header-top">
         <span className="mobile-wordmark">Kuizu</span>
         {!authBooting && !user && (
-          <button className="mobile-auth-btn" onClick={onAuthOpen}>Sign In</button>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button className="mobile-auth-btn" onClick={onAuthOpen}>Sign In</button>
+            <button className="mobile-avatar-btn" onClick={onProfileMenuToggle} aria-label="Open menu">
+              ☰
+            </button>
+          </div>
         )}
         {!authBooting && user && (
           <button className="mobile-avatar-btn" onClick={onProfileMenuToggle} aria-label="Open profile menu">
@@ -700,11 +718,9 @@ function MainLayout({
         )}
       </div>
       <div className="mobile-nav-grid">
-        <button className={`mobile-nav-btn ${path === "/discover" ? "mobile-nav-btn-active" : ""}`} onClick={() => navigate("/discover")}>Discover</button>
         <button className={`mobile-nav-btn ${path === "/games" ? "mobile-nav-btn-active" : ""}`} onClick={() => navigate("/games")}>My Games</button>
         <button className={`mobile-nav-btn mobile-nav-btn-home ${path === "/home" || path === "/" ? "mobile-nav-btn-active" : ""}`} onClick={() => navigate("/home")}>Home</button>
         <button className={`mobile-nav-btn ${path.startsWith("/join") ? "mobile-nav-btn-active" : ""}`} onClick={() => navigate("/join")}>Join a Game</button>
-        <button className={`mobile-nav-btn ${showAbout ? "mobile-nav-btn-active" : ""}`} onClick={(e) => { e.stopPropagation(); setShowAbout((v) => !v); }}>About</button>
       </div>
     </div>
   );
@@ -764,7 +780,7 @@ function MainLayout({
     </div>
   );
 
-  const profileDropdown = isProfileMenuOpen && user && (
+  const profileDropdown = isProfileMenuOpen && (
     <div
       style={{
         position: "fixed",
@@ -779,24 +795,40 @@ function MainLayout({
         zIndex: 51,
       }}
     >
-      <div style={{ padding: "12px 14px", borderBottom: `1px solid ${COLORS.border}` }}>
-        <div style={{ color: COLORS.ink, fontWeight: 700, fontSize: 14 }}>{username}</div>
-      </div>
+      {user && (
+        <>
+          <div style={{ padding: "12px 14px", borderBottom: `1px solid ${COLORS.border}` }}>
+            <div style={{ color: COLORS.ink, fontWeight: 700, fontSize: 14 }}>{username}</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => { navigate("/profile"); onProfileMenuToggle(); }}
+            style={menuItemStyle}
+          >My Profile</button>
+          <button
+            type="button"
+            onClick={() => { navigate("/games"); onProfileMenuToggle(); }}
+            style={menuItemStyle}
+          >My Games</button>
+        </>
+      )}
       <button
         type="button"
-        onClick={() => { navigate("/profile"); onProfileMenuToggle(); }}
+        onClick={() => { navigate("/discover"); onProfileMenuToggle(); }}
         style={menuItemStyle}
-      >My Profile</button>
+      >Discover</button>
       <button
         type="button"
-        onClick={() => { navigate("/games"); onProfileMenuToggle(); }}
+        onClick={(e) => { e.stopPropagation(); setShowAbout(true); onProfileMenuToggle(); }}
         style={menuItemStyle}
-      >My Games</button>
-      <button
-        type="button"
-        onClick={onLogout}
-        style={{ ...menuItemStyle, borderTop: `1px solid ${COLORS.border}`, color: COLORS.coralDark }}
-      >Sign Out</button>
+      >About</button>
+      {user && (
+        <button
+          type="button"
+          onClick={onLogout}
+          style={{ ...menuItemStyle, borderTop: `1px solid ${COLORS.border}`, color: COLORS.coralDark }}
+        >Sign Out</button>
+      )}
     </div>
   );
 
