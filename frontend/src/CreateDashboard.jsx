@@ -563,7 +563,6 @@ export default function CreateDashboard({
   };
 
   const handleHostMultiplayer = () => {
-    if (!loggedIn) return;
     const clean = validateAll();
     if (!clean) return;
     onHost({ ...(quizMeta || {}), questions: clean, timeControl: buildTimeControlPayload(timeControl) });
@@ -1107,7 +1106,16 @@ function ActionBar({ loggedIn, canPlay, hasContent, onPlay, onHost, onSave, onPo
       >
         ▶ Play
       </button>
-      {renderLockableBtn("host", "Host", styles.actionBtnCoral, onHost, false)}
+      <button
+        style={{
+          ...styles.actionBtnCoral,
+          ...(!canPlay ? styles.actionBtnDisabled : {}),
+        }}
+        onClick={onHost}
+        disabled={!canPlay}
+      >
+        Host
+      </button>
       {renderLockableBtn("save", "Save", styles.actionBtnGhost, onSave, saveLoading)}
       {renderLockableBtn("discover", "Post", styles.actionBtnGhost, onPostDiscover, discoverLoading)}
     </div>
