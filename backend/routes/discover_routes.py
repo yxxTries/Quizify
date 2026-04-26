@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from controllers import discover_controller
 from middleware.auth_middleware import CurrentUser
@@ -14,10 +14,17 @@ def list_discover_posts():
     return DiscoverPostsListResponse(posts=posts)
 
 
+async def check_discover_rate_limit(request: Request, current_user: CurrentUser):
+    if current_user.get("email") == "amil.shahul777@gmail.com":
+        return
+    checker = rate_limit(limit=6, window_seconds=600)
+    await checker(request)
+
+
 @router.post(
     "",
     response_model=DiscoverPostResponse,
-    dependencies=[Depends(rate_limit(limit=6, window_seconds=600))],
+    dependencies=[Depends(check_discover_rate_limit)],
 )
 def create_discover_post(request: DiscoverPostRequest, current_user: CurrentUser):
     return discover_controller.create_post(

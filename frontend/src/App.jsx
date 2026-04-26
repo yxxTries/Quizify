@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Routes, Route, useNavigate, useSearchParams, useParams, Navigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useSearchParams, useParams, Navigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import Upload from "./Upload.jsx";
-import Preview from "./Preview.jsx";
+import Welcome from "./Welcome.jsx";
+import CreateDashboard from "./CreateDashboard.jsx";
 import Quiz from "./Quiz.jsx";
 import Host from "./Host.jsx";
 import Join from "./Join.jsx";
@@ -10,14 +10,15 @@ import Discover from "./Discover.jsx";
 import MyGames from "./MyGames.jsx";
 import MyProfile from "./MyProfile.jsx";
 import AuthModal from "./AuthModal.jsx";
+import { COLORS, FONTS } from "./theme.js";
 import { getCurrentUser, logout, saveMyGame, checkHealth, createDiscoverPost, getPreferences } from "./api";
 
 const globalStyle = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    background: #1A1A2E;
-    color: #F1F2F6;
-    font-family: 'DM Sans', sans-serif;
+    background: ${COLORS.cream};
+    color: ${COLORS.ink};
+    font-family: ${FONTS.body};
     -webkit-font-smoothing: antialiased;
   }
   button { font-family: inherit; }
@@ -26,7 +27,7 @@ const globalStyle = `
   select { font-family: inherit; }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Syne', sans-serif;
+    font-family: ${FONTS.display};
   }
   @media (max-width: 520px) {
     .quiz-grid { grid-template-columns: 1fr !important; }
@@ -34,49 +35,110 @@ const globalStyle = `
 
   .nav-buttons-container {
     position: fixed;
-    top: 16px;
+    top: 14px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
     justify-content: center;
-    max-width: calc(100vw - 160px);
+    max-width: calc(100vw - 520px);
     padding: 0 4px;
     align-items: center;
     z-index: 40;
   }
   .nav-button {
     white-space: nowrap;
-    transition: all 0.2s ease;
-    min-height: 44px;
+    transition: all 0.15s ease;
+    min-height: 40px;
     display: inline-flex;
     align-items: center;
+    padding: 8px 14px;
+    background: ${COLORS.creamSoft};
+    color: ${COLORS.ink};
+    border: 1px solid ${COLORS.border};
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
   }
-  /* Mobile header shell — hidden on desktop */
+  .nav-button:hover { background: ${COLORS.yellowSoft}; }
+  .nav-button-active {
+    background: ${COLORS.sage};
+    color: ${COLORS.ink};
+    border-color: ${COLORS.sageDark};
+    font-weight: 700;
+  }
+  .nav-button-active:hover { background: ${COLORS.sageDark}; color: ${COLORS.creamSoft}; }
+
+  .nav-button-home {
+    border-radius: 20px;
+    padding: 8px 18px;
+  }
+
   .mobile-header { display: none; }
-  /* Desktop profile controls */
   .profile-controls-desktop { display: flex; }
 
+  .desktop-wordmark {
+    position: fixed;
+    top: 22px;
+    left: 24px;
+    font-family: ${FONTS.display};
+    font-size: 24px;
+    font-weight: 800;
+    color: ${COLORS.ink};
+    letter-spacing: -0.5px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 41;
+  }
+
+  .desktop-header-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 68px;
+    background: transparent;
+    border-bottom: 1px solid transparent;
+    z-index: 39;
+    transition: background 0.2s ease, border-bottom-color 0.2s ease;
+  }
+  .desktop-header-bg.scrolled {
+    background: ${COLORS.cream};
+    border-bottom-color: ${COLORS.border};
+  }
+
   @media (max-width: 768px) {
-    /* Hide desktop nav strip and desktop profile controls */
     .nav-buttons-container { display: none !important; }
     .profile-controls-desktop { display: none !important; }
+    .desktop-header-bg { display: none !important; }
+    .desktop-wordmark { display: none !important; }
+    .action-bar {
+      position: fixed !important;
+      top: auto !important;
+      bottom: 12px !important;
+      right: 12px !important;
+      left: 12px !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      background: ${COLORS.creamSoft} !important;
+      padding: 10px !important;
+      border-radius: 14px !important;
+      border: 1px solid ${COLORS.border} !important;
+      box-shadow: 0 6px 20px rgba(42,51,64,0.10) !important;
+    }
 
-    /* Show the mobile header */
     .mobile-header {
       display: flex;
       flex-direction: column;
       position: fixed;
       top: 0; left: 0; right: 0;
-      background: rgba(20, 24, 48, 0.97);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid #1e2d4e;
+      background: ${COLORS.creamSoft};
+      border-bottom: 1px solid ${COLORS.border};
       z-index: 40;
     }
 
-    /* Top bar: wordmark + auth button */
     .mobile-header-top {
       display: flex;
       align-items: center;
@@ -85,20 +147,19 @@ const globalStyle = `
       gap: 10px;
     }
     .mobile-wordmark {
-      font-family: 'Syne', sans-serif;
+      font-family: ${FONTS.display};
       font-size: 20px;
       font-weight: 800;
-      color: #00D2D3;
+      color: ${COLORS.ink};
       letter-spacing: 1px;
       line-height: 1;
     }
 
-    /* Auth button in top bar */
     .mobile-auth-btn {
       padding: 9px 18px;
-      background: #00D2D3;
-      color: #0E1A2B;
-      border: none;
+      background: ${COLORS.yellow};
+      color: ${COLORS.ink};
+      border: 1px solid ${COLORS.yellowDark};
       border-radius: 8px;
       font-family: inherit;
       font-size: 14px;
@@ -111,9 +172,9 @@ const globalStyle = `
       width: 38px;
       height: 38px;
       border-radius: 50%;
-      background: #13243d;
-      color: #dbf4ff;
-      border: 1px solid #2d4d73;
+      background: ${COLORS.blue};
+      color: ${COLORS.creamSoft};
+      border: 1px solid ${COLORS.blueDark};
       font-family: inherit;
       font-size: 15px;
       font-weight: 700;
@@ -124,7 +185,6 @@ const globalStyle = `
       flex-shrink: 0;
     }
 
-    /* Nav button grid: 2 columns, full width */
     .mobile-nav-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -142,18 +202,20 @@ const globalStyle = `
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
-      border: 1px solid #2B5A8A;
-      background: rgba(15, 52, 96, 0.55);
-      color: #E2E8F0;
+      border: 1px solid ${COLORS.border};
+      background: ${COLORS.cream};
+      color: ${COLORS.ink};
       transition: opacity 0.15s;
     }
     .mobile-nav-btn:active { opacity: 0.75; }
-    .mobile-nav-btn-accent {
-      background: #00D2D3;
-      color: #0E1A2B;
-      border-color: #6FF4F0;
+    .mobile-nav-btn-active {
+      background: ${COLORS.sage};
+      color: ${COLORS.ink};
+      border-color: ${COLORS.sageDark};
       font-weight: 700;
-      box-shadow: 0 4px 12px rgba(0,210,211,0.3);
+    }
+    .mobile-nav-btn-home {
+      border-radius: 20px;
     }
   }
 `;
@@ -179,12 +241,8 @@ export default function App() {
   const username = user?.username || user?.email?.split("@")[0] || "";
 
   const profileInitial = useMemo(() => {
-    if (username) {
-      return username[0].toUpperCase();
-    }
-    if (user?.email) {
-      return user.email[0].toUpperCase();
-    }
+    if (username) return username[0].toUpperCase();
+    if (user?.email) return user.email[0].toUpperCase();
     return "P";
   }, [username, user]);
 
@@ -216,7 +274,6 @@ export default function App() {
     }
 
     checkServer();
-
     return () => {
       cancelled = true;
       if (intervalId) clearInterval(intervalId);
@@ -226,7 +283,6 @@ export default function App() {
   // Auth bootstrap
   useEffect(() => {
     if (serverStatus !== "ready") return;
-
     let cancelled = false;
 
     async function bootstrapAuth() {
@@ -237,68 +293,51 @@ export default function App() {
           try {
             const prefs = await getPreferences();
             if (!cancelled) setAutoReveal(prefs.auto_reveal);
-          } catch {
-            // preferences fetch failing is non-fatal; keep default
-          }
+          } catch {}
         }
       } catch {
-        if (!cancelled) {
-          setUser(null);
-        }
+        if (!cancelled) setUser(null);
       } finally {
-        if (!cancelled) {
-          setAuthBooting(false);
-        }
+        if (!cancelled) setAuthBooting(false);
       }
     }
 
     bootstrapAuth();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [serverStatus]);
 
-  // Handle outside clicks for profile menu
+  // Profile menu outside-click
   useEffect(() => {
     function handleOutsideClick(event) {
-      if (!profileMenuRef.current) {
-        return;
-      }
+      if (!profileMenuRef.current) return;
       if (!profileMenuRef.current.contains(event.target)) {
         setIsProfileMenuOpen(false);
       }
     }
-
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  // Handle joining via pin from query params (legacy support)
+  // Legacy ?pin= query support
   useEffect(() => {
     const pin = searchParams.get("pin");
-    if (pin) {
-      navigate(`/join/${pin}`);
-    }
+    if (pin) navigate(`/join/${pin}`);
   }, [searchParams, navigate]);
 
-  const handleQuizReady = (quizData) => {
+  const handlePlay = (quizData) => {
     setQuiz(quizData);
     setIntent("solo");
-    navigate("/preview");
+    navigate("/quiz");
   };
 
-  const handleHostReady = (quizData) => {
+  const handleHostStart = (quizData) => {
     setQuiz(quizData);
     setIntent("host");
-    navigate("/preview");
+    navigate("/host");
   };
 
   const handleLogout = async () => {
-    try {
-      await logout();
-    } catch {
-      // Keep UX resilient even if logout API fails.
-    }
+    try { await logout(); } catch {}
     setUser(null);
     setAutoReveal(true);
     setIsProfileMenuOpen(false);
@@ -308,13 +347,11 @@ export default function App() {
   const handleAuthSuccess = async (nextUser) => {
     setUser(nextUser);
     setIsProfileMenuOpen(false);
-    navigate("/");
+    navigate("/home");
     try {
       const prefs = await getPreferences();
       setAutoReveal(prefs.auto_reveal);
-    } catch {
-      // non-fatal
-    }
+    } catch {}
   };
 
   const handleSaveGame = async (payload) => {
@@ -322,7 +359,6 @@ export default function App() {
       setIsAuthOpen(true);
       throw new Error("Please sign in to save games.");
     }
-
     return saveMyGame(payload);
   };
 
@@ -331,7 +367,6 @@ export default function App() {
       setIsAuthOpen(true);
       throw new Error("Please sign in to post on Discover.");
     }
-
     return createDiscoverPost(payload);
   };
 
@@ -341,17 +376,17 @@ export default function App() {
         <style>{globalStyle}</style>
         <style>{`
           .blackout-container {
-            position: fixed; inset: 0; background: #000; color: #fff;
+            position: fixed; inset: 0; background: ${COLORS.cream}; color: ${COLORS.ink};
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 9999;
           }
           .blackout-title {
-            font-family: 'Syne', sans-serif;
+            font-family: ${FONTS.display};
             font-size: 3.5rem; letter-spacing: 2px; margin-bottom: 1rem;
           }
           .blackout-text {
-            font-family: 'DM Sans', sans-serif;
-            font-size: 1.1rem; color: #888; animation: pulse 2s infinite;
+            font-family: ${FONTS.body};
+            font-size: 1.1rem; color: ${COLORS.inkMuted}; animation: pulse 2s infinite;
           }
           @keyframes pulse {
             0%, 100% { opacity: 1; }
@@ -370,7 +405,7 @@ export default function App() {
 
   const pageMeta = {
     "/": { title: "Kuizu — Turn slides into quizzes", description: "Upload a PDF or PPTX and instantly generate an AI-powered quiz. Play solo or host a live multiplayer game." },
-    "/preview": { title: "Review Questions — Kuizu", description: "Edit, reorder, and customise your generated quiz questions before playing." },
+    "/home": { title: "Home — Kuizu", description: "Upload a PDF or PPTX and instantly generate an AI-powered quiz." },
     "/quiz": { title: "Playing Quiz — Kuizu", description: "Answer questions, track your streak, and see your score." },
     "/host": { title: "Host a Game — Kuizu", description: "Host a live multiplayer quiz. Share the PIN with friends and watch the leaderboard." },
     "/join": { title: "Join a Game — Kuizu", description: "Enter a game PIN and nickname to join a live Kuizu multiplayer session." },
@@ -379,9 +414,8 @@ export default function App() {
     "/games": { title: "My Games — Kuizu", description: "Access your saved quizzes and pin your favourites for quick play." },
   };
 
-  // Get current meta based on path
   const currentPath = Object.keys(pageMeta).find(
-    key => window.location.pathname === key || 
+    key => window.location.pathname === key ||
     (key === "/join" && window.location.pathname.startsWith("/join"))
   ) || "/";
   const meta = pageMeta[currentPath] ?? pageMeta["/"];
@@ -407,15 +441,67 @@ export default function App() {
         <Route
           path="/"
           element={
-            <UploadPageContent
+            <LandingRoute
               user={user}
-              onQuizReady={handleQuizReady}
-              onHostReady={handleHostReady}
-              onPlayPinned={(quizData) => {
-                setQuiz(quizData);
-                setIntent("solo");
-                navigate("/preview");
-              }}
+              authBooting={authBooting}
+              onAuthOpen={() => setIsAuthOpen(true)}
+              onLogout={handleLogout}
+              navigate={navigate}
+            />
+          }
+        />
+        <Route
+          path="/home"
+          element={
+            <HomeRoute
+              user={user}
+              quiz={quiz}
+              setQuiz={setQuiz}
+              authBooting={authBooting}
+              isProfileMenuOpen={isProfileMenuOpen}
+              profileMenuRef={profileMenuRef}
+              username={username}
+              profileInitial={profileInitial}
+              onProfileMenuToggle={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              onAuthOpen={() => setIsAuthOpen(true)}
+              onLogout={handleLogout}
+              onPlay={handlePlay}
+              onHost={handleHostStart}
+              onSaveGame={handleSaveGame}
+              onPostDiscover={handlePostDiscover}
+              navigate={navigate}
+            />
+          }
+        />
+        <Route
+          path="/quiz"
+          element={
+            quiz ? (
+              <Quiz quiz={quiz} onRestart={() => navigate("/home")} autoReveal={autoReveal} />
+            ) : (
+              <Navigate to="/home" replace />
+            )
+          }
+        />
+        <Route
+          path="/host"
+          element={
+            quiz ? (
+              <Host quiz={quiz} onEnd={() => navigate("/home")} autoReveal={autoReveal} />
+            ) : (
+              <Navigate to="/home" replace />
+            )
+          }
+        />
+        <Route
+          path="/join/:pin?"
+          element={<JoinRoute onExit={() => navigate("/home")} />}
+        />
+        <Route
+          path="/discover"
+          element={
+            <MainLayout
+              user={user}
               isProfileMenuOpen={isProfileMenuOpen}
               profileMenuRef={profileMenuRef}
               username={username}
@@ -425,92 +511,51 @@ export default function App() {
               onAuthOpen={() => setIsAuthOpen(true)}
               onLogout={handleLogout}
               navigate={navigate}
-            />
-          }
-        />
-        <Route
-          path="/preview"
-          element={
-            quiz ? (
-              <Preview
-                quiz={quiz}
-                onStart={(editedQuiz) => {
-                  setQuiz(editedQuiz);
-                  if (intent === "host") {
-                    navigate("/host");
-                  } else {
-                    navigate("/quiz");
-                  }
+            >
+              <Discover
+                onBack={() => navigate("/home")}
+                onPlay={(quizData) => {
+                  setQuiz(quizData);
+                  setIntent("solo");
+                  navigate("/home");
                 }}
-                onBack={() => navigate("/")}
-                intent={intent}
-                onSaveGame={handleSaveGame}
-                onPostDiscover={handlePostDiscover}
                 user={user}
                 onRequireAuth={() => setIsAuthOpen(true)}
               />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/quiz"
-          element={
-            quiz ? (
-              <Quiz quiz={quiz} onRestart={() => navigate("/")} autoReveal={autoReveal} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/host"
-          element={
-            quiz ? (
-              <Host quiz={quiz} onEnd={() => navigate("/")} autoReveal={autoReveal} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/join/:pin?"
-          element={<JoinRoute onExit={() => navigate("/")} />}
-        />
-        <Route
-          path="/discover"
-          element={
-            <Discover
-              onBack={() => navigate("/")}
-              onPlay={(quizData) => {
-                setQuiz(quizData);
-                setIntent("solo");
-                navigate("/preview");
-              }}
-              user={user}
-              onRequireAuth={() => setIsAuthOpen(true)}
-            />
+            </MainLayout>
           }
         />
         <Route
           path="/games"
           element={
-            <MyGames
-              onBack={() => navigate("/")}
+            <MainLayout
+              user={user}
+              isProfileMenuOpen={isProfileMenuOpen}
+              profileMenuRef={profileMenuRef}
               username={username}
-              onPlay={(quizData) => {
-                setQuiz(quizData);
-                setIntent("solo");
-                navigate("/preview");
-              }}
-              onRequireAuth={() => setIsAuthOpen(true)}
-              onEdit={(game) => {
-                setQuiz(game.quiz);
-                setIntent("solo");
-                navigate("/preview");
-              }}
-            />
+              profileInitial={profileInitial}
+              authBooting={authBooting}
+              onProfileMenuToggle={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              onAuthOpen={() => setIsAuthOpen(true)}
+              onLogout={handleLogout}
+              navigate={navigate}
+            >
+              <MyGames
+                onBack={() => navigate("/home")}
+                username={username}
+                onPlay={(quizData) => {
+                  setQuiz(quizData);
+                  setIntent("solo");
+                  navigate("/home");
+                }}
+                onRequireAuth={() => setIsAuthOpen(true)}
+                onEdit={(game) => {
+                  setQuiz(game.quiz);
+                  setIntent("solo");
+                  navigate("/home");
+                }}
+              />
+            </MainLayout>
           }
         />
         <Route
@@ -518,7 +563,7 @@ export default function App() {
           element={
             <MyProfile
               user={user}
-              onBack={() => navigate("/")}
+              onBack={() => navigate("/home")}
               onRequireAuth={() => setIsAuthOpen(true)}
               onUserUpdated={setUser}
               autoReveal={autoReveal}
@@ -526,6 +571,8 @@ export default function App() {
             />
           }
         />
+        {/* Legacy redirect */}
+        <Route path="/preview" element={<Navigate to="/home" replace />} />
       </Routes>
 
       {isAuthOpen && (
@@ -538,89 +585,105 @@ export default function App() {
   );
 }
 
-// Upload Page Content Component
-function UploadPageContent({
-  user,
-  onQuizReady,
-  onHostReady,
-  onPlayPinned,
-  isProfileMenuOpen,
-  profileMenuRef,
-  username,
-  profileInitial,
-  authBooting,
-  onProfileMenuToggle,
-  onAuthOpen,
-  onLogout,
-  navigate
+// ──────────────────────────────────────────────
+// LandingRoute & HomeRoute
+// ──────────────────────────────────────────────
+
+function LoadingScreen() {
+  return (
+    <div style={{
+      minHeight: "100vh", background: COLORS.cream, color: COLORS.ink,
+      display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONTS.body,
+    }}>
+      Loading…
+    </div>
+  );
+}
+
+function LandingRoute({ user, authBooting, onAuthOpen, onLogout, navigate }) {
+  if (authBooting) return <LoadingScreen />;
+  return (
+    <Welcome
+      user={user}
+      onSignIn={onAuthOpen}
+      onSignOut={onLogout}
+      onCreate={() => navigate("/home")}
+      onJoin={() => navigate("/join")}
+    />
+  );
+}
+
+function HomeRoute({
+  user, quiz, setQuiz, authBooting, isProfileMenuOpen, profileMenuRef,
+  username, profileInitial, onProfileMenuToggle, onAuthOpen, onLogout,
+  onPlay, onHost, onSaveGame, onPostDiscover, navigate,
+}) {
+  if (authBooting) return <LoadingScreen />;
+
+  return (
+    <MainLayout
+      user={user}
+      isProfileMenuOpen={isProfileMenuOpen}
+      profileMenuRef={profileMenuRef}
+      username={username}
+      profileInitial={profileInitial}
+      authBooting={authBooting}
+      onProfileMenuToggle={onProfileMenuToggle}
+      onAuthOpen={onAuthOpen}
+      onLogout={onLogout}
+      navigate={navigate}
+    >
+      <CreateDashboard
+        user={user}
+        initialQuiz={quiz}
+        onPlay={(q) => { setQuiz(q); onPlay(q); }}
+        onHost={(q) => { setQuiz(q); onHost(q); }}
+        onSaveGame={onSaveGame}
+        onPostDiscover={onPostDiscover}
+        onRequireAuth={onAuthOpen}
+      />
+    </MainLayout>
+  );
+}
+
+// ──────────────────────────────────────────────
+// MainLayout — nav + header
+// ──────────────────────────────────────────────
+
+function MainLayout({
+  user, isProfileMenuOpen, profileMenuRef, username, profileInitial,
+  authBooting, onProfileMenuToggle, onAuthOpen, onLogout, navigate, children
 }) {
   const [showAbout, setShowAbout] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const location = useLocation();
+  const path = location.pathname;
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navigationButtons = (
-    <div className="nav-buttons-container">
-      <button
-        onClick={() => navigate("/discover")}
-        className="nav-button"
-        style={{
-          padding: "10px 16px",
-          background: "rgba(15, 52, 96, 0.55)",
-          color: "#E2E8F0",
-          border: "1px solid #2B5A8A",
-          borderRadius: 8,
-          cursor: "pointer",
-          fontWeight: 600,
-        }}
-      >
-        Discover
-      </button>
-      <button
-        onClick={() => navigate("/games")}
-        className="nav-button"
-        style={{
-          padding: "10px 16px",
-          background: "rgba(36, 73, 121, 0.65)",
-          color: "#E2E8F0",
-          border: "1px solid #3E6EA3",
-          borderRadius: 8,
-          cursor: "pointer",
-          fontWeight: 700,
-        }}
-      >
-        My Games
-      </button>
-      <button
-        onClick={() => navigate("/join")}
-        className="nav-button"
-        style={{
-          padding: "10px 16px",
-          background: "#00D2D3",
-          color: "#0E1A2B",
-          border: "1px solid #6FF4F0",
-          borderRadius: 8,
-          cursor: "pointer",
-          fontWeight: 700,
-          boxShadow: "0 6px 14px rgba(0, 210, 211, 0.35)",
-        }}
-      >
-        Join a Game
-      </button>
-      <button
-        onClick={(e) => { e.stopPropagation(); setShowAbout((v) => !v); }}
-        className="nav-button"
-        style={{
-          padding: "10px 16px",
-          background: "rgba(15, 52, 96, 0.55)",
-          color: "#E2E8F0",
-          border: "1px solid #2B5A8A",
-          borderRadius: 8,
-          cursor: "pointer",
-          fontWeight: 600,
-        }}
-      >
-        About Kuizu
-      </button>
-
-    </div>
+    <>
+      <div className={`desktop-header-bg ${isScrolled ? "scrolled" : ""}`} />
+      <div className="desktop-wordmark" onClick={() => navigate("/")}>
+        Kuizu
+      </div>
+      <div className="nav-buttons-container">
+        <button onClick={() => navigate("/discover")} className={`nav-button ${path === "/discover" ? "nav-button-active" : ""}`}>Discover</button>
+        <button onClick={() => navigate("/games")} className={`nav-button ${path === "/games" ? "nav-button-active" : ""}`}>My Games</button>
+        <button onClick={() => navigate("/home")} className={`nav-button nav-button-home ${path === "/home" || path === "/" ? "nav-button-active" : ""}`}>Home</button>
+        <button onClick={() => navigate("/join")} className={`nav-button ${path.startsWith("/join") ? "nav-button-active" : ""}`}>Join a Game</button>
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowAbout((v) => !v); }}
+          className={`nav-button ${showAbout ? "nav-button-active" : ""}`}
+        >
+          About
+        </button>
+      </div>
+    </>
   );
 
   const mobileHeader = (
@@ -637,10 +700,11 @@ function UploadPageContent({
         )}
       </div>
       <div className="mobile-nav-grid">
-        <button className="mobile-nav-btn" onClick={() => navigate("/discover")}>Discover</button>
-        <button className="mobile-nav-btn" onClick={() => navigate("/games")}>My Games</button>
-        <button className="mobile-nav-btn mobile-nav-btn-accent" onClick={() => navigate("/join")}>Join a Game</button>
-        <button className="mobile-nav-btn" onClick={(e) => { e.stopPropagation(); setShowAbout((v) => !v); }}>About Kuizu</button>
+        <button className={`mobile-nav-btn ${path === "/discover" ? "mobile-nav-btn-active" : ""}`} onClick={() => navigate("/discover")}>Discover</button>
+        <button className={`mobile-nav-btn ${path === "/games" ? "mobile-nav-btn-active" : ""}`} onClick={() => navigate("/games")}>My Games</button>
+        <button className={`mobile-nav-btn mobile-nav-btn-home ${path === "/home" || path === "/" ? "mobile-nav-btn-active" : ""}`} onClick={() => navigate("/home")}>Home</button>
+        <button className={`mobile-nav-btn ${path.startsWith("/join") ? "mobile-nav-btn-active" : ""}`} onClick={() => navigate("/join")}>Join a Game</button>
+        <button className={`mobile-nav-btn ${showAbout ? "mobile-nav-btn-active" : ""}`} onClick={(e) => { e.stopPropagation(); setShowAbout((v) => !v); }}>About</button>
       </div>
     </div>
   );
@@ -651,7 +715,7 @@ function UploadPageContent({
       className="profile-controls-desktop"
       style={{
         position: "fixed",
-        top: 12,
+        top: 14,
         right: 14,
         zIndex: 50,
         gap: 8,
@@ -663,35 +727,34 @@ function UploadPageContent({
           onClick={onAuthOpen}
           style={{
             padding: "10px 16px",
-            minHeight: 44,
-            background: "#13243d",
-            color: "#e3eefc",
-            border: "1px solid #2d4d73",
-            borderRadius: 8,
+            minHeight: 40,
+            background: COLORS.yellow,
+            color: COLORS.ink,
+            border: `1px solid ${COLORS.yellowDark}`,
+            borderRadius: 10,
             cursor: "pointer",
             fontWeight: 700,
-            fontSize: 14,
+            fontSize: 13,
           }}
         >
           Sign In
         </button>
       )}
-
       {!authBooting && user && (
         <button
           onClick={onProfileMenuToggle}
           style={{
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             borderRadius: "50%",
-            background: "#13243d",
-            color: "#dbf4ff",
-            border: "1px solid #2d4d73",
+            background: COLORS.blue,
+            color: COLORS.creamSoft,
+            border: `1px solid ${COLORS.blueDark}`,
             cursor: "pointer",
             fontWeight: 700,
             display: "grid",
             placeItems: "center",
-            fontSize: 16,
+            fontSize: 15,
           }}
           aria-label="Open profile menu"
         >
@@ -709,37 +772,31 @@ function UploadPageContent({
         right: 14,
         minWidth: 210,
         borderRadius: 12,
-        border: "1px solid #2f4f75",
-        background: "#12243d",
+        border: `1px solid ${COLORS.border}`,
+        background: COLORS.creamSoft,
         overflow: "hidden",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+        boxShadow: "0 8px 24px rgba(42,51,64,0.12)",
         zIndex: 51,
       }}
     >
-      <div style={{ padding: "14px 14px 12px", borderBottom: "1px solid #264363" }}>
-        <div style={{ color: "#d7e8ff", fontWeight: 700, fontSize: 14 }}>{username}</div>
+      <div style={{ padding: "12px 14px", borderBottom: `1px solid ${COLORS.border}` }}>
+        <div style={{ color: COLORS.ink, fontWeight: 700, fontSize: 14 }}>{username}</div>
       </div>
       <button
         type="button"
         onClick={() => { navigate("/profile"); onProfileMenuToggle(); }}
-        style={{ width: "100%", textAlign: "left", padding: "14px 14px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer", fontSize: 15 }}
-      >
-        My Profile
-      </button>
+        style={menuItemStyle}
+      >My Profile</button>
       <button
         type="button"
         onClick={() => { navigate("/games"); onProfileMenuToggle(); }}
-        style={{ width: "100%", textAlign: "left", padding: "14px 14px", border: "none", background: "transparent", color: "#cfe3f9", cursor: "pointer", fontSize: 15 }}
-      >
-        My Games
-      </button>
+        style={menuItemStyle}
+      >My Games</button>
       <button
         type="button"
         onClick={onLogout}
-        style={{ width: "100%", textAlign: "left", padding: "14px 14px", border: "none", borderTop: "1px solid #264363", background: "transparent", color: "#ffb7bf", cursor: "pointer", fontSize: 15 }}
-      >
-        Sign Out
-      </button>
+        style={{ ...menuItemStyle, borderTop: `1px solid ${COLORS.border}`, color: COLORS.coralDark }}
+      >Sign Out</button>
     </div>
   );
 
@@ -749,11 +806,24 @@ function UploadPageContent({
       {profileControls}
       {mobileHeader}
       {profileDropdown}
-      <Upload onQuizReady={onQuizReady} onHostReady={onHostReady} user={user} onPlayPinned={onPlayPinned} />
+      {children}
       {showAbout && <TypewriterOverlay onDismiss={() => setShowAbout(false)} />}
     </div>
   );
 }
+
+const menuItemStyle = {
+  width: "100%",
+  textAlign: "left",
+  padding: "12px 14px",
+  border: "none",
+  background: "transparent",
+  color: COLORS.ink,
+  cursor: "pointer",
+  fontSize: 14,
+  fontFamily: "inherit",
+  fontWeight: 500,
+};
 
 function TypewriterOverlay({ onDismiss }) {
   const readyRef = useRef(false);
@@ -795,18 +865,28 @@ function TypewriterOverlay({ onDismiss }) {
   return (
     <div
       onClick={() => { if (readyRef.current) onDismiss(); }}
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", zIndex: 9998, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(16px, 5vmin, 40px)", cursor: "pointer" }}
+      style={{
+        position: "fixed", inset: 0,
+        background: "rgba(42,51,64,0.85)",
+        backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+        zIndex: 9998, display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "clamp(16px, 5vmin, 40px)", cursor: "pointer",
+      }}
     >
-      <div style={{ whiteSpace: "pre-wrap", color: "#00D2D3", fontSize: "clamp(13px, 2.8vmin, 22px)", fontFamily: "monospace", textAlign: "left", width: "100%", maxWidth: "800px", lineHeight: 1.7, overflowY: "auto", maxHeight: "80vh" }}>
+      <div style={{
+        whiteSpace: "pre-wrap", color: COLORS.cream, fontSize: "clamp(13px, 2.8vmin, 22px)",
+        fontFamily: "monospace", textAlign: "left", width: "100%", maxWidth: "800px",
+        lineHeight: 1.7, overflowY: "auto", maxHeight: "80vh"
+      }}>
         {displayed}
         <span style={{ animation: "cursorBlink 1s step-end infinite" }}>_</span>
       </div>
-      <p style={{ marginTop: "clamp(12px, 3vmin, 28px)", color: "rgba(255,255,255,0.45)", fontSize: "13px", fontFamily: "monospace", flexShrink: 0 }}>Tap anywhere to close</p>
+      <p style={{ marginTop: "clamp(12px, 3vmin, 28px)", color: "rgba(251,246,233,0.5)", fontSize: 13, fontFamily: "monospace" }}>
+        Tap anywhere to close
+      </p>
       <style>{`
-        @keyframes cursorBlink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
+        @keyframes cursorBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
       `}</style>
     </div>
   );

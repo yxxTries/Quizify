@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { deleteDiscoverPost, getDiscoverPosts } from "./api";
+import EditMetaModal from "./EditMetaModal.jsx";
+import { deleteDiscoverPost, getDiscoverPosts, updateDiscoverPost } from "./api";
 
 const CATEGORIES = [
   "All",
@@ -16,11 +17,14 @@ const CATEGORIES = [
 export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
+  const [showMyPosts, setShowMyPosts] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
   const [feedback, setFeedback] = useState("");
+  const [editingPost, setEditingPost] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +59,7 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
     const normalized = search.trim().toLowerCase();
 
     return posts.filter((quiz) => {
+      if (showMyPosts && quiz.user_id !== user?.id) return false;
       const categoryMatch = category === "All" || quiz.category === category;
       const textMatch =
         !normalized ||
@@ -63,7 +68,7 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
 
       return categoryMatch && textMatch;
     });
-  }, [category, posts, search]);
+  }, [category, posts, search, showMyPosts, user]);
 
   const handleDeletePost = async (event, post) => {
     event.stopPropagation();
@@ -88,6 +93,23 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
     }
   };
 
+  const handleConfirmEdit = async ({ title, category }) => {
+    if (!editingPost) return;
+    setEditLoading(true);
+    setFeedback("");
+    try {
+      const updated = await updateDiscoverPost(editingPost.id, { title, category });
+      setPosts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      setEditingPost(null);
+      setFeedback(`Updated "${title}".`);
+    } catch (err) {
+      setFeedback(err?.message || "Could not update post.");
+      throw err;
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   return (
     <div style={styles.page} className="discover-page">
       <style>{`
@@ -106,17 +128,30 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
             </p>
           </div>
           <button type="button" onClick={onBack} style={styles.backButton} className="discover-back-btn">
-            Back to Home
+            Back
           </button>
         </header>
 
         <section style={styles.controlsRow}>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by title or creator"
-            style={styles.searchInput}
-          />
+          <div style={styles.searchRow}>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by title or creator"
+              style={styles.searchInput}
+            />
+            {user && (
+              <label style={styles.myPostsToggle}>
+                <input
+                  type="checkbox"
+                  checked={showMyPosts}
+                  onChange={(e) => setShowMyPosts(e.target.checked)}
+                  style={{ accentColor: "#5A7FA8", width: "16px", height: "16px" }}
+                />
+                My Posts Only
+              </label>
+            )}
+          </div>
 
           <div style={styles.categoriesWrap}>
             {CATEGORIES.map((item) => (
@@ -180,8 +215,17 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
                     onPlay(quiz.quiz);
                   }}
                 >
-                  Play Quiz
+                  Play
                 </button>
+                {user?.id === quiz.user_id && (
+                  <button
+                    type="button"
+                    style={styles.secondaryAction}
+                    onClick={(event) => { event.stopPropagation(); setEditingPost(quiz); }}
+                  >
+                    Edit
+                  </button>
+                )}
                 {user?.id === quiz.user_id && (
                   <button
                     type="button"
@@ -189,7 +233,7 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
                     onClick={(event) => handleDeletePost(event, quiz)}
                     disabled={deleteLoadingId === quiz.id}
                   >
-                    {deleteLoadingId === quiz.id ? "Deleting..." : "Delete"}
+                    {deleteLoadingId === quiz.id ? "..." : "Delete"}
                   </button>
                 )}
               </div>
@@ -197,6 +241,16 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
           ))}
         </section>
       </div>
+
+      <EditMetaModal
+        open={Boolean(editingPost)}
+        initialTitle={editingPost?.title || ""}
+        initialCategory={editingPost?.category || "General"}
+        loading={editLoading}
+        onClose={() => !editLoading && setEditingPost(null)}
+        onConfirm={handleConfirmEdit}
+        type="discover"
+      />
     </div>
   );
 }
@@ -204,9 +258,9 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#1A1A2E",
-    color: "#F1F2F6",
-    padding: "clamp(16px, 4vw, 32px) clamp(14px, 3vw, 20px)",
+    background: "#FBF6E9",
+    color: "#2A3340",
+    padding: "80px clamp(14px, 3vw, 20px) clamp(16px, 4vw, 32px)",
   },
   container: {
     width: "100%",
@@ -227,18 +281,18 @@ const styles = {
     fontSize: "clamp(20px, 5vw, 34px)",
     lineHeight: 1.1,
     margin: 0,
-    color: "#F1F2F6",
+    color: "#2A3340",
   },
   subtitle: {
     marginTop: "8px",
-    color: "#B0BAC3",
+    color: "#5C6877",
     maxWidth: "740px",
     fontSize: "clamp(13px, 3vw, 15px)",
   },
   backButton: {
-    border: "1px solid #2B5A8A",
-    background: "rgba(15, 52, 96, 0.55)",
-    color: "#E2E8F0",
+    border: "1px solid #E5DCC2",
+    background: "rgba(229, 220, 194, 0.7)",
+    color: "#2A3340",
     borderRadius: "10px",
     padding: "10px 14px",
     cursor: "pointer",
@@ -248,24 +302,45 @@ const styles = {
     alignSelf: "flex-start",
   },
   controlsRow: {
-    border: "1px solid #0F3460",
-    background: "#20233D",
+    border: "1px solid #E5DCC2",
+    background: "#FFFCF0",
     borderRadius: "16px",
     padding: "14px",
     display: "flex",
     flexDirection: "column",
     gap: "12px",
   },
-  searchInput: {
+  searchRow: {
+    display: "flex",
+    gap: "12px",
     width: "100%",
+    flexWrap: "wrap",
+  },
+  searchInput: {
+    flex: 1,
+    minWidth: "220px",
     borderRadius: "10px",
-    border: "1px solid #2B5A8A",
-    background: "#151B33",
-    color: "#F1F2F6",
+    border: "1px solid #E5DCC2",
+    background: "#EFE7CF",
+    color: "#2A3340",
     padding: "12px 14px",
     outline: "none",
     fontSize: "16px",
     boxSizing: "border-box",
+  },
+  myPostsToggle: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    color: "#5C6877",
+    fontSize: "14px",
+    fontWeight: 600,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    padding: "12px 14px",
+    border: "1px solid #E5DCC2",
+    borderRadius: "10px",
+    background: "#EFE7CF",
   },
   categoriesWrap: {
     display: "flex",
@@ -273,9 +348,9 @@ const styles = {
     gap: "8px",
   },
   categoryChip: {
-    border: "1px solid #2B5A8A",
+    border: "1px solid #E5DCC2",
     background: "transparent",
-    color: "#B0BAC3",
+    color: "#5C6877",
     borderRadius: "999px",
     padding: "10px 14px",
     fontSize: "14px",
@@ -285,9 +360,9 @@ const styles = {
     alignItems: "center",
   },
   categoryChipActive: {
-    background: "#00D2D3",
-    color: "#101A2B",
-    borderColor: "#00D2D3",
+    background: "#5A7FA8",
+    color: "#FBF6E9",
+    borderColor: "#5A7FA8",
     fontWeight: 700,
   },
   grid: {
@@ -297,20 +372,20 @@ const styles = {
   },
   feedbackBanner: {
     borderRadius: "12px",
-    border: "1px solid #2f8f74",
-    background: "#143226",
-    color: "#9ff0cf",
+    border: "1px solid #82A87B",
+    background: "#DFEAD9",
+    color: "#A8C3A0",
     padding: "12px 14px",
     fontSize: "14px",
     fontWeight: 600,
   },
   emptyState: {
     gridColumn: "1 / -1",
-    border: "1px dashed #2B5A8A",
+    border: "1px dashed #E5DCC2",
     borderRadius: "14px",
     padding: "24px",
     textAlign: "center",
-    background: "#20233D",
+    background: "#FFFCF0",
   },
   emptyTitle: {
     margin: 0,
@@ -318,11 +393,11 @@ const styles = {
   },
   emptyText: {
     marginTop: "8px",
-    color: "#B0BAC3",
+    color: "#5C6877",
   },
   card: {
-    background: "#252A4A",
-    border: "1px solid #0F3460",
+    background: "#F4ECD2",
+    border: "1px solid #E5DCC2",
     borderRadius: "14px",
     padding: "14px",
     display: "flex",
@@ -338,11 +413,14 @@ const styles = {
     gap: "8px",
   },
   cardCategory: {
-    color: "#00D2D3",
+    color: "#5A7FA8",
     fontSize: "12px",
     fontWeight: 700,
     letterSpacing: "0.4px",
     textTransform: "uppercase",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   difficultyBadge: {
     border: "1px solid",
@@ -356,11 +434,18 @@ const styles = {
     fontSize: "19px",
     lineHeight: 1.2,
     minHeight: "46px",
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
   },
   cardMeta: {
     margin: 0,
-    color: "#B0BAC3",
+    color: "#5C6877",
     fontSize: "13px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   cardActions: {
     marginTop: "auto",
@@ -371,9 +456,9 @@ const styles = {
   secondaryAction: {
     flex: 1,
     borderRadius: "10px",
-    border: "1px solid #2B5A8A",
+    border: "1px solid #E5DCC2",
     background: "transparent",
-    color: "#B0BAC3",
+    color: "#5C6877",
     padding: "11px 10px",
     cursor: "pointer",
     fontWeight: 600,
@@ -383,9 +468,9 @@ const styles = {
   deleteAction: {
     flex: 1,
     borderRadius: "10px",
-    border: "1px solid #854151",
-    background: "rgba(97, 27, 41, 0.35)",
-    color: "#ffc3cb",
+    border: "1px solid #D77966",
+    background: "rgba(215, 121, 102, 0.35)",
+    color: "#E89B8C",
     padding: "11px 10px",
     cursor: "pointer",
     fontWeight: 700,

@@ -12,7 +12,7 @@ const CATEGORIES = [
   "Other",
 ];
 
-export default function DiscoverPostModal({
+export default function SaveGameModal({
   open,
   initialTitle,
   initialCategory,
@@ -39,7 +39,7 @@ export default function DiscoverPostModal({
   const handleConfirm = async () => {
     const cleanTitle = title.trim();
     if (!cleanTitle) {
-      setError("Choose a title before publishing.");
+      setError("Choose a title before saving.");
       return;
     }
 
@@ -50,7 +50,7 @@ export default function DiscoverPostModal({
         category,
       });
     } catch (err) {
-      setError(err?.message || "Could not publish to Discover.");
+      setError(err?.message || "Could not save to Library.");
     }
   };
 
@@ -63,10 +63,10 @@ export default function DiscoverPostModal({
         }
       `}</style>
       <div style={styles.modal} onClick={(event) => event.stopPropagation()}>
-        <p style={styles.kicker}>Publish to Discover</p>
-        <h2 style={styles.title}>Share this quiz on the community board</h2>
+        <p style={styles.kicker}>Save Quiz</p>
+        <h2 style={styles.title}>Save to My Games</h2>
         <p style={styles.body}>
-          Your post will be public. Pick how it should appear, then confirm publish.
+          Keep this quiz in your personal library to play or host later.
         </p>
 
         <div style={styles.form}>
@@ -100,10 +100,9 @@ export default function DiscoverPostModal({
         </div>
 
         <div style={styles.guidelines}>
-          <p style={styles.guideline}>Public post: visible to everyone in Discover.</p>
+          <p style={styles.guideline}>Private: Only you can see this until you post it.</p>
           <p style={styles.guideline}>Questions: {questionCount}</p>
-          <p style={styles.guideline}>If you publish duplicates or too fast, posting will be blocked.</p>
-          <p style={styles.guideline}>You can delete your own Discover posts later.</p>
+          <p style={styles.guideline}>You can edit the topic and questions later.</p>
         </div>
 
         {error && <div style={styles.error}>{error}</div>}
@@ -113,7 +112,7 @@ export default function DiscoverPostModal({
             Cancel
           </button>
           <button type="button" onClick={handleConfirm} disabled={loading} style={styles.primary}>
-            {loading ? "Publishing..." : "Publish Post"}
+            {loading ? "Saving..." : "Save Game"}
           </button>
         </div>
       </div>

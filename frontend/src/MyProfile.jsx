@@ -4,8 +4,8 @@ import { changePassword, getMyGames, updateProfile, updatePreferences } from "./
 const profileStyles = `
   .account-page {
     min-height: 100vh;
-    background: #1A1A2E;
-    color: #F1F2F6;
+    background: #FBF6E9;
+    color: #2A3340;
     padding: 32px 20px 48px;
   }
 
@@ -27,7 +27,7 @@ const profileStyles = `
 
   .account-kicker {
     margin: 0 0 8px;
-    color: #9cc7ee;
+    color: #8A95A3;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.14em;
@@ -42,15 +42,15 @@ const profileStyles = `
 
   .account-subtitle {
     margin: 10px 0 0;
-    color: #9fb2c8;
+    color: #8A95A3;
     line-height: 1.6;
     max-width: 560px;
   }
 
   .account-back {
-    border: 1px solid #2B5A8A;
-    background: rgba(15, 52, 96, 0.55);
-    color: #E2E8F0;
+    border: 1px solid #E5DCC2;
+    background: rgba(229, 220, 194, 0.7);
+    color: #2A3340;
     border-radius: 10px;
     padding: 10px 14px;
     cursor: pointer;
@@ -58,8 +58,8 @@ const profileStyles = `
   }
 
   .account-card {
-    border: 1px solid #24456A;
-    background: linear-gradient(180deg, rgba(22, 30, 52, 0.96) 0%, rgba(14, 20, 39, 0.98) 100%);
+    border: 1px solid #E5DCC2;
+    background: linear-gradient(180deg, rgba(255, 252, 240, 0.97) 0%, rgba(255, 252, 240, 0.98) 100%);
     border-radius: 20px;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
   }
@@ -85,9 +85,9 @@ const profileStyles = `
     border-radius: 20px;
     display: grid;
     place-items: center;
-    background: linear-gradient(180deg, #1c3f67 0%, #132a47 100%);
-    color: #dbf4ff;
-    border: 1px solid #4b6f96;
+    background: linear-gradient(180deg, #F4ECD2 0%, #E5DCC2 100%);
+    color: #2A3340;
+    border: 1px solid #5A7FA8;
     font-size: 28px;
     font-weight: 700;
     flex: 0 0 auto;
@@ -102,7 +102,7 @@ const profileStyles = `
 
   .account-email {
     margin: 8px 0 0;
-    color: #B0BAC3;
+    color: #5C6877;
     word-break: break-word;
   }
 
@@ -110,13 +110,13 @@ const profileStyles = `
     min-width: 180px;
     padding: 18px 20px;
     border-radius: 18px;
-    border: 1px solid #2B5A8A;
-    background: rgba(11, 21, 38, 0.88);
+    border: 1px solid #E5DCC2;
+    background: rgba(251, 246, 233, 0.95);
   }
 
   .account-count-label {
     margin: 0;
-    color: #9db5cf;
+    color: #8A95A3;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -149,7 +149,7 @@ const profileStyles = `
 
   .account-panel-copy {
     margin: 0;
-    color: #9fb2c8;
+    color: #8A95A3;
     line-height: 1.6;
   }
 
@@ -164,31 +164,31 @@ const profileStyles = `
     margin-bottom: 6px;
     font-size: 13px;
     font-weight: 600;
-    color: #b5c6db;
+    color: #8A95A3;
   }
 
   .account-input {
     width: 100%;
     border-radius: 10px;
-    border: 1px solid #274262;
-    background: #091425;
-    color: #F1F2F6;
+    border: 1px solid #E5DCC2;
+    background: #FBF6E9;
+    color: #2A3340;
     padding: 12px 13px;
     outline: none;
     font-size: 15px;
   }
 
   .account-input:focus {
-    border-color: #58d5e0;
-    box-shadow: 0 0 0 3px rgba(0, 210, 211, 0.12);
+    border-color: #7FA3C9;
+    box-shadow: 0 0 0 3px rgba(127, 163, 201, 0.12);
   }
 
   .account-button {
     align-self: flex-start;
     border-radius: 10px;
-    border: 1px solid #78f4f0;
-    background: #00d2d3;
-    color: #0b1523;
+    border: 1px solid #7FA3C9;
+    background: #5A7FA8;
+    color: #FBF6E9;
     font-weight: 800;
     cursor: pointer;
     padding: 11px 16px;
@@ -206,16 +206,16 @@ const profileStyles = `
   }
 
   .account-feedback-success {
-    color: #95f2d2;
+    color: #A8C3A0;
   }
 
   .account-feedback-error {
-    color: #ff8d9a;
+    color: #E89B8C;
   }
 
   .account-empty {
     padding: 22px;
-    color: #9fb2c8;
+    color: #8A95A3;
     line-height: 1.6;
   }
 
@@ -388,7 +388,7 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, 
                 <h1 className="account-title">My Profile</h1>
               </div>
               <button type="button" onClick={onBack} className="account-back">
-                Back to Home
+                Back
               </button>
             </header>
 
@@ -420,7 +420,7 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, 
               </p>
             </div>
             <button type="button" onClick={onBack} className="account-back">
-              Back to Home
+              Back
             </button>
           </header>
 
@@ -454,8 +454,8 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, 
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
               <div>
-                <div style={{ fontWeight: 600, color: "#d7e8ff", marginBottom: 4 }}>Auto-reveal answer when time runs out</div>
-                <div style={{ fontSize: 13, color: "#9fb2c8" }}>
+                <div style={{ fontWeight: 600, color: "#2A3340", marginBottom: 4 }}>Auto-reveal answer when time runs out</div>
+                <div style={{ fontSize: 13, color: "#8A95A3" }}>
                   When off, answers are locked but not shown — you control the reveal.
                 </div>
               </div>
@@ -469,7 +469,7 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, 
                   height: 28,
                   borderRadius: 14,
                   border: "none",
-                  background: autoReveal ? "#00d2d3" : "#274262",
+                  background: autoReveal ? "#5A7FA8" : "#E5DCC2",
                   cursor: prefsSaving ? "wait" : "pointer",
                   position: "relative",
                   transition: "background 0.2s",

@@ -9,7 +9,7 @@ import {
 const overlayStyle = {
   position: "fixed",
   inset: 0,
-  background: "rgba(4, 10, 20, 0.7)",
+  background: "rgba(42, 51, 64, 0.55)",
   backdropFilter: "blur(4px)",
   display: "flex",
   justifyContent: "center",
@@ -19,8 +19,8 @@ const overlayStyle = {
 
 const cardStyle = {
   width: "min(92vw, 420px)",
-  background: "linear-gradient(180deg, #111f35 0%, #0a1628 100%)",
-  border: "1px solid #305681",
+  background: "linear-gradient(180deg, #FFFCF0 0%, #FBF6E9 100%)",
+  border: "1px solid #5A7FA8",
   borderRadius: 14,
   boxShadow: "0 16px 45px rgba(0, 0, 0, 0.45)",
   padding: "20px 18px",
@@ -35,10 +35,10 @@ const tabRowStyle = {
 const fieldStyle = {
   width: "100%",
   padding: "11px 12px",
-  background: "#091425",
-  border: "1px solid #274262",
+  background: "#FBF6E9",
+  border: "1px solid #E5DCC2",
   borderRadius: 8,
-  color: "#e2e8f0",
+  color: "#2A3340",
   outline: "none",
 };
 
@@ -47,16 +47,16 @@ const labelStyle = {
   marginBottom: 6,
   fontWeight: 600,
   fontSize: 13,
-  color: "#b5c6db",
+  color: "#8A95A3",
 };
 
 const actionBtnStyle = {
   width: "100%",
   padding: "10px 12px",
   borderRadius: 8,
-  border: "1px solid #78f4f0",
-  background: "#00d2d3",
-  color: "#0b1523",
+  border: "1px solid #7FA3C9",
+  background: "#5A7FA8",
+  color: "#FBF6E9",
   fontWeight: 800,
   cursor: "pointer",
 };
@@ -66,9 +66,9 @@ function tabButtonStyle(active) {
     flex: 1,
     padding: "8px 10px",
     borderRadius: 8,
-    border: active ? "1px solid #58d5e0" : "1px solid #274262",
-    background: active ? "rgba(0, 210, 211, 0.2)" : "#0b1628",
-    color: active ? "#9cf5ff" : "#9db5cf",
+    border: active ? "1px solid #7FA3C9" : "1px solid #E5DCC2",
+    background: active ? "rgba(127, 163, 201, 0.2)" : "#FBF6E9",
+    color: active ? "#7FA3C9" : "#8A95A3",
     fontWeight: 700,
     cursor: "pointer",
   };
@@ -166,8 +166,8 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
             onClick={onClose}
             style={{
               background: "transparent",
-              border: "1px solid #36557a",
-              color: "#bdd1e6",
+              border: "1px solid #5A7FA8",
+              color: "#D8E4F0",
               borderRadius: 6,
               padding: "4px 8px",
               cursor: "pointer",
@@ -207,7 +207,7 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={fieldStyle} />
             <label style={{ ...labelStyle, marginTop: 10 }}>Password</label>
             <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} style={fieldStyle} />
-            <div style={{ marginTop: 6, color: "#8ea8c7", fontSize: 12 }}>{passwordHint(password)}</div>
+            <div style={{ marginTop: 6, color: "#8A95A3", fontSize: 12 }}>{passwordHint(password)}</div>
             <button disabled={loading} type="submit" style={{ ...actionBtnStyle, marginTop: 14 }}>
               {loading ? "Creating Account..." : "Create Account"}
             </button>
@@ -221,7 +221,7 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
             <button disabled={loading} type="submit" style={{ ...actionBtnStyle, marginTop: 14 }}>
               {loading ? "Sending..." : "Send Reset"}
             </button>
-            <div style={{ marginTop: 10, fontSize: 12, color: "#8ea8c7" }}>
+            <div style={{ marginTop: 10, fontSize: 12, color: "#8A95A3" }}>
               Have a token already? Use reset form below.
             </div>
 
@@ -235,8 +235,8 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
           </form>
         )}
 
-        {error && <div style={{ marginTop: 12, color: "#ff8d9a", whiteSpace: "pre-line" }}>{error}</div>}
-        {info && <div style={{ marginTop: 12, color: "#95f2d2", whiteSpace: "pre-line" }}>{info}</div>}
+        {error && <div style={{ marginTop: 12, color: "#E89B8C", whiteSpace: "pre-line" }}>{error}</div>}
+        {info && <div style={{ marginTop: 12, color: "#A8C3A0", whiteSpace: "pre-line" }}>{info}</div>}
       </div>
     </div>
   );

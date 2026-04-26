@@ -18,12 +18,13 @@ const LOCKED_FEATURES = [
 ];
 
 function normalizeTimeControl(value) {
+  if (value == null) return { enabled: true, preset: "quick", secondsPerQuestion: 10 };
   const seconds = Number(value?.secondsPerQuestion);
   const matchingPreset = TIMER_PRESETS.find((preset) => preset.seconds === seconds);
   return {
     enabled: Boolean(value?.enabled && Number.isFinite(seconds) && seconds >= 5 && seconds <= 120),
-    preset: matchingPreset ? matchingPreset.id : "standard",
-    secondsPerQuestion: Number.isFinite(seconds) ? Math.max(5, Math.min(120, Math.round(seconds))) : 20,
+    preset: matchingPreset ? matchingPreset.id : "quick",
+    secondsPerQuestion: Number.isFinite(seconds) ? Math.max(5, Math.min(120, Math.round(seconds))) : 10,
   };
 }
 
@@ -61,7 +62,7 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
   const [numQuestions, setNumQuestions] = useState(5);
   const [prompt, setPrompt]           = useState("");
   const [pinnedGames, setPinnedGames] = useState([]);
-  const [timeControl, setTimeControl] = useState(() => normalizeTimeControl({ enabled: false }));
+  const [timeControl, setTimeControl] = useState(() => normalizeTimeControl(null));
   const [featureIndex, setFeatureIndex] = useState(0);
   const inputRef                      = useRef();
   const username = user?.username || user?.email?.split("@")[0] || "";

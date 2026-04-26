@@ -27,3 +27,4 @@ ENV/
 .DS_Store
 Thumbs.db
 package-lock.json
+.claude/settings.local.json

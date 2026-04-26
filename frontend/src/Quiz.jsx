@@ -96,12 +96,22 @@ function ProgressBar({ results, current }) {
   );
 }
 
-function ScoreScreen({ score, total, onRestart, onJoinNew, leaderboard, isMultiplayer }) {
+function ScoreScreen({ score, total, onRestart, onJoinNew, leaderboard, isMultiplayer, quiz, userSelections }) {
   const pct = Math.round((score / total) * 100);
   const emoji = pct === 100 ? "🏆" : pct >= 70 ? "🎉" : pct >= 40 ? "🙂" : "😅";
 
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyQA = () => {
+    const text = quiz.questions.map((q) => `Q: ${q.question}\nA: ${q.choices[q.correct_index]}`).join("\n\n");
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
-    <div style={{ ...scoreStyles.wrap, padding: "clamp(20px, 5vw, 40px)", boxSizing: "border-box" }}>
+    <div style={scoreStyles.wrap}>
       <div style={scoreStyles.emoji}>{emoji}</div>
       <h1 style={scoreStyles.h1}>Quiz complete!</h1>
       <div style={scoreStyles.scoreBox}>
@@ -139,6 +149,36 @@ function ScoreScreen({ score, total, onRestart, onJoinNew, leaderboard, isMultip
           {isMultiplayer ? "Exit Game" : "New Quiz →"}
         </button>
       </div>
+
+      <div style={scoreStyles.reviewSection}>
+        <div style={scoreStyles.reviewHeader}>
+          <h2 style={scoreStyles.reviewTitle}>Quiz Review</h2>
+          <button onClick={handleCopyQA} style={scoreStyles.copyBtn}>
+            {copied ? "Copied!" : "Copy Q&A"}
+          </button>
+        </div>
+        <div style={scoreStyles.reviewList}>
+          {quiz.questions.map((q, i) => {
+            const userSelectedIdx = userSelections[i];
+            const isCorrect = userSelectedIdx === q.correct_index;
+            const didNotAnswer = userSelectedIdx === null || userSelectedIdx === undefined;
+
+            return (
+              <div key={i} style={scoreStyles.reviewCard}>
+                <p style={scoreStyles.reviewQ}><span style={scoreStyles.reviewQNum}>Q{i+1}.</span> {q.question}</p>
+                <div style={scoreStyles.reviewAnswers}>
+                  <div style={scoreStyles.correctAnswer}>
+                    <span style={scoreStyles.answerLabel}>Correct Answer:</span> {q.choices[q.correct_index]}
+                  </div>
+                  <div style={isCorrect ? scoreStyles.userCorrect : scoreStyles.userWrong}>
+                    <span style={scoreStyles.answerLabel}>Your Answer:</span> {didNotAnswer ? "No answer" : q.choices[userSelectedIdx]}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
       <style>{`@keyframes popIn { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }`}</style>
     </div>
   );
@@ -149,8 +189,10 @@ const scoreStyles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    minHeight: "80vh",
+    justifyContent: "flex-start",
+    minHeight: "100vh",
+    padding: "clamp(40px, 10vh, 80px) clamp(20px, 5vw, 40px)",
+    boxSizing: "border-box",
     gap: "16px",
     animation: "popIn 0.4s ease both",
   },
@@ -185,6 +227,95 @@ const scoreStyles = {
     fontFamily: "'DM Sans', sans-serif",
     cursor: "pointer",
   },
+  reviewSection: {
+    width: "100%",
+    maxWidth: "800px",
+    marginTop: "40px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+  reviewHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottom: "1px solid #0F3460",
+    paddingBottom: "12px",
+  },
+  reviewTitle: {
+    color: "#F1F2F6",
+    margin: 0,
+    fontSize: "24px",
+    fontFamily: "'Syne', sans-serif",
+  },
+  copyBtn: {
+    background: "transparent",
+    color: "#00D2D3",
+    border: "1px solid #00D2D3",
+    padding: "8px 16px",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: 600,
+    fontSize: "14px",
+    transition: "all 0.2s",
+  },
+  reviewList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+  reviewCard: {
+    background: "#252A4A",
+    border: "1px solid #0F3460",
+    borderRadius: "12px",
+    padding: "20px",
+    textAlign: "left",
+  },
+  reviewQ: {
+    margin: "0 0 16px 0",
+    fontSize: "18px",
+    color: "#F1F2F6",
+    fontWeight: 600,
+    lineHeight: 1.4,
+  },
+  reviewQNum: {
+    color: "#00D2D3",
+    marginRight: "8px",
+  },
+  reviewAnswers: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  correctAnswer: {
+    background: "rgba(38, 137, 12, 0.15)",
+    border: "1px solid rgba(38, 137, 12, 0.4)",
+    color: "#5dd87a",
+    padding: "10px 14px",
+    borderRadius: "8px",
+    fontSize: "15px",
+  },
+  userCorrect: {
+    background: "rgba(0, 210, 211, 0.1)",
+    border: "1px solid rgba(0, 210, 211, 0.3)",
+    color: "#00D2D3",
+    padding: "10px 14px",
+    borderRadius: "8px",
+    fontSize: "15px",
+  },
+  userWrong: {
+    background: "rgba(226, 27, 60, 0.1)",
+    border: "1px solid rgba(226, 27, 60, 0.3)",
+    color: "#ff7070",
+    padding: "10px 14px",
+    borderRadius: "8px",
+    fontSize: "15px",
+  },
+  answerLabel: {
+    fontWeight: 700,
+    marginRight: "6px",
+    opacity: 0.8,
+  }
 };
 
 export default function Quiz({
@@ -227,6 +358,7 @@ export default function Quiz({
     timerSettings.enabled ? timerSettings.secondsPerQuestion * 1000 : 0
   ));
   
+  const [userSelections, setUserSelections] = useState(() => new Array(total).fill(null));
   const [results, setResults] = useState(() => new Array(total).fill("pending"));
 
   const [lockedLeaderboard, setLockedLeaderboard] = useState(leaderboard || {});
@@ -399,6 +531,11 @@ export default function Quiz({
     if (revealed || isHostMode || timerExpired) return;
     setSelected(idx);
     setRevealed(true);
+    setUserSelections(prev => {
+       const next = [...prev];
+       next[current] = idx;
+       return next;
+    });
     let newScore = score;
     let newStreak = streak;
     if (idx === q.correct_index) {
@@ -413,20 +550,33 @@ export default function Quiz({
     if (onAnswerSubmit) {
        onAnswerSubmit(current, idx);
     }
+    if (!isMultiplayer) {
+      if (soloAdvanceTimeoutRef.current) {
+        window.clearTimeout(soloAdvanceTimeoutRef.current);
+      }
+      soloAdvanceTimeoutRef.current = window.setTimeout(() => {
+        setLocalCurrent((c) => c + 1);
+      }, 2000);
+    }
   };
 
   const handleHostNext = () => {
     revealAndAdvanceHost();
   };
 
-  const handleNextLocal = () => {
-    setLocalCurrent((c) => c + 1);
-  };
-
   if (done) {
     return (
       <div style={styles.page}>
-        <ScoreScreen score={score} total={total} onRestart={onRestart} onJoinNew={onJoinNew} leaderboard={lockedLeaderboard} isMultiplayer={isMultiplayer} />
+        <ScoreScreen 
+          score={score} 
+          total={total} 
+          onRestart={onRestart} 
+          onJoinNew={onJoinNew} 
+          leaderboard={lockedLeaderboard} 
+          isMultiplayer={isMultiplayer}
+          quiz={quiz}
+          userSelections={userSelections}
+        />
       </div>
     );
   }
@@ -566,20 +716,10 @@ export default function Quiz({
             <div style={styles.feedbackRow} key={"fb-" + current}>
               {showResults ? (
                 <>
-                  <div style={selected === q.correct_index ? styles.feedbackCorrect : styles.feedbackWrong}>
-                    {selected === q.correct_index
-                      ? "\u2713 Correct!"
-                      : `\u2717 The answer was: ${q.choices[q.correct_index]}`}   
-                  </div>
-
-                  {isMultiplayer ? (
+                  {isMultiplayer && (
                     <p style={{ textAlign: "center", color: "#B0BAC3", margin: "10px 0" }}>
                       Waiting for the host to start the next question...
                     </p>
-                  ) : (
-                    <button style={styles.nextBtn} onClick={handleNextLocal}>     
-                      {localCurrent + 1 < total ? "Next question \u2192" : "See results \u2192"}
-                    </button>
                   )}
                 </>
               ) : (

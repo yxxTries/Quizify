@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import DiscoverPostModal from "./DiscoverPostModal.jsx";
-import { getMyGames, setMyGamePinned, deleteMyGame, updateMyGameCategory, createDiscoverPost } from "./api";
+import EditMetaModal from "./EditMetaModal.jsx";
+import { getMyGames, setMyGamePinned, deleteMyGame, updateMyGame, createDiscoverPost } from "./api";
 
 const MAX_PINNED_GAMES = 5;
 
@@ -15,29 +16,14 @@ const AVAILABLE_TOPICS = [
   "Other",
 ];
 
-function GameCard({ game, isPinned, editingTopicId, onPlay, onTogglePin, onToggleMenu, onEdit, onStartTopicEdit, onPostDiscover, onDelete, onTopicSave, openMenuId }) {
+function GameCard({ game, isPinned, onPlay, onTogglePin, onToggleMenu, onEdit, onPostDiscover, onDelete, openMenuId }) {
   return (
     <article
       style={isPinned ? { ...styles.card, ...styles.pinnedCard } : styles.card}
-      onClick={() => editingTopicId !== game.id && onPlay(game.quiz)}
+      onClick={() => onPlay(game.quiz)}
     >
       <div style={styles.cardTop}>
-        {editingTopicId === game.id ? (
-          <select
-            style={styles.inlineSelect}
-            value={game.category}
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) => onTopicSave(e, game, e.target.value)}
-            onBlur={() => onTopicSave({ stopPropagation: () => {} }, game, game.category)}
-            autoFocus
-          >
-            {AVAILABLE_TOPICS.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        ) : (
-          <span style={styles.category}>{game.category}</span>
-        )}
+        <span style={styles.category}>{game.category}</span>
         {isPinned
           ? <span style={styles.pinBadge}>Pinned</span>
           : game.pinned
@@ -69,10 +55,9 @@ function GameCard({ game, isPinned, editingTopicId, onPlay, onTogglePin, onToggl
           </button>
           {openMenuId === game.id && (
             <div style={styles.dropdownMenu}>
-              <button type="button" style={styles.dropdownItem} onClick={(e) => onEdit(e, game)}>Edit</button>
-              <button type="button" style={styles.dropdownItem} onClick={(e) => onStartTopicEdit(e, game.id)}>Change Topic</button>
+              <button type="button" style={styles.dropdownItem} onClick={(e) => onEdit(e, game)}>Edit Settings</button>
               <button type="button" style={styles.dropdownItem} onClick={(e) => onPostDiscover(e, game)}>Post to Discover</button>
-              <button type="button" style={{ ...styles.dropdownItem, color: "#ff6b81" }} onClick={(e) => onDelete(e, game.id)}>Delete</button>
+              <button type="button" style={{ ...styles.dropdownItem, color: "#D77966" }} onClick={(e) => onDelete(e, game.id)}>Delete</button>
             </div>
           )}
         </div>
@@ -90,7 +75,7 @@ function formatDate(isoDate) {
   });
 }
 
-export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdit }) {
+export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -100,10 +85,11 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
   const [sortBy, setSortBy] = useState("recent");
   const [pinMessage, setPinMessage] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [editingTopicId, setEditingTopicId] = useState(null);
   const [postMessage, setPostMessage] = useState("");
   const [postDraft, setPostDraft] = useState(null);
   const [postLoading, setPostLoading] = useState(false);
+  const [editingGame, setEditingGame] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = () => setOpenMenuId(null);
@@ -222,11 +208,26 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
     }
   };
 
-  const handleEdit = (e, game) => {
+  const handleEditClick = (e, game) => {
     e.stopPropagation();
     setOpenMenuId(null);
-    if (onEdit) onEdit(game);
+    setEditingGame(game);
   };
+
+  const handleConfirmEdit = async ({ title, category }) => {
+    if (!editingGame) return;
+    setEditLoading(true);
+    try {
+      const updated = await updateMyGame(editingGame.id, { title, category });
+      setGames((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      setEditingGame(null);
+    } catch (err) {
+      setError(err.message || "Could not update game details");
+      throw err;
+    } finally {
+      setEditLoading(false);
+    }
+  }
 
   const handlePostDiscover = (e, game) => {
     e.stopPropagation();
@@ -260,24 +261,6 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
     }
   };
 
-  const startTopicEdit = (e, gameId) => {
-    e.stopPropagation();
-    setOpenMenuId(null);
-    setEditingTopicId(gameId);
-  };
-
-  const handleTopicSave = async (e, game, newTopic) => {
-    e.stopPropagation();
-    setEditingTopicId(null);
-    if (!newTopic || newTopic === game.category) return;
-    try {
-      const updated = await updateMyGameCategory(game.id, newTopic);
-      setGames((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-    } catch (err) {
-      setError(err.message || "Could not change topic");
-    }
-  };
-
   return (
     <div style={styles.page} className="mygames-page">
       <style>{`
@@ -298,7 +281,7 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
           </div>
 
           <button type="button" onClick={onBack} style={styles.backBtn} className="mygames-back-btn">
-            Back to Home
+            Back
           </button>
         </header>
 
@@ -364,15 +347,12 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
                       key={`pinned-${game.id}`}
                       game={game}
                       isPinned
-                      editingTopicId={editingTopicId}
                       onPlay={onPlay}
                       onTogglePin={togglePin}
                       onToggleMenu={toggleMenu}
-                      onEdit={handleEdit}
-                      onStartTopicEdit={startTopicEdit}
+                      onEdit={handleEditClick}
                       onPostDiscover={handlePostDiscover}
                       onDelete={handleDelete}
-                      onTopicSave={handleTopicSave}
                       openMenuId={openMenuId}
                     />
                   ))}
@@ -394,15 +374,12 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
                   key={game.id}
                   game={game}
                   isPinned={false}
-                  editingTopicId={editingTopicId}
                   onPlay={onPlay}
                   onTogglePin={togglePin}
                   onToggleMenu={toggleMenu}
-                  onEdit={handleEdit}
-                  onStartTopicEdit={startTopicEdit}
+                  onEdit={handleEditClick}
                   onPostDiscover={handlePostDiscover}
                   onDelete={handleDelete}
-                  onTopicSave={handleTopicSave}
                   openMenuId={openMenuId}
                 />
               ))}
@@ -424,6 +401,16 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth, onEdi
         }}
         onConfirm={handleConfirmPost}
       />
+
+      <EditMetaModal
+        open={Boolean(editingGame)}
+        initialTitle={editingGame?.title || ""}
+        initialCategory={editingGame?.category || "General"}
+        loading={editLoading}
+        onClose={() => !editLoading && setEditingGame(null)}
+        onConfirm={handleConfirmEdit}
+        type="game"
+      />
     </div>
   );
 }
@@ -432,10 +419,10 @@ const styles = {
   page: {
     position: "relative",
     minHeight: "100vh",
-    background: "#161b33",
-    color: "#f1f2f6",
+    background: "#EFE7CF",
+    color: "#2A3340",
     overflow: "hidden",
-    padding: "clamp(16px, 4vw, 34px) clamp(14px, 3vw, 20px)",
+    padding: "80px clamp(14px, 3vw, 20px) clamp(16px, 4vw, 34px)",
   },
   container: {
     position: "relative",
@@ -450,7 +437,7 @@ const styles = {
   menuIconBtn: {
     background: "transparent",
     border: "none",
-    color: "#b6c3d8",
+    color: "#8A95A3",
     fontSize: "24px",
     cursor: "pointer",
     padding: "0 10px",
@@ -465,8 +452,8 @@ const styles = {
     right: 0,
     bottom: "100%",
     marginBottom: "5px",
-    background: "#1e2541",
-    border: "1px solid #2e3b5e",
+    background: "#EFE7CF",
+    border: "1px solid #E5DCC2",
     borderRadius: "8px",
     padding: "4px 0",
     minWidth: "160px",
@@ -477,7 +464,7 @@ const styles = {
   dropdownItem: {
     background: "transparent",
     border: "none",
-    color: "#f1f2f6",
+    color: "#2A3340",
     padding: "10px 16px",
     textAlign: "left",
     cursor: "pointer",
@@ -492,7 +479,7 @@ const styles = {
     flexWrap: "wrap",
   },
   kicker: {
-    color: "#83f8f5",
+    color: "#7FA3C9",
     textTransform: "uppercase",
     letterSpacing: "1.2px",
     fontSize: "12px",
@@ -505,14 +492,14 @@ const styles = {
   },
   subtitle: {
     marginTop: "10px",
-    color: "#b6c3d8",
+    color: "#8A95A3",
     maxWidth: "760px",
     fontSize: "15px",
   },
   backBtn: {
-    border: "1px solid #3f6c9b",
-    background: "#142138",
-    color: "#d8e7fb",
+    border: "1px solid #E5DCC2",
+    background: "#FFFCF0",
+    color: "#2A3340",
     borderRadius: "10px",
     padding: "10px 14px",
     cursor: "pointer",
@@ -521,8 +508,8 @@ const styles = {
     whiteSpace: "nowrap",
   },
   controls: {
-    border: "1px solid #2f4e74",
-    background: "#142138",
+    border: "1px solid #E5DCC2",
+    background: "#FFFCF0",
     borderRadius: "16px",
     padding: "14px",
     display: "flex",
@@ -532,9 +519,9 @@ const styles = {
   searchInput: {
     width: "100%",
     borderRadius: "10px",
-    border: "1px solid #365883",
-    background: "#0f1a2f",
-    color: "#f1f2f6",
+    border: "1px solid #E5DCC2",
+    background: "#FBF6E9",
+    color: "#2A3340",
     padding: "11px 13px",
     outline: "none",
     fontSize: "15px",
@@ -548,7 +535,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    color: "#b9cae0",
+    color: "#8A95A3",
     fontSize: "13px",
     fontWeight: 700,
     textTransform: "uppercase",
@@ -556,9 +543,9 @@ const styles = {
   },
   selectInput: {
     borderRadius: "8px",
-    border: "1px solid #365883",
-    background: "#0f1a2f",
-    color: "#f1f2f6",
+    border: "1px solid #E5DCC2",
+    background: "#FBF6E9",
+    color: "#2A3340",
     padding: "8px 10px",
     fontSize: "13px",
     fontWeight: 600,
@@ -570,9 +557,9 @@ const styles = {
     gap: "8px",
   },
   filterBtn: {
-    border: "1px solid #3c638f",
+    border: "1px solid #5A7FA8",
     background: "transparent",
-    color: "#b9cae0",
+    color: "#8A95A3",
     borderRadius: "999px",
     padding: "10px 14px",
     cursor: "pointer",
@@ -583,9 +570,9 @@ const styles = {
     alignItems: "center",
   },
   filterBtnActive: {
-    background: "#00d2d3",
-    borderColor: "#00d2d3",
-    color: "#14203a",
+    background: "#5A7FA8",
+    borderColor: "#5A7FA8",
+    color: "#EFE7CF",
   },
   pinStatusWrap: {
     display: "flex",
@@ -595,19 +582,19 @@ const styles = {
     gap: "8px",
   },
   pinStatus: {
-    color: "#99b8d8",
+    color: "#8A95A3",
     fontSize: "13px",
     fontWeight: 700,
   },
   pinMessage: {
-    color: "#ffb4be",
+    color: "#E89B8C",
     fontSize: "13px",
     fontWeight: 700,
   },
   sectionTitle: {
     fontSize: "22px",
     marginBottom: "12px",
-    color: "#def0ff",
+    color: "#2A3340",
   },
   grid: {
     display: "grid",
@@ -616,9 +603,9 @@ const styles = {
   },
   emptyState: {
     gridColumn: "1 / -1",
-    border: "1px dashed #3b628f",
+    border: "1px dashed #E5DCC2",
     borderRadius: "14px",
-    background: "#142138",
+    background: "#FFFCF0",
     textAlign: "center",
     padding: "26px",
   },
@@ -627,12 +614,12 @@ const styles = {
   },
   emptyText: {
     marginTop: "8px",
-    color: "#b6c3d8",
+    color: "#8A95A3",
   },
   card: {
     borderRadius: "14px",
-    border: "1px solid #355980",
-    background: "#16213E",
+    border: "1px solid #5A7FA8",
+    background: "#FFFCF0",
     padding: "14px",
     display: "flex",
     flexDirection: "column",
@@ -640,7 +627,7 @@ const styles = {
     cursor: "pointer",
   },
   pinnedCard: {
-    border: "1px solid #4c78a6",
+    border: "1px solid #5A7FA8",
   },
   cardTop: {
     display: "flex",
@@ -649,33 +636,40 @@ const styles = {
     gap: "8px",
   },
   category: {
-    color: "#80ece9",
+    color: "#7FA3C9",
     fontSize: "12px",
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: "0.4px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   pinBadge: {
     fontSize: "12px",
     fontWeight: 700,
     borderRadius: "999px",
     padding: "4px 8px",
-    border: "1px solid #67aacb",
-    color: "#a7f4f0",
-    background: "rgba(0, 210, 211, 0.12)",
+    border: "1px solid #8A95A3",
+    color: "#7FA3C9",
+    background: "rgba(127, 163, 201, 0.12)",
   },
   pinBadgeMuted: {
     fontSize: "12px",
     fontWeight: 700,
     borderRadius: "999px",
     padding: "4px 8px",
-    border: "1px solid #3f6b97",
-    color: "#a8c2df",
+    border: "1px solid #5A7FA8",
+    color: "#8A95A3",
   },
   cardTitle: {
     fontSize: "20px",
     lineHeight: 1.2,
     minHeight: "48px",
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
   },
   metaGrid: {
     display: "flex",
@@ -684,10 +678,13 @@ const styles = {
   },
   metaItem: {
     fontSize: "13px",
-    color: "#9eb1ca",
+    color: "#8A95A3",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   metaValue: {
-    color: "#eaf3ff",
+    color: "#2A3340",
     fontWeight: 600,
   },
   actions: {
@@ -698,9 +695,9 @@ const styles = {
   secondaryAction: {
     flex: 1,
     borderRadius: "9px",
-    border: "1px solid #3d6794",
+    border: "1px solid #5A7FA8",
     background: "transparent",
-    color: "#c9dff8",
+    color: "#D8E4F0",
     padding: "11px 9px",
     cursor: "pointer",
     fontWeight: 700,
@@ -710,9 +707,9 @@ const styles = {
   pinAction: {
     flex: 1,
     borderRadius: "9px",
-    border: "1px solid #4f77a4",
-    background: "rgba(0, 210, 211, 0.14)",
-    color: "#aaf4f0",
+    border: "1px solid #5A7FA8",
+    background: "rgba(127, 163, 201, 0.14)",
+    color: "#7FA3C9",
     padding: "11px 9px",
     cursor: "pointer",
     fontWeight: 700,
@@ -722,9 +719,9 @@ const styles = {
   pinActionActive: {
     flex: 1,
     borderRadius: "9px",
-    border: "1px solid #6c8cb0",
-    background: "rgba(93, 132, 174, 0.2)",
-    color: "#e0eeff",
+    border: "1px solid #5A7FA8",
+    background: "rgba(127, 163, 201, 0.2)",
+    color: "#2A3340",
     padding: "11px 9px",
     cursor: "pointer",
     fontWeight: 700,
@@ -732,9 +729,9 @@ const styles = {
     minHeight: "44px",
   },
   authPrompt: {
-    border: "1px solid #3b628f",
+    border: "1px solid #E5DCC2",
     borderRadius: "14px",
-    background: "#142138",
+    background: "#FFFCF0",
     textAlign: "center",
     padding: "28px",
   },
@@ -743,14 +740,14 @@ const styles = {
   },
   authText: {
     marginTop: "8px",
-    color: "#b6c3d8",
+    color: "#8A95A3",
   },
   authBtn: {
     marginTop: "14px",
-    border: "1px solid #67aacb",
+    border: "1px solid #8A95A3",
     borderRadius: "10px",
-    background: "#00d2d3",
-    color: "#15253d",
+    background: "#5A7FA8",
+    color: "#EFE7CF",
     fontWeight: 700,
     padding: "10px 14px",
     cursor: "pointer",
@@ -758,9 +755,9 @@ const styles = {
   inlineSelect: {
     padding: "4px 8px",
     borderRadius: "4px",
-    background: "#2f3640",
-    color: "#fff",
-    border: "1px solid #718093",
+    background: "#FFFCF0",
+    color: "#2A3340",
+    border: "1px solid #E5DCC2",
     outline: "none",
     fontFamily: "inherit",
     fontSize: "0.85rem",

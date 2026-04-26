@@ -455,12 +455,13 @@ const TIMER_PRESETS = [
 ];
 
 function normalizeTimeControl(value) {
+  if (value == null) return { enabled: true, preset: "quick", secondsPerQuestion: 10 };
   const seconds = Number(value?.secondsPerQuestion);
   const matchingPreset = TIMER_PRESETS.find((p) => p.seconds === seconds);
   return {
     enabled: Boolean(value?.enabled && Number.isFinite(seconds) && seconds >= 5 && seconds <= 120),
-    preset: matchingPreset ? matchingPreset.id : "standard",
-    secondsPerQuestion: Number.isFinite(seconds) ? Math.max(5, Math.min(120, Math.round(seconds))) : 20,
+    preset: matchingPreset ? matchingPreset.id : "quick",
+    secondsPerQuestion: Number.isFinite(seconds) ? Math.max(5, Math.min(120, Math.round(seconds))) : 10,
   };
 }
 

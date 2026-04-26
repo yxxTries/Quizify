@@ -167,10 +167,10 @@ export function setMyGamePinned(gameId, pinned) {
   });
 }
 
-export function updateMyGameCategory(gameId, category) {
-  return request(`/games/${gameId}/category`, {
+export function updateMyGame(gameId, payload) {
+  return request(`/games/${gameId}`, {
     method: "PATCH",
-    body: JSON.stringify({ category }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -190,6 +190,13 @@ export function createDiscoverPost(payload) {
 export function deleteDiscoverPost(postId) {
   return request(`/discover/${postId}`, {
     method: "DELETE",
+  });
+}
+
+export function updateDiscoverPost(postId, payload) {
+  return request(`/discover/${postId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
   });
 }
 

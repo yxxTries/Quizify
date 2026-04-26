@@ -102,7 +102,7 @@ export default function Join({ onExit, initialPin = "" }) {
 
   if (status === "playing" && quiz && currentQuestionIndex === null) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#B0BAC3", fontSize: 20 }}>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#5C6877", fontSize: 20 }}>
         Loading first question...
       </div>
     );
@@ -118,29 +118,29 @@ export default function Join({ onExit, initialPin = "" }) {
       background: "transparent"
     }}>
       <div style={{
-        background: "#252A4A",
+        background: "#F4ECD2",
         padding: "clamp(24px, 6vw, 48px)",
         borderRadius: "clamp(16px, 3vw, 24px)",
         width: "100%",
         maxWidth: "440px",
         textAlign: "center",
         boxShadow: "0 12px 48px rgba(0,0,0,0.3)",
-        border: "1px solid #0F3460",
+        border: "1px solid #E5DCC2",
         animation: "fadeInUp 0.6s ease"
       }}>
         
         {status === "waiting" ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", animation: "fadeIn 0.5s ease" }}>
             <div style={{ 
-              background: "rgba(124, 111, 255, 0.1)", 
-              color: "#00D2D3", 
+              background: "rgba(127, 163, 201, 0.1)", 
+              color: "#5A7FA8", 
               padding: "16px 32px", 
               borderRadius: "20px", 
               marginBottom: "32px",
               display: "inline-flex",
               alignItems: "center",
               gap: "12px",
-              border: "1px solid rgba(124, 111, 255, 0.2)"
+              border: "1px solid rgba(127, 163, 201, 0.2)"
             }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
@@ -148,7 +148,7 @@ export default function Join({ onExit, initialPin = "" }) {
               <h2 style={{ fontSize: "24px", margin: 0, fontFamily: "'Syne', sans-serif" }}>You're in!</h2>
             </div>
             
-            <p style={{ fontSize: "20px", color: "#F1F2F6", margin: "0 0 40px 0", fontWeight: "500" }}>
+            <p style={{ fontSize: "20px", color: "#2A3340", margin: "0 0 40px 0", fontWeight: "500" }}>
               Waiting for the host to start...
             </p>
             
@@ -157,14 +157,14 @@ export default function Join({ onExit, initialPin = "" }) {
                  position: "absolute",
                  top: 0, left: 0, right: 0, bottom: 0,
                  borderRadius: "50%", 
-                 border: "4px solid rgba(124, 111, 255, 0.1)"
+                 border: "4px solid rgba(127, 163, 201, 0.1)"
                }} />
                <div style={{ 
                  position: "absolute",
                  top: 0, left: 0, right: 0, bottom: 0,
                  borderRadius: "50%", 
                  border: "4px solid transparent",
-                 borderTopColor: "#00D2D3", 
+                 borderTopColor: "#5A7FA8", 
                  animation: "spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite" 
                }} />
             </div>
@@ -176,15 +176,15 @@ export default function Join({ onExit, initialPin = "" }) {
                  marginTop: "48px", 
                  padding: "12px 24px", 
                  background: "transparent", 
-                 color: "#B0BAC3", 
+                 color: "#5C6877", 
                  border: "none", 
                  cursor: "pointer", 
                  fontSize: "16px", 
                  textDecoration: "underline",
                  transition: "color 0.2s"
                }}
-               onMouseOver={(e) => e.currentTarget.style.color = "#F1F2F6"}
-               onMouseOut={(e) => e.currentTarget.style.color = "#B0BAC3"}
+               onMouseOver={(e) => e.currentTarget.style.color = "#2A3340"}
+               onMouseOut={(e) => e.currentTarget.style.color = "#5C6877"}
             >
                Leave Game
             </button>
@@ -196,7 +196,7 @@ export default function Join({ onExit, initialPin = "" }) {
           </div>
         ) : (
           <form onSubmit={handleJoin} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <h1 style={{ margin: "0 0 10px 0", fontSize: "clamp(26px, 7vw, 36px)", fontFamily: "'Syne', sans-serif", color: "#F1F2F6" }}>Join Game</h1>
+            <h1 style={{ margin: "0 0 10px 0", fontSize: "clamp(26px, 7vw, 36px)", fontFamily: "'Syne', sans-serif", color: "#2A3340" }}>Join Game</h1>
             
             <div style={{ position: "relative" }}>
               <input
@@ -208,9 +208,9 @@ export default function Join({ onExit, initialPin = "" }) {
                   width: "100%",
                   padding: "clamp(14px, 4vw, 20px) clamp(16px, 4vw, 24px)",
                   borderRadius: "16px",
-                  border: "2px solid #0F3460",
-                  background: "#16213E",
-                  color: "#F1F2F6",
+                  border: "2px solid #E5DCC2",
+                  background: "#FFFCF0",
+                  color: "#2A3340",
                   fontSize: "clamp(16px, 4.5vw, 20px)",
                   textAlign: "center",
                   outline: "none",
@@ -219,8 +219,8 @@ export default function Join({ onExit, initialPin = "" }) {
                   letterSpacing: pin ? "4px" : "normal",
                   fontWeight: pin ? "bold" : "normal"
                 }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = "#00D2D3"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(124, 111, 255, 0.1)"; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = "#0F3460"; e.currentTarget.style.boxShadow = "none"; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "#5A7FA8"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(127, 163, 201, 0.1)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "#E5DCC2"; e.currentTarget.style.boxShadow = "none"; }}
               />
             </div>
             
@@ -234,9 +234,9 @@ export default function Join({ onExit, initialPin = "" }) {
                   width: "100%",
                   padding: "clamp(14px, 4vw, 20px) clamp(16px, 4vw, 24px)",
                   borderRadius: "16px",
-                  border: "2px solid #0F3460",
-                  background: "#16213E",
-                  color: "#F1F2F6",
+                  border: "2px solid #E5DCC2",
+                  background: "#FFFCF0",
+                  color: "#2A3340",
                   fontSize: "clamp(16px, 4.5vw, 20px)",
                   textAlign: "center",
                   outline: "none",
@@ -244,16 +244,16 @@ export default function Join({ onExit, initialPin = "" }) {
                   boxSizing: "border-box",
                   fontWeight: name ? "bold" : "normal"
                 }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = "#00D2D3"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(124, 111, 255, 0.1)"; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = "#0F3460"; e.currentTarget.style.boxShadow = "none"; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "#5A7FA8"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(127, 163, 201, 0.1)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "#E5DCC2"; e.currentTarget.style.boxShadow = "none"; }}
               />
             </div>
             
             {error && (
               <div style={{ 
-                background: "rgba(255, 77, 79, 0.1)", 
-                border: "1px solid rgba(255, 77, 79, 0.3)", 
-                color: "#FF6B6B", 
+                background: "rgba(215, 121, 102, 0.1)", 
+                border: "1px solid rgba(215, 121, 102, 0.3)", 
+                color: "#D77966", 
                 padding: "12px", 
                 borderRadius: "12px",
                 fontSize: "16px",
@@ -269,8 +269,8 @@ export default function Join({ onExit, initialPin = "" }) {
               style={{
                 width: "100%",
                 padding: "clamp(14px, 4vw, 20px)",
-                background: (!pin || !name) ? "#0F3460" : "#00D2D3",
-                color: (!pin || !name) ? "#B0BAC3" : "#16213E",
+                background: (!pin || !name) ? "#E5DCC2" : "#5A7FA8",
+                color: (!pin || !name) ? "#5C6877" : "#FFFCF0",
                 border: "none",
                 borderRadius: "16px",
                 cursor: (status === "joining" || !pin || !name) ? "not-allowed" : "pointer",
@@ -278,7 +278,7 @@ export default function Join({ onExit, initialPin = "" }) {
                 fontWeight: "bold",
                 marginTop: "10px",
                 transition: "all 0.2s",
-                boxShadow: (!pin || !name) ? "none" : "0 8px 24px rgba(124, 111, 255, 0.3)",
+                boxShadow: (!pin || !name) ? "none" : "0 8px 24px rgba(127, 163, 201, 0.3)",
                 opacity: status === "joining" ? 0.7 : 1
               }}
               onMouseOver={(e) => { if(pin && name && status !== "joining") e.currentTarget.style.transform = "translateY(-2px)"; }}
@@ -294,7 +294,7 @@ export default function Join({ onExit, initialPin = "" }) {
                  width: "100%", 
                  padding: "16px", 
                  background: "transparent", 
-                 color: "#B0BAC3", 
+                 color: "#5C6877", 
                  border: "2px solid transparent", 
                  borderRadius: "16px",
                  cursor: "pointer", 
@@ -302,10 +302,10 @@ export default function Join({ onExit, initialPin = "" }) {
                  fontWeight: "600",
                  transition: "all 0.2s",
                }}
-               onMouseOver={(e) => { e.currentTarget.style.background = "rgba(46, 46, 66, 0.5)"; e.currentTarget.style.color = "#F1F2F6"; }}
-               onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#B0BAC3"; }}
+               onMouseOver={(e) => { e.currentTarget.style.background = "rgba(244, 236, 210, 0.6)"; e.currentTarget.style.color = "#2A3340"; }}
+               onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#5C6877"; }}
             >
-               Back to Home
+               Back
             </button>
             <style>{`
               @keyframes shake {

@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
+from services.user_service import get_user_by_id
 from services.game_service import _DB_LOCK, _connect, validate_quiz_payload
 
 POST_COOLDOWN_SECONDS = 60
@@ -54,37 +55,41 @@ def create_discover_post(user_id: int, author: str, title: str, category: str, q
     }
     questions_count = len(stored_quiz["questions"])
 
+    user = get_user_by_id(user_id)
+    is_unlimited = user and user.get("email") == "amil.shahul777@gmail.com"
+
     with _DB_LOCK:
         conn = _connect()
         try:
-            existing_count_row = conn.execute(
-                "SELECT COUNT(*) AS count FROM discover_posts WHERE user_id = ?",
-                (user_id,),
-            ).fetchone()
-            existing_count = int(existing_count_row["count"] if existing_count_row else 0)
-            if existing_count >= MAX_DISCOVER_POSTS_PER_USER:
-                raise HTTPException(
-                    status_code=400,
-                    detail="You have reached the Discover posting limit. Delete an older post before publishing another.",
-                )
-
-            latest_post = conn.execute(
-                """
-                SELECT created_at
-                FROM discover_posts
-                WHERE user_id = ?
-                ORDER BY created_at DESC, id DESC
-                LIMIT 1
-                """,
-                (user_id,),
-            ).fetchone()
-            if latest_post is not None:
-                latest_created_at = datetime.fromisoformat(str(latest_post["created_at"]))
-                if latest_created_at > datetime.now(UTC) - timedelta(seconds=POST_COOLDOWN_SECONDS):
+            if not is_unlimited:
+                existing_count_row = conn.execute(
+                    "SELECT COUNT(*) AS count FROM discover_posts WHERE user_id = ?",
+                    (user_id,),
+                ).fetchone()
+                existing_count = int(existing_count_row["count"] if existing_count_row else 0)
+                if existing_count >= MAX_DISCOVER_POSTS_PER_USER:
                     raise HTTPException(
-                        status_code=429,
-                        detail="Please wait about a minute before posting to Discover again.",
+                        status_code=400,
+                        detail="You have reached the Discover posting limit. Delete an older post before publishing another.",
                     )
+
+                latest_post = conn.execute(
+                    """
+                    SELECT created_at
+                    FROM discover_posts
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (user_id,),
+                ).fetchone()
+                if latest_post is not None:
+                    latest_created_at = datetime.fromisoformat(str(latest_post["created_at"]))
+                    if latest_created_at > datetime.now(UTC) - timedelta(seconds=POST_COOLDOWN_SECONDS):
+                        raise HTTPException(
+                            status_code=429,
+                            detail="Please wait about a minute before posting to Discover again.",
+                        )
 
             duplicate_cutoff = (datetime.now(UTC) - timedelta(hours=RECENT_DUPLICATE_WINDOW_HOURS)).isoformat()
             serialized_quiz = json.dumps(stored_quiz, sort_keys=True)
@@ -217,6 +222,54 @@ def delete_discover_post(user_id: int, post_id: int) -> None:
         finally:
             conn.close()
 
+
+def update_discover_post(user_id: int, post_id: int, title: str, category: str) -> dict[str, Any]:
+    clean_title = title.strip()
+    clean_category = category.strip()
+    if not clean_title:
+        raise HTTPException(status_code=400, detail="Title is required.")
+    if not clean_category:
+        raise HTTPException(status_code=400, detail="Category is required.")
+        
+    now = datetime.now(UTC).isoformat()
+    
+    with _DB_LOCK:
+        conn = _connect()
+        try:
+            existing = conn.execute(
+                "SELECT id, user_id, quiz_json FROM discover_posts WHERE id = ?",
+                (post_id,),
+            ).fetchone()
+            
+            if existing is None:
+                raise HTTPException(status_code=404, detail="Discover post not found.")
+            if int(existing["user_id"]) != user_id:
+                raise HTTPException(status_code=403, detail="You can only edit your own Discover posts.")
+                
+            quiz = json.loads(existing["quiz_json"])
+            if "discoverMeta" in quiz and isinstance(quiz["discoverMeta"], dict):
+                quiz["discoverMeta"]["title"] = clean_title
+                quiz["discoverMeta"]["category"] = clean_category
+            
+            serialized_quiz = json.dumps(quiz, sort_keys=True)
+            
+            conn.execute(
+                """
+                UPDATE discover_posts
+                SET title = ?, category = ?, quiz_json = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (clean_title, clean_category, serialized_quiz, now, post_id)
+            )
+            conn.commit()
+            
+            row = conn.execute(
+                "SELECT dp.*, u.username AS author FROM discover_posts dp JOIN users u ON u.id = dp.user_id WHERE dp.id = ?",
+                (post_id,)
+            ).fetchone()
+            return _row_to_discover_post(row)
+        finally:
+            conn.close()
 
 def _row_to_discover_post(row: sqlite3.Row) -> dict[str, Any]:
     quiz = json.loads(row["quiz_json"])
