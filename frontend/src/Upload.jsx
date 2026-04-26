@@ -344,9 +344,9 @@ export default function Upload({ onQuizReady, onHostReady, user, onPlayPinned })
                   </div>
                 </div>
                 <div style={styles.lockedFeaturesContent}>
-                  <div style={styles.lockedFeaturesTitle}>Log in to access more features</div>
+                  <div style={styles.lockedFeaturesTitle}>Sign in to access more features</div>
                   <div style={styles.lockedFeaturesText}>
-                    Use timer controls and more once you are signed in.
+                    Save, discover and more once you are signed in.
                   </div>
                 </div>
               </div>
