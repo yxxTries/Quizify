@@ -229,6 +229,7 @@ export default function Join({ onExit, initialPin = "" }) {
                 placeholder="Nickname"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                maxLength={20}
                 required
                 style={{
                   width: "100%",
@@ -325,4 +326,3 @@ export default function Join({ onExit, initialPin = "" }) {
     </div>
   );
 }
-

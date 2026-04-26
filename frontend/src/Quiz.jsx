@@ -25,6 +25,13 @@ function formatCountdown(ms) {
   return minutes > 0 ? `${minutes}:${String(seconds).padStart(2, "0")}` : `${seconds}s`;
 }
 
+function truncateName(name, max = 16) {
+  if (!name) return "";
+  const arr = Array.from(name); // Safely array-ify emojis to prevent half-character breaks
+  if (arr.length <= max) return name;
+  return arr.slice(0, max).join("") + "…";
+}
+
 const pbStyles = {
   container: {
     display: "flex",
@@ -126,14 +133,14 @@ function ScoreScreen({ score, total, onRestart, onJoinNew, leaderboard, isMultip
            {Object.entries(leaderboard)
              .sort(([, a], [, b]) => b - a)
              .map(([name, pts], i) => (
-                <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", borderBottom: i < Object.entries(leaderboard).length - 1 ? "1px solid #16213E" : "none", alignItems: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{ color: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#B0BAC3", fontWeight: i < 3 ? "bold" : "normal", fontSize: "clamp(14px, 3.5vw, 20px)", width: "30px" }}>
+                <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "10px 12px", borderBottom: i < Object.entries(leaderboard).length - 1 ? "1px solid #16213E" : "none", alignItems: "center", gap: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
+                    <span style={{ color: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#B0BAC3", fontWeight: i < 3 ? "bold" : "normal", fontSize: "clamp(14px, 3.5vw, 20px)", width: "30px", flexShrink: 0 }}>
                       {i + 1}.
                     </span>
-                    <span style={{ color: i === 0 ? "#00D2D3" : "#F1F2F6", fontWeight: i < 3 ? "bold" : "normal", fontSize: "clamp(14px, 3.5vw, 20px)" }}>{name}</span>
+                    <span title={name} style={{ color: i === 0 ? "#00D2D3" : "#F1F2F6", fontWeight: i < 3 ? "bold" : "normal", fontSize: "clamp(14px, 3.5vw, 20px)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{truncateName(name)}</span>
                   </div>
-                  <span style={{ color: "#B0BAC3", fontWeight: "bold", fontSize: "clamp(14px, 3.5vw, 20px)" }}>{pts} pts</span>
+                  <span style={{ color: "#B0BAC3", fontWeight: "bold", fontSize: "clamp(14px, 3.5vw, 20px)", flexShrink: 0 }}>{pts} pts</span>
                 </div>
              ))}
         </div>
@@ -790,8 +797,8 @@ export default function Quiz({
                           }}>
                             {i + 1}.
                           </span>
-                          <span style={{ fontSize: "clamp(16px, 2.5vw, 24px)", fontWeight: "600", color: "#F1F2F6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {name}
+                          <span title={name} style={{ fontSize: "clamp(16px, 2.5vw, 24px)", fontWeight: "600", color: "#F1F2F6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {truncateName(name)}
                           </span>
                           {isOnStreak && <span style={{ fontSize: "clamp(14px, 2vw, 20px)", filter: "drop-shadow(0 0 4px rgba(255,159,67,0.8))", flexShrink: 0 }}>🔥 {playerStreak}</span>}
                         </div>

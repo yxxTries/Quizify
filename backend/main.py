@@ -87,6 +87,15 @@ async def websocket_host(websocket: WebSocket):
 @app.websocket("/ws/join/{pin}/{name}")
 async def websocket_join(websocket: WebSocket, pin: str, name: str):
     await websocket.accept()
+
+    room = manager.rooms.get(pin)
+    if room:
+        existing_names = [n.lower() for n in room.get("scores", {}).keys()]
+        if name.lower() in existing_names:
+            await websocket.send_json({"type": "error", "message": "Nickname already taken. Please choose another."})
+            await websocket.close()
+            return
+
     success = await manager.join_room(pin, name, websocket)
     if not success:
         await websocket.send_json({"type": "error", "message": "Room not found or game already started."})
