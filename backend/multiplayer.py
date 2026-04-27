@@ -14,12 +14,26 @@ class ConnectionManager:
                 return pin
         raise RuntimeError("No available PINs — server is at capacity")
 
+    def is_player_connected(self, pin: str, player_name: str) -> bool:
+        """Return True only if the player has an active, open WebSocket."""
+        room = self.rooms.get(pin)
+        if not room:
+            return False
+        ws = room["players"].get(player_name)
+        if ws is None:
+            return False
+        # WebSocket state 1 == CONNECTED
+        try:
+            return ws.client_state.value == 1
+        except Exception:
+            return False
+
     async def join_room(self, pin: str, player_name: str, player_ws: WebSocket) -> bool:
         if pin not in self.rooms:
             return False
-        
+
         self.rooms[pin]["players"][player_name] = player_ws
-        
+
         # Notify host that a player joined
         try:
             await self.rooms[pin]["host"].send_json({
@@ -28,7 +42,7 @@ class ConnectionManager:
             })
         except Exception as e:
             print(f"Warning: could not notify host of player join: {e}")
-            
+
         return True
 
     def get_room(self, pin: str):

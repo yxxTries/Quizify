@@ -74,8 +74,16 @@ async def websocket_host(websocket: WebSocket):
                         payload["index"] = msg.get("index")
                         payload["startedAt"] = msg.get("startedAt")
                         payload["durationSeconds"] = msg.get("durationSeconds")
+                        # Track current question so reconnecting players can catch up
+                        manager.rooms[pin]["current_question_index"] = msg.get("index")
+                        manager.rooms[pin]["current_timer"] = {
+                            "startedAt": msg.get("startedAt"),
+                            "durationSeconds": msg.get("durationSeconds"),
+                        }
                     if msg_type == "reveal_answer":
                         payload["correct_answer"] = msg.get("correct_answer")
+                    if msg_type == "end_game":
+                        manager.rooms[pin]["current_question_index"] = None
                     await manager.broadcast_to_players(pin, payload)
     except WebSocketDisconnect:
         # We need to find which room this host was running and close it
@@ -90,8 +98,15 @@ async def websocket_join(websocket: WebSocket, pin: str, name: str):
 
     room = manager.rooms.get(pin)
     if room:
-        existing_names = [n.lower() for n in room.get("scores", {}).keys()]
-        if name.lower() in existing_names:
+        # Allow reconnect if the same name's old connection is gone; block if still alive
+        name_lower = name.lower()
+        for existing_name in room.get("scores", {}).keys():
+            if existing_name.lower() == name_lower and existing_name != name:
+                # Different casing — treat as taken
+                await websocket.send_json({"type": "error", "message": "Nickname already taken. Please choose another."})
+                await websocket.close()
+                return
+        if name in room.get("scores", {}) and manager.is_player_connected(pin, name):
             await websocket.send_json({"type": "error", "message": "Nickname already taken. Please choose another."})
             await websocket.close()
             return
@@ -105,8 +120,28 @@ async def websocket_join(websocket: WebSocket, pin: str, name: str):
     try:
         room = manager.ensure_room_state(pin)
         if room:
-            room["scores"][name] = 0
-            room["streaks"][name] = 0
+            is_rejoin = name in room["scores"]
+            if not is_rejoin:
+                room["scores"][name] = 0
+                room["streaks"][name] = 0
+
+            # Send current game state so reconnecting players catch up
+            quiz_data = room.get("quiz")
+            current_question = room.get("current_question_index")
+            if quiz_data and current_question is not None:
+                # Game is already in progress — send quiz + current question
+                await websocket.send_json({"type": "start", "quiz": quiz_data})
+                timer = room.get("current_timer", {})
+                await websocket.send_json({
+                    "type": "next_question",
+                    "index": current_question,
+                    "startedAt": timer.get("startedAt"),
+                    "durationSeconds": timer.get("durationSeconds"),
+                })
+            elif quiz_data:
+                # Game started (quiz set) but no question yet
+                await websocket.send_json({"type": "start", "quiz": quiz_data})
+
             await manager.sync_leaderboard(pin)
 
         while True:
@@ -146,7 +181,6 @@ async def websocket_join(websocket: WebSocket, pin: str, name: str):
                 else:
                     room["streaks"][name] = 0
 
-            # Update leaderboard immediately (Quiz.jsx delays showing it until reveal)
             await manager.sync_leaderboard(pin)
 
             if "host" in room:
@@ -161,12 +195,9 @@ async def websocket_join(websocket: WebSocket, pin: str, name: str):
                 except Exception as e:
                     print(f"Warning: could not forward answer_submit to host: {e}")
     except WebSocketDisconnect:
+        # Remove the active socket but keep scores/streaks so the player can rejoin
         await manager.remove_player(pin, name)
-        room = manager.get_room(pin)
-        if room and "scores" in room and name in room["scores"]:
-            del room["scores"][name]
-            room.get("streaks", {}).pop(name, None)
-            await manager.sync_leaderboard(pin)
+        await manager.sync_leaderboard(pin)
 
 
 @app.post("/generate-quiz")

@@ -1,10 +1,23 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Quiz from "./Quiz.jsx";
 import { buildWebSocketUrl } from "./api.js";
 
+const SESSION_KEY = "kuizu_mp_session";
+
+function saveSession(pin, name) {
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, name })); } catch {}
+}
+function clearSession() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch {}
+}
+function loadSession() {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null"); } catch { return null; }
+}
+
 export default function Join({ onExit, initialPin = "" }) {
-  const [pin, setPin] = useState(initialPin);
-  const [name, setName] = useState("");
+  const savedSession = loadSession();
+  const [pin, setPin] = useState(initialPin || savedSession?.pin || "");
+  const [name, setName] = useState(savedSession?.name || "");
   const [status, setStatus] = useState("login"); // login, joining, waiting, playing
   const [quiz, setQuiz] = useState(null);
   const [error, setError] = useState("");
@@ -14,31 +27,35 @@ export default function Join({ onExit, initialPin = "" }) {
   const [questionTimer, setQuestionTimer] = useState(null);
   const ws = useRef(null);
 
-  const handleJoin = (e) => {
-    e.preventDefault();
-    if (!pin || !name) return;
-    
+  // Auto-reconnect if there's a saved session
+  useEffect(() => {
+    if (savedSession?.pin && savedSession?.name) {
+      connectToGame(savedSession.pin, savedSession.name);
+    }
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const connectToGame = (gamePin, playerName) => {
     setError("");
     setStatus("joining");
 
-    ws.current = new WebSocket(buildWebSocketUrl(`/ws/join/${pin}/${name}`));
+    const socket = new WebSocket(buildWebSocketUrl(`/ws/join/${gamePin}/${playerName}`));
+    ws.current = socket;
 
-    ws.current.onopen = () => {
+    socket.onopen = () => {
+      saveSession(gamePin, playerName);
       setStatus("waiting");
     };
 
-    ws.current.onmessage = (event) => {
+    socket.onmessage = (event) => {
       let data;
-      try {
-        data = JSON.parse(event.data);
-      } catch {
-        console.error("Failed to parse WebSocket message:", event.data);
-        return;
-      }
+      try { data = JSON.parse(event.data); } catch { return; }
       if (data.type === "error") {
         setError(data.message);
         setStatus("login");
-        ws.current.close();
+        clearSession();
+        socket.close();
       } else if (data.type === "start") {
         setQuiz(data.quiz);
         setStatus("playing");
@@ -50,22 +67,36 @@ export default function Join({ onExit, initialPin = "" }) {
           startedAt: data.startedAt,
           durationSeconds: data.durationSeconds,
         });
+        setStatus("playing");
       } else if (data.type === "reveal_answer") {
         setHostRevealed(true);
       } else if (data.type === "leaderboard") {
         setLeaderboard(data.scores);
       } else if (data.type === "end_game") {
         setQuestionTimer(null);
-        setCurrentQuestionIndex(quiz?.questions?.length || 1000);
+        setCurrentQuestionIndex(1000);
+        clearSession();
+      } else if (data.type === "host_disconnected") {
+        clearSession();
       }
     };
-    
-    ws.current.onerror = () => {
-       if (status !== "playing") {
-         setError("Could not connect to game. Check PIN.");
-         setStatus("login");
-       }
+
+    socket.onerror = () => {
+      setStatus(s => {
+        if (s !== "playing") {
+          setError("Could not connect to game. Check PIN.");
+          clearSession();
+          return "login";
+        }
+        return s;
+      });
     };
+  };
+
+  const handleJoin = (e) => {
+    e.preventDefault();
+    if (!pin || !name) return;
+    connectToGame(pin, name);
   };
 
   const handleAnswerSubmit = (questionIndex, optionIndex) => {
@@ -80,11 +111,13 @@ export default function Join({ onExit, initialPin = "" }) {
         {/* We reuse the Quiz component */}
         <Quiz
           quiz={quiz}
-          onRestart={() => { if(ws.current) ws.current.close(); onExit(); }}
+          onRestart={() => { clearSession(); if(ws.current) ws.current.close(); onExit(); }}
           onJoinNew={() => {
+            clearSession();
             if(ws.current) ws.current.close();
             setStatus("login");
             setPin("");
+            setName("");
             setQuiz(null);
             setCurrentQuestionIndex(0);
             setLeaderboard({});
@@ -171,7 +204,7 @@ export default function Join({ onExit, initialPin = "" }) {
             
             <button
                type="button"
-               onClick={() => { if(ws.current) ws.current.close(); onExit(); }}
+               onClick={() => { clearSession(); if(ws.current) ws.current.close(); onExit(); }}
                style={{ 
                  marginTop: "48px", 
                  padding: "12px 24px", 

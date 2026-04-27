@@ -325,6 +325,30 @@ const scoreStyles = {
   }
 };
 
+function getSoloSessionKey(quiz) {
+  // Stable key based on quiz identity so different quizzes don't share state
+  const id = quiz?.id || quiz?.title || "";
+  const count = quiz?.questions?.length || 0;
+  return `kuizu_solo_${id}_${count}`;
+}
+
+function loadSoloSession(quiz) {
+  try {
+    const raw = sessionStorage.getItem(getSoloSessionKey(quiz));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveSoloSession(quiz, state) {
+  try {
+    sessionStorage.setItem(getSoloSessionKey(quiz), JSON.stringify(state));
+  } catch {}
+}
+
+function clearSoloSession(quiz) {
+  try { sessionStorage.removeItem(getSoloSessionKey(quiz)); } catch {}
+}
+
 export default function Quiz({
   quiz,
   onRestart,
@@ -349,14 +373,17 @@ export default function Quiz({
 
   const [leaderboardRef] = useAutoAnimate();
 
-  const [localCurrent, setLocalCurrent] = useState(0);
+  // Restore solo session from sessionStorage if available
+  const savedSolo = !isMultiplayer ? loadSoloSession(quiz) : null;
+
+  const [localCurrent, setLocalCurrent] = useState(() => savedSolo?.localCurrent ?? 0);
   const current = isMultiplayer ? currentQuestionIndex : localCurrent;
 
-  const [selected,  setSelected]  = useState(null);   // index of chosen answer 
-  const [revealed,  setRevealed]  = useState(false);  // show correct/wrong     
-  const [score,     setScore]     = useState(0);
-  const [streak,    setStreak]    = useState(0);
-  const [done,      setDone]      = useState(false);
+  const [selected,  setSelected]  = useState(null);
+  const [revealed,  setRevealed]  = useState(false);
+  const [score,     setScore]     = useState(() => savedSolo?.score ?? 0);
+  const [streak,    setStreak]    = useState(() => savedSolo?.streak ?? 0);
+  const [done,      setDone]      = useState(() => !isMultiplayer && (savedSolo?.localCurrent ?? 0) >= total);
   const [showConfirmEnd, setShowConfirmEnd] = useState(false);
   const [soloQuestionStartedAt, setSoloQuestionStartedAt] = useState(() => (
     !isMultiplayer && timerSettings.enabled ? Date.now() : null
@@ -364,9 +391,13 @@ export default function Quiz({
   const [timeLeftMs, setTimeLeftMs] = useState(() => (
     timerSettings.enabled ? timerSettings.secondsPerQuestion * 1000 : 0
   ));
-  
-  const [userSelections, setUserSelections] = useState(() => new Array(total).fill(null));
-  const [results, setResults] = useState(() => new Array(total).fill("pending"));
+
+  const [userSelections, setUserSelections] = useState(() =>
+    savedSolo?.userSelections ?? new Array(total).fill(null)
+  );
+  const [results, setResults] = useState(() =>
+    savedSolo?.results ?? new Array(total).fill("pending")
+  );
 
   const [lockedLeaderboard, setLockedLeaderboard] = useState(leaderboard || {});
   const [lockedStreaks, setLockedStreaks] = useState(streaks || {});
@@ -375,11 +406,9 @@ export default function Quiz({
   const timerFiredForRef = useRef(-1);
 
   useEffect(() => {
-    if (revealed || done) {
-      setLockedLeaderboard(leaderboard || {});
-      setLockedStreaks(streaks || {});
-    }
-  }, [leaderboard, streaks, revealed, done]);
+    setLockedLeaderboard(leaderboard || {});
+    setLockedStreaks(streaks || {});
+  }, [leaderboard, streaks]);
 
   // When question changes, reset all per-question state
   useEffect(() => {
@@ -405,6 +434,16 @@ export default function Quiz({
       setDone(true);
     }
   }, [current, total, isMultiplayer, timerSettings.enabled, timerSettings.secondsPerQuestion]);
+
+  // Persist solo progress so refreshes/accidental navigation can resume
+  useEffect(() => {
+    if (isMultiplayer) return;
+    if (done) {
+      clearSoloSession(quiz);
+    } else {
+      saveSoloSession(quiz, { localCurrent, score, streak, userSelections, results });
+    }
+  }, [isMultiplayer, localCurrent, score, streak, userSelections, results, done, quiz]);
 
   const activeTimer = useMemo(() => {
     if (!timerSettings.enabled || current >= total || done) {
@@ -574,12 +613,12 @@ export default function Quiz({
   if (done) {
     return (
       <div style={styles.page}>
-        <ScoreScreen 
-          score={score} 
-          total={total} 
-          onRestart={onRestart} 
-          onJoinNew={onJoinNew} 
-          leaderboard={lockedLeaderboard} 
+        <ScoreScreen
+          score={score}
+          total={total}
+          onRestart={onRestart}
+          onJoinNew={onJoinNew}
+          leaderboard={lockedLeaderboard}
           isMultiplayer={isMultiplayer}
           quiz={quiz}
           userSelections={userSelections}
@@ -631,7 +670,7 @@ export default function Quiz({
                   {showConfirmEnd ? (
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                       <span style={{ color: "#F1F2F6", fontWeight: 500 }}>Leave?</span>
-                      <span onClick={onRestart} style={{ cursor: "pointer", color: "#FF6B6B", fontWeight: 600 }}>Yes</span>
+                      <span onClick={() => { if (!isMultiplayer) clearSoloSession(quiz); onRestart(); }} style={{ cursor: "pointer", color: "#FF6B6B", fontWeight: 600 }}>Yes</span>
                       <span onClick={() => setShowConfirmEnd(false)} style={{ cursor: "pointer", color: "#00D2D3", fontWeight: 600 }}>No</span>
                     </div>
                   ) : (
