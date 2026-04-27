@@ -935,7 +935,7 @@ function TypewriterOverlay({ onDismiss }) {
       }}
     >
       <div style={{
-        whiteSpace: "pre-wrap", color: COLORS.cream, fontSize: "clamp(13px, 2.8vmin, 22px)",
+        whiteSpace: "pre-wrap", color: "#FBF6E9", fontSize: "clamp(13px, 2.8vmin, 22px)",
         fontFamily: "monospace", textAlign: "left", width: "100%", maxWidth: "800px",
         lineHeight: 1.7, overflowY: "auto", maxHeight: "80vh"
       }}>
