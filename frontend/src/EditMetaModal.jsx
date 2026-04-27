@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { COLORS, FONTS } from "./theme.js";
+import React, { useEffect, useState, useMemo } from "react";
+import { FONTS } from "./theme.js";
+import { useTheme } from "./ThemeContext.jsx";
 
 const CATEGORIES = [
   "Science",
@@ -21,6 +22,8 @@ export default function EditMetaModal({
   onConfirm,
   type = "game"
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => getStyles(COLORS), [COLORS]);
   const [title, setTitle] = useState(initialTitle || "");
   const [category, setCategory] = useState(initialCategory || "General");
   const [error, setError] = useState("");
@@ -114,7 +117,7 @@ export default function EditMetaModal({
   );
 }
 
-const styles = {
+const getStyles = (COLORS) => ({
   overlay: { position: "fixed", inset: 0, background: "rgba(42, 51, 64, 0.72)", display: "grid", placeItems: "center", padding: "20px", zIndex: 100 },
   modal: { width: "100%", maxWidth: "520px", background: COLORS.creamSoft, border: `1px solid ${COLORS.border}`, borderRadius: "18px", padding: "22px", color: COLORS.ink, boxShadow: "0 22px 60px rgba(42, 51, 64, 0.15)", fontFamily: FONTS.body },
   kicker: { margin: 0, color: COLORS.blueDark, fontSize: "12px", fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase" },
@@ -128,4 +131,4 @@ const styles = {
   actions: { display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "18px" },
   secondary: { borderRadius: "10px", border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.ink, padding: "10px 14px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
   primary: { borderRadius: "10px", border: "none", background: COLORS.sageDark, color: COLORS.creamSoft, padding: "10px 14px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit" },
-};
+});

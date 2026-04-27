@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import EditMetaModal from "./EditMetaModal.jsx";
 import { deleteDiscoverPost, getDiscoverPosts, updateDiscoverPost } from "./api";
+import { useTheme } from "./ThemeContext.jsx";
 
 const CATEGORIES = [
   "All",
@@ -15,6 +16,8 @@ const CATEGORIES = [
 ];
 
 export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => getStyles(COLORS), [COLORS]);
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [showMyPosts, setShowMyPosts] = useState(false);
@@ -146,7 +149,7 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
                   type="checkbox"
                   checked={showMyPosts}
                   onChange={(e) => setShowMyPosts(e.target.checked)}
-                  style={{ accentColor: "#5A7FA8", width: "16px", height: "16px" }}
+                  style={{ accentColor: COLORS.blueDark, width: "16px", height: "16px" }}
                 />
                 My Posts Only
               </label>
@@ -255,11 +258,11 @@ export default function Discover({ onBack, onPlay, user, onRequireAuth }) {
   );
 }
 
-const styles = {
+const getStyles = (COLORS) => ({
   page: {
     minHeight: "100vh",
-    background: "#FBF6E9",
-    color: "#2A3340",
+    background: COLORS.cream,
+    color: COLORS.ink,
     padding: "80px clamp(14px, 3vw, 20px) clamp(16px, 4vw, 32px)",
   },
   container: {
@@ -281,18 +284,18 @@ const styles = {
     fontSize: "clamp(20px, 5vw, 34px)",
     lineHeight: 1.1,
     margin: 0,
-    color: "#2A3340",
+    color: COLORS.ink,
   },
   subtitle: {
     marginTop: "8px",
-    color: "#5C6877",
+    color: COLORS.inkSoft,
     maxWidth: "740px",
     fontSize: "clamp(13px, 3vw, 15px)",
   },
   backButton: {
-    border: "1px solid #E5DCC2",
-    background: "rgba(229, 220, 194, 0.7)",
-    color: "#2A3340",
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.creamWarm,
+    color: COLORS.ink,
     borderRadius: "10px",
     padding: "10px 14px",
     cursor: "pointer",
@@ -302,8 +305,8 @@ const styles = {
     alignSelf: "flex-start",
   },
   controlsRow: {
-    border: "1px solid #E5DCC2",
-    background: "#FFFCF0",
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.creamSoft,
     borderRadius: "16px",
     padding: "14px",
     display: "flex",
@@ -320,9 +323,9 @@ const styles = {
     flex: 1,
     minWidth: "220px",
     borderRadius: "10px",
-    border: "1px solid #E5DCC2",
-    background: "#EFE7CF",
-    color: "#2A3340",
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.borderSoft,
+    color: COLORS.ink,
     padding: "12px 14px",
     outline: "none",
     fontSize: "16px",
@@ -332,15 +335,15 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    color: "#5C6877",
+    color: COLORS.inkSoft,
     fontSize: "14px",
     fontWeight: 600,
     cursor: "pointer",
     whiteSpace: "nowrap",
     padding: "12px 14px",
-    border: "1px solid #E5DCC2",
+    border: `1px solid ${COLORS.border}`,
     borderRadius: "10px",
-    background: "#EFE7CF",
+    background: COLORS.borderSoft,
   },
   categoriesWrap: {
     display: "flex",
@@ -348,9 +351,9 @@ const styles = {
     gap: "8px",
   },
   categoryChip: {
-    border: "1px solid #E5DCC2",
+    border: `1px solid ${COLORS.border}`,
     background: "transparent",
-    color: "#5C6877",
+    color: COLORS.inkSoft,
     borderRadius: "999px",
     padding: "10px 14px",
     fontSize: "14px",
@@ -362,9 +365,9 @@ const styles = {
     flex: "1 1 auto",
   },
   categoryChipActive: {
-    background: "#5A7FA8",
-    color: "#FBF6E9",
-    borderColor: "#5A7FA8",
+    background: COLORS.blueDark,
+    color: COLORS.creamSoft,
+    borderColor: COLORS.blueDark,
     fontWeight: 700,
   },
   grid: {
@@ -374,20 +377,20 @@ const styles = {
   },
   feedbackBanner: {
     borderRadius: "12px",
-    border: "1px solid #82A87B",
-    background: "#DFEAD9",
-    color: "#A8C3A0",
+    border: `1px solid ${COLORS.sageDark}`,
+    background: COLORS.sageSoft,
+    color: COLORS.sage,
     padding: "12px 14px",
     fontSize: "14px",
     fontWeight: 600,
   },
   emptyState: {
     gridColumn: "1 / -1",
-    border: "1px dashed #E5DCC2",
+    border: `1px dashed ${COLORS.border}`,
     borderRadius: "14px",
     padding: "24px",
     textAlign: "center",
-    background: "#FFFCF0",
+    background: COLORS.creamSoft,
   },
   emptyTitle: {
     margin: 0,
@@ -395,11 +398,11 @@ const styles = {
   },
   emptyText: {
     marginTop: "8px",
-    color: "#5C6877",
+    color: COLORS.inkSoft,
   },
   card: {
-    background: "#F4ECD2",
-    border: "1px solid #E5DCC2",
+    background: COLORS.creamWarm,
+    border: `1px solid ${COLORS.border}`,
     borderRadius: "14px",
     padding: "14px",
     display: "flex",
@@ -415,7 +418,7 @@ const styles = {
     gap: "8px",
   },
   cardCategory: {
-    color: "#5A7FA8",
+    color: COLORS.blueDark,
     fontSize: "12px",
     fontWeight: 700,
     letterSpacing: "0.4px",
@@ -443,7 +446,7 @@ const styles = {
   },
   cardMeta: {
     margin: 0,
-    color: "#5C6877",
+    color: COLORS.inkSoft,
     fontSize: "13px",
     whiteSpace: "nowrap",
     overflow: "hidden",
@@ -458,9 +461,9 @@ const styles = {
   secondaryAction: {
     flex: 1,
     borderRadius: "10px",
-    border: "1px solid #E5DCC2",
+    border: `1px solid ${COLORS.border}`,
     background: "transparent",
-    color: "#5C6877",
+    color: COLORS.inkSoft,
     padding: "11px 10px",
     cursor: "pointer",
     fontWeight: 600,
@@ -470,13 +473,13 @@ const styles = {
   deleteAction: {
     flex: 1,
     borderRadius: "10px",
-    border: "1px solid #D77966",
-    background: "rgba(215, 121, 102, 0.35)",
-    color: "#E89B8C",
+    border: `1px solid ${COLORS.coralDark}`,
+    background: COLORS.coralSoft,
+    color: COLORS.coral,
     padding: "11px 10px",
     cursor: "pointer",
     fontWeight: 700,
     minHeight: "44px",
     fontSize: "14px",
   },
-};
+});

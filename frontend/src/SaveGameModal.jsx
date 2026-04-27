@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { COLORS, FONTS } from "./theme.js";
+import React, { useEffect, useState, useMemo } from "react";
+import { FONTS } from "./theme.js";
+import { useTheme } from "./ThemeContext.jsx";
 
 const CATEGORIES = [
   "Science",
@@ -21,6 +22,8 @@ export default function SaveGameModal({
   onClose,
   onConfirm,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => getStyles(COLORS), [COLORS]);
   const [title, setTitle] = useState(initialTitle || "");
   const [category, setCategory] = useState(initialCategory || "General");
   const [error, setError] = useState("");
@@ -120,7 +123,7 @@ export default function SaveGameModal({
   );
 }
 
-const styles = {
+const getStyles = (COLORS) => ({
   overlay: {
     position: "fixed",
     inset: 0,
@@ -242,4 +245,4 @@ const styles = {
     fontWeight: 700,
     fontFamily: "inherit",
   },
-};
+});

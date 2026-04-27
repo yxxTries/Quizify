@@ -10,21 +10,24 @@ import Discover from "./Discover.jsx";
 import MyGames from "./MyGames.jsx";
 import MyProfile from "./MyProfile.jsx";
 import AuthModal from "./AuthModal.jsx";
-import { COLORS, FONTS } from "./theme.js";
+import { FONTS } from "./theme.js";
+import { useTheme } from "./ThemeContext.jsx";
+import ThemeToggle from "./ThemeToggle.jsx";
 import { getCurrentUser, logout, saveMyGame, checkHealth, createDiscoverPost, getPreferences } from "./api";
 
-const globalStyle = `
+const buildGlobalStyle = (COLORS) => `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     background: ${COLORS.cream};
     color: ${COLORS.ink};
     font-family: ${FONTS.body};
     -webkit-font-smoothing: antialiased;
+    transition: background 0.2s ease, color 0.2s ease;
   }
   button { font-family: inherit; }
-  input  { font-family: inherit; font-size: max(16px, 1em); }
-  textarea { font-family: inherit; font-size: max(16px, 1em); }
-  select { font-family: inherit; }
+  input  { font-family: inherit; font-size: max(16px, 1em); color: ${COLORS.ink}; }
+  textarea { font-family: inherit; font-size: max(16px, 1em); color: ${COLORS.ink}; }
+  select { font-family: inherit; color: ${COLORS.ink}; }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: ${FONTS.display};
@@ -253,6 +256,8 @@ function clearQuizSession() {
 export default function App() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { colors: COLORS } = useTheme();
+  const globalStyle = useMemo(() => buildGlobalStyle(COLORS), [COLORS]);
   const [quiz, setQuiz] = useState(() => loadQuizSession());
   const [intent, setIntent] = useState("solo");
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -617,6 +622,7 @@ export default function App() {
 // ──────────────────────────────────────────────
 
 function LoadingScreen() {
+  const { colors: COLORS } = useTheme();
   return (
     <div style={{
       minHeight: "100vh", background: COLORS.cream, color: COLORS.ink,
@@ -681,10 +687,24 @@ function MainLayout({
   user, isProfileMenuOpen, profileMenuRef, username, profileInitial,
   authBooting, onProfileMenuToggle, onAuthOpen, onLogout, navigate, children
 }) {
+  const { colors: COLORS } = useTheme();
   const [showAbout, setShowAbout] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
   const path = location.pathname;
+
+  const menuItemStyle = {
+    width: "100%",
+    textAlign: "left",
+    padding: "12px 14px",
+    border: "none",
+    background: "transparent",
+    color: COLORS.ink,
+    cursor: "pointer",
+    fontSize: 14,
+    fontFamily: "inherit",
+    fontWeight: 500,
+  };
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -717,19 +737,22 @@ function MainLayout({
     <div className={`mobile-header ${isScrolled ? "scrolled" : ""}`}>
       <div className="mobile-header-top">
         <span className="mobile-wordmark">Kuizu</span>
-        {!authBooting && !user && (
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button className="mobile-auth-btn" onClick={onAuthOpen}>Sign In</button>
-            <button className="mobile-avatar-btn" onClick={onProfileMenuToggle} aria-label="Open menu">
-              ☰
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <ThemeToggle size={38} />
+          {!authBooting && !user && (
+            <>
+              <button className="mobile-auth-btn" onClick={onAuthOpen}>Sign In</button>
+              <button className="mobile-avatar-btn" onClick={onProfileMenuToggle} aria-label="Open menu">
+                ☰
+              </button>
+            </>
+          )}
+          {!authBooting && user && (
+            <button className="mobile-avatar-btn" onClick={onProfileMenuToggle} aria-label="Open profile menu">
+              {profileInitial}
             </button>
-          </div>
-        )}
-        {!authBooting && user && (
-          <button className="mobile-avatar-btn" onClick={onProfileMenuToggle} aria-label="Open profile menu">
-            {profileInitial}
-          </button>
-        )}
+          )}
+        </div>
       </div>
       <div className="mobile-nav-grid">
         <button className={`mobile-nav-btn ${path === "/games" ? "mobile-nav-btn-active" : ""}`} onClick={() => navigate("/games")}>My Games</button>
@@ -748,8 +771,10 @@ function MainLayout({
         top: 14,
         right: 14,
         zIndex: 50,
+        display: "flex",
+        flexDirection: "column",
         gap: 8,
-        alignItems: "center",
+        alignItems: "flex-end",
       }}
     >
       {!authBooting && !user && (
@@ -791,6 +816,7 @@ function MainLayout({
           {profileInitial}
         </button>
       )}
+      <ThemeToggle />
     </div>
   );
 
@@ -858,20 +884,8 @@ function MainLayout({
   );
 }
 
-const menuItemStyle = {
-  width: "100%",
-  textAlign: "left",
-  padding: "12px 14px",
-  border: "none",
-  background: "transparent",
-  color: COLORS.ink,
-  cursor: "pointer",
-  fontSize: 14,
-  fontFamily: "inherit",
-  fontWeight: 500,
-};
-
 function TypewriterOverlay({ onDismiss }) {
+  const { colors: COLORS } = useTheme();
   const readyRef = useRef(false);
   useEffect(() => {
     const t = setTimeout(() => { readyRef.current = true; }, 50);

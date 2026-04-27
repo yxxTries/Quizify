@@ -1,78 +1,63 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   forgotPassword,
   login,
   register,
   resetPassword,
 } from "./api";
+import { useTheme } from "./ThemeContext.jsx";
 
-const overlayStyle = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(42, 51, 64, 0.55)",
-  backdropFilter: "blur(4px)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  zIndex: 40,
-};
-
-const cardStyle = {
-  width: "min(92vw, 420px)",
-  background: "linear-gradient(180deg, #FFFCF0 0%, #FBF6E9 100%)",
-  border: "1px solid #5A7FA8",
-  borderRadius: 14,
-  boxShadow: "0 16px 45px rgba(0, 0, 0, 0.45)",
-  padding: "20px 18px",
-};
-
-const tabRowStyle = {
-  display: "flex",
-  gap: 8,
-  marginBottom: 14,
-};
-
-const fieldStyle = {
-  width: "100%",
-  padding: "11px 12px",
-  background: "#FBF6E9",
-  border: "1px solid #E5DCC2",
-  borderRadius: 8,
-  color: "#2A3340",
-  outline: "none",
-};
-
-const labelStyle = {
-  display: "block",
-  marginBottom: 6,
-  fontWeight: 600,
-  fontSize: 13,
-  color: "#8A95A3",
-};
-
-const actionBtnStyle = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: 8,
-  border: "1px solid #7FA3C9",
-  background: "#5A7FA8",
-  color: "#FBF6E9",
-  fontWeight: 800,
-  cursor: "pointer",
-};
-
-function tabButtonStyle(active) {
-  return {
-    flex: 1,
-    padding: "8px 10px",
+const getStyles = (COLORS) => ({
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: COLORS.overlay,
+    backdropFilter: "blur(4px)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 40,
+  },
+  card: {
+    width: "min(92vw, 420px)",
+    background: COLORS.creamSoft,
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: 14,
+    boxShadow: `0 16px 45px ${COLORS.shadow}`,
+    padding: "20px 18px",
+  },
+  tabRow: {
+    display: "flex",
+    gap: 8,
+    marginBottom: 14,
+  },
+  field: {
+    width: "100%",
+    padding: "11px 12px",
+    background: COLORS.cream,
+    border: `1px solid ${COLORS.border}`,
     borderRadius: 8,
-    border: active ? "1px solid #7FA3C9" : "1px solid #E5DCC2",
-    background: active ? "rgba(127, 163, 201, 0.2)" : "#FBF6E9",
-    color: active ? "#7FA3C9" : "#8A95A3",
-    fontWeight: 700,
+    color: COLORS.ink,
+    outline: "none",
+  },
+  label: {
+    display: "block",
+    marginBottom: 6,
+    fontWeight: 600,
+    fontSize: 13,
+    color: COLORS.inkSoft,
+  },
+  actionBtn: {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: 8,
+    border: `1px solid ${COLORS.blueDark}`,
+    background: COLORS.blueDark,
+    color: COLORS.creamSoft,
+    fontWeight: 800,
     cursor: "pointer",
-  };
-}
+  },
+});
 
 function passwordHint(password) {
   if (!password) return "Use 8+ chars with upper, lower, number, and symbol.";
@@ -88,6 +73,9 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
   const [info, setInfo] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => getStyles(COLORS), [COLORS]);
 
   const clearMessages = () => {
     setInfo("");
@@ -156,18 +144,29 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
     }
   };
 
+  const getTabButtonStyle = (active) => ({
+    flex: 1,
+    padding: "8px 10px",
+    borderRadius: 8,
+    border: active ? `1px solid ${COLORS.blue}` : `1px solid ${COLORS.border}`,
+    background: active ? COLORS.blueSoft : COLORS.cream,
+    color: active ? COLORS.blue : COLORS.inkSoft,
+    fontWeight: 700,
+    cursor: "pointer",
+  });
+
   return (
-    <div style={overlayStyle} onClick={onClose}>
-      <div style={cardStyle} onClick={(event) => event.stopPropagation()}>
+    <div style={styles.overlay} onClick={onClose}>
+      <div style={styles.card} onClick={(event) => event.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <h3 style={{ fontSize: 24 }}>Account</h3>
+          <h3 style={{ fontSize: 24, color: COLORS.ink }}>Account</h3>
           <button
             type="button"
             onClick={onClose}
             style={{
               background: "transparent",
-              border: "1px solid #5A7FA8",
-              color: "#D8E4F0",
+              border: `1px solid ${COLORS.blueDark}`,
+              color: COLORS.blueDark,
               borderRadius: 6,
               padding: "4px 8px",
               cursor: "pointer",
@@ -177,25 +176,25 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
           </button>
         </div>
 
-        <div style={tabRowStyle}>
-          <button type="button" style={tabButtonStyle(tab === "login")} onClick={() => { clearMessages(); setTab("login"); }}>
+        <div style={styles.tabRow}>
+          <button type="button" style={getTabButtonStyle(tab === "login")} onClick={() => { clearMessages(); setTab("login"); }}>
             Sign In
           </button>
-          <button type="button" style={tabButtonStyle(tab === "register")} onClick={() => { clearMessages(); setTab("register"); }}>
+          <button type="button" style={getTabButtonStyle(tab === "register")} onClick={() => { clearMessages(); setTab("register"); }}>
             Sign Up
           </button>
-          <button type="button" style={tabButtonStyle(tab === "forgot")} onClick={() => { clearMessages(); setTab("forgot"); }}>
+          <button type="button" style={getTabButtonStyle(tab === "forgot")} onClick={() => { clearMessages(); setTab("forgot"); }}>
             Forgot
           </button>
         </div>
 
         {tab === "login" && (
           <form onSubmit={onLogin}>
-            <label style={labelStyle}>Email</label>
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={fieldStyle} />
-            <label style={{ ...labelStyle, marginTop: 10 }}>Password</label>
-            <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} style={fieldStyle} />
-            <button disabled={loading} type="submit" style={{ ...actionBtnStyle, marginTop: 14 }}>
+            <label style={styles.label}>Email</label>
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={styles.field} />
+            <label style={{ ...styles.label, marginTop: 10 }}>Password</label>
+            <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} style={styles.field} />
+            <button disabled={loading} type="submit" style={{ ...styles.actionBtn, marginTop: 14 }}>
               {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>
@@ -203,12 +202,12 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
 
         {tab === "register" && (
           <form onSubmit={onRegister}>
-            <label style={labelStyle}>Email</label>
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={fieldStyle} />
-            <label style={{ ...labelStyle, marginTop: 10 }}>Password</label>
-            <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} style={fieldStyle} />
-            <div style={{ marginTop: 6, color: "#8A95A3", fontSize: 12 }}>{passwordHint(password)}</div>
-            <button disabled={loading} type="submit" style={{ ...actionBtnStyle, marginTop: 14 }}>
+            <label style={styles.label}>Email</label>
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={styles.field} />
+            <label style={{ ...styles.label, marginTop: 10 }}>Password</label>
+            <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} style={styles.field} />
+            <div style={{ marginTop: 6, color: COLORS.inkMuted, fontSize: 12 }}>{passwordHint(password)}</div>
+            <button disabled={loading} type="submit" style={{ ...styles.actionBtn, marginTop: 14 }}>
               {loading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
@@ -216,27 +215,27 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
 
         {tab === "forgot" && (
           <form onSubmit={onForgot}>
-            <label style={labelStyle}>Email</label>
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={fieldStyle} />
-            <button disabled={loading} type="submit" style={{ ...actionBtnStyle, marginTop: 14 }}>
+            <label style={styles.label}>Email</label>
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} style={styles.field} />
+            <button disabled={loading} type="submit" style={{ ...styles.actionBtn, marginTop: 14 }}>
               {loading ? "Sending..." : "Send Reset"}
             </button>
-            <div style={{ marginTop: 10, fontSize: 12, color: "#8A95A3" }}>
+            <div style={{ marginTop: 10, fontSize: 12, color: COLORS.inkMuted }}>
               Have a token already? Use reset form below.
             </div>
 
-            <label style={{ ...labelStyle, marginTop: 12 }}>Reset Token</label>
-            <input value={resetToken} onChange={(e) => setResetToken(e.target.value)} style={fieldStyle} />
-            <label style={{ ...labelStyle, marginTop: 10 }}>New Password</label>
-            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={fieldStyle} />
-            <button disabled={loading || !resetToken || !newPassword} type="button" onClick={onReset} style={{ ...actionBtnStyle, marginTop: 12 }}>
+            <label style={{ ...styles.label, marginTop: 12 }}>Reset Token</label>
+            <input value={resetToken} onChange={(e) => setResetToken(e.target.value)} style={styles.field} />
+            <label style={{ ...styles.label, marginTop: 10 }}>New Password</label>
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} style={styles.field} />
+            <button disabled={loading || !resetToken || !newPassword} type="button" onClick={onReset} style={{ ...styles.actionBtn, marginTop: 12 }}>
               {loading ? "Resetting..." : "Reset Password"}
             </button>
           </form>
         )}
 
-        {error && <div style={{ marginTop: 12, color: "#E89B8C", whiteSpace: "pre-line" }}>{error}</div>}
-        {info && <div style={{ marginTop: 12, color: "#A8C3A0", whiteSpace: "pre-line" }}>{info}</div>}
+        {error && <div style={{ marginTop: 12, color: COLORS.coralDark, whiteSpace: "pre-line" }}>{error}</div>}
+        {info && <div style={{ marginTop: 12, color: COLORS.quizPositive, whiteSpace: "pre-line" }}>{info}</div>}
       </div>
     </div>
   );

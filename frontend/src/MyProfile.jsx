@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { changePassword, getMyGames, updateProfile, updatePreferences } from "./api";
+import { useTheme } from "./ThemeContext.jsx";
 
-const profileStyles = `
+const getProfileStyles = (COLORS) => `
   .account-page {
     min-height: 100vh;
-    background: #FBF6E9;
-    color: #2A3340;
+    background: ${COLORS.cream};
+    color: ${COLORS.ink};
     padding: 32px 20px 48px;
   }
 
@@ -27,7 +28,7 @@ const profileStyles = `
 
   .account-kicker {
     margin: 0 0 8px;
-    color: #8A95A3;
+    color: ${COLORS.inkMuted};
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.14em;
@@ -42,15 +43,15 @@ const profileStyles = `
 
   .account-subtitle {
     margin: 10px 0 0;
-    color: #8A95A3;
+    color: ${COLORS.inkMuted};
     line-height: 1.6;
     max-width: 560px;
   }
 
   .account-back {
-    border: 1px solid #E5DCC2;
-    background: rgba(229, 220, 194, 0.7);
-    color: #2A3340;
+    border: 1px solid ${COLORS.border};
+    background: ${COLORS.creamWarm};
+    color: ${COLORS.ink};
     border-radius: 10px;
     padding: 10px 14px;
     cursor: pointer;
@@ -58,10 +59,10 @@ const profileStyles = `
   }
 
   .account-card {
-    border: 1px solid #E5DCC2;
-    background: linear-gradient(180deg, rgba(255, 252, 240, 0.97) 0%, rgba(255, 252, 240, 0.98) 100%);
+    border: 1px solid ${COLORS.border};
+    background: ${COLORS.creamSoft};
     border-radius: 20px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 18px 40px ${COLORS.shadow};
   }
 
   .account-summary {
@@ -85,9 +86,9 @@ const profileStyles = `
     border-radius: 20px;
     display: grid;
     place-items: center;
-    background: linear-gradient(180deg, #F4ECD2 0%, #E5DCC2 100%);
-    color: #2A3340;
-    border: 1px solid #5A7FA8;
+    background: ${COLORS.creamWarm};
+    color: ${COLORS.ink};
+    border: 1px solid ${COLORS.blueDark};
     font-size: 28px;
     font-weight: 700;
     flex: 0 0 auto;
@@ -102,7 +103,7 @@ const profileStyles = `
 
   .account-email {
     margin: 8px 0 0;
-    color: #5C6877;
+    color: ${COLORS.inkSoft};
     word-break: break-word;
   }
 
@@ -110,13 +111,13 @@ const profileStyles = `
     min-width: 180px;
     padding: 22px 24px;
     border-radius: 18px;
-    border: 1px solid #E5DCC2;
-    background: rgba(251, 246, 233, 0.95);
+    border: 1px solid ${COLORS.border};
+    background: ${COLORS.cream};
   }
 
   .account-count-label {
     margin: 0;
-    color: #8A95A3;
+    color: ${COLORS.inkMuted};
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -149,7 +150,7 @@ const profileStyles = `
 
   .account-panel-copy {
     margin: 0;
-    color: #8A95A3;
+    color: ${COLORS.inkMuted};
     line-height: 1.6;
   }
 
@@ -164,31 +165,31 @@ const profileStyles = `
     margin-bottom: 8px;
     font-size: 13px;
     font-weight: 600;
-    color: #8A95A3;
+    color: ${COLORS.inkMuted};
   }
 
   .account-input {
     width: 100%;
     border-radius: 10px;
-    border: 1px solid #E5DCC2;
-    background: #FBF6E9;
-    color: #2A3340;
+    border: 1px solid ${COLORS.border};
+    background: ${COLORS.cream};
+    color: ${COLORS.ink};
     padding: 14px 16px;
     outline: none;
     font-size: 15px;
   }
 
   .account-input:focus {
-    border-color: #7FA3C9;
-    box-shadow: 0 0 0 3px rgba(127, 163, 201, 0.12);
+    border-color: ${COLORS.blue};
+    box-shadow: 0 0 0 3px ${COLORS.blueSoft};
   }
 
   .account-button {
     width: 100%;
     border-radius: 10px;
-    border: 1px solid #7FA3C9;
-    background: #5A7FA8;
-    color: #FBF6E9;
+    border: 1px solid ${COLORS.blueDark};
+    background: ${COLORS.blueDark};
+    color: ${COLORS.creamSoft};
     font-weight: 800;
     font-size: 15px;
     cursor: pointer;
@@ -208,16 +209,16 @@ const profileStyles = `
   }
 
   .account-feedback-success {
-    color: #A8C3A0;
+    color: ${COLORS.quizPositive};
   }
 
   .account-feedback-error {
-    color: #E89B8C;
+    color: ${COLORS.coral};
   }
 
   .account-empty {
     padding: 28px;
-    color: #8A95A3;
+    color: ${COLORS.inkMuted};
     line-height: 1.6;
   }
 
@@ -253,6 +254,9 @@ function buildFeedback(message = "", tone = "") {
 }
 
 export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, autoReveal = true, onAutoRevealChange }) {
+  const { colors: COLORS } = useTheme();
+  const profileStyles = useMemo(() => getProfileStyles(COLORS), [COLORS]);
+
   const [savedQuizCount, setSavedQuizCount] = useState(0);
   const [loadingCount, setLoadingCount] = useState(Boolean(user));
   const [countError, setCountError] = useState("");
@@ -456,8 +460,8 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, 
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
               <div>
-                <div style={{ fontWeight: 600, color: "#2A3340", marginBottom: 4 }}>Auto-reveal answer when time runs out</div>
-                <div style={{ fontSize: 13, color: "#8A95A3" }}>
+                <div style={{ fontWeight: 600, color: COLORS.ink, marginBottom: 4 }}>Auto-reveal answer when time runs out</div>
+                <div style={{ fontSize: 13, color: COLORS.inkMuted }}>
                   When off, answers are locked but not shown — you control the reveal.
                 </div>
               </div>
@@ -471,7 +475,7 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, 
                   height: 28,
                   borderRadius: 14,
                   border: "none",
-                  background: autoReveal ? "#5A7FA8" : "#E5DCC2",
+                  background: autoReveal ? COLORS.blueDark : COLORS.border,
                   cursor: prefsSaving ? "wait" : "pointer",
                   position: "relative",
                   transition: "background 0.2s",

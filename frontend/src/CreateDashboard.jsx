@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { generateQuiz } from "./api.js";
-import { COLORS, FONTS } from "./theme.js";
+import { FONTS } from "./theme.js";
+import { useTheme } from "./ThemeContext.jsx";
 import DiscoverPostModal from "./DiscoverPostModal.jsx";
 import SaveGameModal from "./SaveGameModal.jsx";
 
@@ -123,6 +124,8 @@ function QuestionCard({
   isDragOver,
   isDragging,
 }) {
+  const { colors: COLORS } = useTheme();
+  const cardStyles = useMemo(() => buildCardStyles(COLORS), [COLORS]);
   const [draft, setDraft] = useState(null);
   const [localErrors, setLocalErrors] = useState({});
   const questionRef = useRef();
@@ -291,6 +294,8 @@ export default function CreateDashboard({
   onPostDiscover,
   onRequireAuth,
 }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => buildStyles(COLORS), [COLORS]);
   // Generation inputs
   const [file, setFile] = useState(null);
   const [prompt, setPrompt] = useState("");
@@ -1066,6 +1071,8 @@ export default function CreateDashboard({
 // ──────────────────────────────────────────────
 
 function ActionBar({ loggedIn, canPlay, hasContent, onPlay, onHost, onSave, onPostDiscover, onRequireAuth, saveLoading, discoverLoading }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => buildStyles(COLORS), [COLORS]);
   const [hovered, setHovered] = useState(null);
   const actionBarRight = loggedIn ? 70 : 124;
 
@@ -1132,7 +1139,7 @@ function ActionBar({ loggedIn, canPlay, hasContent, onPlay, onHost, onSave, onPo
 // Styles
 // ──────────────────────────────────────────────
 
-const styles = {
+const buildStyles = (COLORS) => ({
   page: {
     minHeight: "100vh",
     background: COLORS.cream,
@@ -1287,7 +1294,7 @@ const styles = {
   infoBox: {
     background: COLORS.sageSoft,
     border: `1px solid ${COLORS.sage}`,
-    color: "#3F6B38",
+    color: COLORS.quizPositive,
     borderRadius: 10,
     padding: "10px 14px",
     fontSize: 13,
@@ -1493,9 +1500,9 @@ const styles = {
     pointerEvents: "none",
     zIndex: 60,
   },
-};
+});
 
-const cardStyles = {
+const buildCardStyles = (COLORS) => ({
   card: {
     position: "relative",
     background: COLORS.creamSoft,
@@ -1587,7 +1594,7 @@ const cardStyles = {
   choiceCorrect: {
     background: COLORS.sageSoft,
     border: `1px solid ${COLORS.sageDark}`,
-    color: "#3F6B38",
+    color: COLORS.quizPositive,
   },
   choiceNeutral: {
     background: COLORS.creamWarm,
@@ -1715,4 +1722,4 @@ const cardStyles = {
     cursor: "pointer",
     fontFamily: "inherit",
   },
-};
+});

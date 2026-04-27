@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import DiscoverPostModal from "./DiscoverPostModal.jsx";
 import EditMetaModal from "./EditMetaModal.jsx";
 import { getMyGames, setMyGamePinned, deleteMyGame, updateMyGame, createDiscoverPost } from "./api";
+import { useTheme } from "./ThemeContext.jsx";
 
 const MAX_PINNED_GAMES = 5;
 
@@ -16,7 +17,7 @@ const AVAILABLE_TOPICS = [
   "Other",
 ];
 
-function GameCard({ game, isPinned, onPlay, onTogglePin, onToggleMenu, onEdit, onPostDiscover, onDelete, openMenuId }) {
+function GameCard({ game, isPinned, onPlay, onTogglePin, onToggleMenu, onEdit, onPostDiscover, onDelete, openMenuId, styles, COLORS }) {
   return (
     <article
       style={isPinned ? { ...styles.card, ...styles.pinnedCard } : styles.card}
@@ -57,7 +58,7 @@ function GameCard({ game, isPinned, onPlay, onTogglePin, onToggleMenu, onEdit, o
             <div style={styles.dropdownMenu}>
               <button type="button" style={styles.dropdownItem} onClick={(e) => onEdit(e, game)}>Edit Settings</button>
               <button type="button" style={styles.dropdownItem} onClick={(e) => onPostDiscover(e, game)}>Post to Discover</button>
-              <button type="button" style={{ ...styles.dropdownItem, color: "#D77966" }} onClick={(e) => onDelete(e, game.id)}>Delete</button>
+              <button type="button" style={{ ...styles.dropdownItem, color: COLORS.coralDark }} onClick={(e) => onDelete(e, game.id)}>Delete</button>
             </div>
           )}
         </div>
@@ -76,6 +77,8 @@ function formatDate(isoDate) {
 }
 
 export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
+  const { colors: COLORS } = useTheme();
+  const styles = useMemo(() => getStyles(COLORS), [COLORS]);
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -354,6 +357,8 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
                       onPostDiscover={handlePostDiscover}
                       onDelete={handleDelete}
                       openMenuId={openMenuId}
+                      styles={styles}
+                      COLORS={COLORS}
                     />
                   ))}
                 </div>
@@ -381,6 +386,8 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
                   onPostDiscover={handlePostDiscover}
                   onDelete={handleDelete}
                   openMenuId={openMenuId}
+                  styles={styles}
+                  COLORS={COLORS}
                 />
               ))}
             </section>
@@ -415,12 +422,12 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
   );
 }
 
-const styles = {
+const getStyles = (COLORS) => ({
   page: {
     position: "relative",
     minHeight: "100vh",
-    background: "#EFE7CF",
-    color: "#2A3340",
+    background: COLORS.borderSoft,
+    color: COLORS.ink,
     overflow: "hidden",
     padding: "80px clamp(14px, 3vw, 20px) clamp(16px, 4vw, 34px)",
   },
@@ -437,7 +444,7 @@ const styles = {
   menuIconBtn: {
     background: "transparent",
     border: "none",
-    color: "#8A95A3",
+    color: COLORS.inkMuted,
     fontSize: "24px",
     cursor: "pointer",
     padding: "0 10px",
@@ -452,8 +459,8 @@ const styles = {
     right: 0,
     bottom: "100%",
     marginBottom: "5px",
-    background: "#EFE7CF",
-    border: "1px solid #E5DCC2",
+    background: COLORS.borderSoft,
+    border: `1px solid ${COLORS.border}`,
     borderRadius: "8px",
     padding: "4px 0",
     minWidth: "160px",
@@ -464,7 +471,7 @@ const styles = {
   dropdownItem: {
     background: "transparent",
     border: "none",
-    color: "#2A3340",
+    color: COLORS.ink,
     padding: "10px 16px",
     textAlign: "left",
     cursor: "pointer",
@@ -480,7 +487,7 @@ const styles = {
     flexWrap: "wrap",
   },
   kicker: {
-    color: "#7FA3C9",
+    color: COLORS.blue,
     textTransform: "uppercase",
     letterSpacing: "1.2px",
     fontSize: "12px",
@@ -493,14 +500,14 @@ const styles = {
   },
   subtitle: {
     marginTop: "10px",
-    color: "#8A95A3",
+    color: COLORS.inkMuted,
     maxWidth: "760px",
     fontSize: "15px",
   },
   backBtn: {
-    border: "1px solid #E5DCC2",
-    background: "#FFFCF0",
-    color: "#2A3340",
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.creamSoft,
+    color: COLORS.ink,
     borderRadius: "10px",
     padding: "10px 14px",
     cursor: "pointer",
@@ -509,8 +516,8 @@ const styles = {
     whiteSpace: "nowrap",
   },
   controls: {
-    border: "1px solid #E5DCC2",
-    background: "#FFFCF0",
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.creamSoft,
     borderRadius: "16px",
     padding: "14px",
     display: "flex",
@@ -520,9 +527,9 @@ const styles = {
   searchInput: {
     width: "100%",
     borderRadius: "10px",
-    border: "1px solid #E5DCC2",
-    background: "#FBF6E9",
-    color: "#2A3340",
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.cream,
+    color: COLORS.ink,
     padding: "11px 13px",
     outline: "none",
     fontSize: "15px",
@@ -536,7 +543,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    color: "#8A95A3",
+    color: COLORS.inkMuted,
     fontSize: "13px",
     fontWeight: 700,
     textTransform: "uppercase",
@@ -544,9 +551,9 @@ const styles = {
   },
   selectInput: {
     borderRadius: "8px",
-    border: "1px solid #E5DCC2",
-    background: "#FBF6E9",
-    color: "#2A3340",
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.cream,
+    color: COLORS.ink,
     padding: "8px 10px",
     fontSize: "13px",
     fontWeight: 600,
@@ -558,9 +565,9 @@ const styles = {
     gap: "8px",
   },
   filterBtn: {
-    border: "1px solid #5A7FA8",
+    border: `1px solid ${COLORS.blueDark}`,
     background: "transparent",
-    color: "#8A95A3",
+    color: COLORS.inkMuted,
     borderRadius: "999px",
     padding: "10px 14px",
     cursor: "pointer",
@@ -573,9 +580,9 @@ const styles = {
     flex: "1 1 auto",
   },
   filterBtnActive: {
-    background: "#5A7FA8",
-    borderColor: "#5A7FA8",
-    color: "#EFE7CF",
+    background: COLORS.blueDark,
+    borderColor: COLORS.blueDark,
+    color: COLORS.borderSoft,
   },
   pinStatusWrap: {
     display: "flex",
@@ -585,19 +592,19 @@ const styles = {
     gap: "8px",
   },
   pinStatus: {
-    color: "#8A95A3",
+    color: COLORS.inkMuted,
     fontSize: "13px",
     fontWeight: 700,
   },
   pinMessage: {
-    color: "#E89B8C",
+    color: COLORS.coral,
     fontSize: "13px",
     fontWeight: 700,
   },
   sectionTitle: {
     fontSize: "22px",
     marginBottom: "12px",
-    color: "#2A3340",
+    color: COLORS.ink,
   },
   grid: {
     display: "grid",
@@ -606,9 +613,9 @@ const styles = {
   },
   emptyState: {
     gridColumn: "1 / -1",
-    border: "1px dashed #E5DCC2",
+    border: `1px dashed ${COLORS.border}`,
     borderRadius: "14px",
-    background: "#FFFCF0",
+    background: COLORS.creamSoft,
     textAlign: "center",
     padding: "26px",
   },
@@ -617,12 +624,12 @@ const styles = {
   },
   emptyText: {
     marginTop: "8px",
-    color: "#8A95A3",
+    color: COLORS.inkMuted,
   },
   card: {
     borderRadius: "14px",
-    border: "1px solid #5A7FA8",
-    background: "#FFFCF0",
+    border: `1px solid ${COLORS.blueDark}`,
+    background: COLORS.creamSoft,
     padding: "14px",
     display: "flex",
     flexDirection: "column",
@@ -630,7 +637,7 @@ const styles = {
     cursor: "pointer",
   },
   pinnedCard: {
-    border: "1px solid #5A7FA8",
+    border: `1px solid ${COLORS.blueDark}`,
   },
   cardTop: {
     display: "flex",
@@ -639,7 +646,7 @@ const styles = {
     gap: "8px",
   },
   category: {
-    color: "#7FA3C9",
+    color: COLORS.blue,
     fontSize: "12px",
     fontWeight: 700,
     textTransform: "uppercase",
@@ -653,17 +660,17 @@ const styles = {
     fontWeight: 700,
     borderRadius: "999px",
     padding: "4px 8px",
-    border: "1px solid #8A95A3",
-    color: "#7FA3C9",
-    background: "rgba(127, 163, 201, 0.12)",
+    border: `1px solid ${COLORS.inkMuted}`,
+    color: COLORS.blue,
+    background: COLORS.blueSoft,
   },
   pinBadgeMuted: {
     fontSize: "12px",
     fontWeight: 700,
     borderRadius: "999px",
     padding: "4px 8px",
-    border: "1px solid #5A7FA8",
-    color: "#8A95A3",
+    border: `1px solid ${COLORS.blueDark}`,
+    color: COLORS.inkMuted,
   },
   cardTitle: {
     fontSize: "20px",
@@ -681,13 +688,13 @@ const styles = {
   },
   metaItem: {
     fontSize: "13px",
-    color: "#8A95A3",
+    color: COLORS.inkMuted,
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
   metaValue: {
-    color: "#2A3340",
+    color: COLORS.ink,
     fontWeight: 600,
   },
   actions: {
@@ -698,9 +705,9 @@ const styles = {
   secondaryAction: {
     flex: 1,
     borderRadius: "9px",
-    border: "1px solid #5A7FA8",
+    border: `1px solid ${COLORS.blueDark}`,
     background: "transparent",
-    color: "#D8E4F0",
+    color: COLORS.blueSoft, // or similar appropriate for contrast
     padding: "11px 9px",
     cursor: "pointer",
     fontWeight: 700,
@@ -710,9 +717,9 @@ const styles = {
   pinAction: {
     flex: 1,
     borderRadius: "9px",
-    border: "1px solid #5A7FA8",
-    background: "rgba(127, 163, 201, 0.14)",
-    color: "#7FA3C9",
+    border: `1px solid ${COLORS.blueDark}`,
+    background: COLORS.blueSoft,
+    color: COLORS.blue,
     padding: "11px 9px",
     cursor: "pointer",
     fontWeight: 700,
@@ -722,9 +729,9 @@ const styles = {
   pinActionActive: {
     flex: 1,
     borderRadius: "9px",
-    border: "1px solid #5A7FA8",
-    background: "rgba(127, 163, 201, 0.2)",
-    color: "#2A3340",
+    border: `1px solid ${COLORS.blueDark}`,
+    background: COLORS.blueSoft, // Could adjust opacity if needed
+    color: COLORS.ink,
     padding: "11px 9px",
     cursor: "pointer",
     fontWeight: 700,
@@ -732,9 +739,9 @@ const styles = {
     minHeight: "44px",
   },
   authPrompt: {
-    border: "1px solid #E5DCC2",
+    border: `1px solid ${COLORS.border}`,
     borderRadius: "14px",
-    background: "#FFFCF0",
+    background: COLORS.creamSoft,
     textAlign: "center",
     padding: "28px",
   },
@@ -743,14 +750,14 @@ const styles = {
   },
   authText: {
     marginTop: "8px",
-    color: "#8A95A3",
+    color: COLORS.inkMuted,
   },
   authBtn: {
     marginTop: "14px",
-    border: "1px solid #8A95A3",
+    border: `1px solid ${COLORS.inkMuted}`,
     borderRadius: "10px",
-    background: "#5A7FA8",
-    color: "#EFE7CF",
+    background: COLORS.blueDark,
+    color: COLORS.borderSoft,
     fontWeight: 700,
     padding: "10px 14px",
     cursor: "pointer",
@@ -759,12 +766,12 @@ const styles = {
   inlineSelect: {
     padding: "4px 8px",
     borderRadius: "4px",
-    background: "#FFFCF0",
-    color: "#2A3340",
-    border: "1px solid #E5DCC2",
+    background: COLORS.creamSoft,
+    color: COLORS.ink,
+    border: `1px solid ${COLORS.border}`,
     outline: "none",
     fontFamily: "inherit",
     fontSize: "0.85rem",
     cursor: "pointer",
   }
-};
+});

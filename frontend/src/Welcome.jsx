@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { COLORS, FONTS } from "./theme.js";
+import { FONTS, LIGHT_COLORS as COLORS } from "./theme.js";
 
 export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin }) {
   const username = user?.username || user?.email?.split("@")[0] || "";
@@ -119,6 +119,8 @@ export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin })
     frameId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameId);
   }, []);
+
+  const styles = getStyles(COLORS);
 
   return (
     <div style={styles.page}>
@@ -294,7 +296,7 @@ export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin })
   );
 }
 
-const styles = {
+const getStyles = (COLORS) => ({
   page: {
     position: "relative",
     overflow: "hidden",
@@ -307,4 +309,4 @@ const styles = {
     justifyContent: "center",
     padding: "20px",
   },
-};
+});
