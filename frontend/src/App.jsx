@@ -238,10 +238,22 @@ function JoinRoute({ onExit }) {
   return <Join initialPin={pin || ""} onExit={onExit} />;
 }
 
+const QUIZ_SESSION_KEY = "kuizu_active_quiz";
+
+function loadQuizSession() {
+  try { return JSON.parse(sessionStorage.getItem(QUIZ_SESSION_KEY) || "null"); } catch { return null; }
+}
+function saveQuizSession(quiz) {
+  try { if (quiz) sessionStorage.setItem(QUIZ_SESSION_KEY, JSON.stringify(quiz)); } catch {}
+}
+function clearQuizSession() {
+  try { sessionStorage.removeItem(QUIZ_SESSION_KEY); } catch {}
+}
+
 export default function App() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [quiz, setQuiz] = useState(null);
+  const [quiz, setQuiz] = useState(() => loadQuizSession());
   const [intent, setIntent] = useState("solo");
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -339,12 +351,14 @@ export default function App() {
 
   const handlePlay = (quizData) => {
     setQuiz(quizData);
+    saveQuizSession(quizData);
     setIntent("solo");
     navigate("/quiz");
   };
 
   const handleHostStart = (quizData) => {
     setQuiz(quizData);
+    saveQuizSession(quizData);
     setIntent("host");
     navigate("/host");
   };
@@ -490,7 +504,7 @@ export default function App() {
           path="/quiz"
           element={
             quiz ? (
-              <Quiz quiz={quiz} onRestart={() => navigate("/home")} autoReveal={autoReveal} />
+              <Quiz quiz={quiz} onRestart={() => { clearQuizSession(); navigate("/home"); }} autoReveal={autoReveal} />
             ) : (
               <Navigate to="/home" replace />
             )
@@ -500,7 +514,7 @@ export default function App() {
           path="/host"
           element={
             quiz ? (
-              <Host quiz={quiz} onEnd={() => navigate("/home")} autoReveal={autoReveal} />
+              <Host quiz={quiz} onEnd={() => { clearQuizSession(); navigate("/home"); }} autoReveal={autoReveal} />
             ) : (
               <Navigate to="/home" replace />
             )
