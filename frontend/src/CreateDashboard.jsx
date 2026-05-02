@@ -395,11 +395,6 @@ export default function CreateDashboard({
       setGlobalErrors({});
       return;
     }
-    if (rateLimited) {
-      setError(`Rate limit reached. Try again in ~${Math.ceil(RATE_LIMIT.windowMs / 60000)} min.`);
-      return;
-    }
-
     setLoading(true);
     setError("");
     setErrorBanner("");
@@ -819,10 +814,10 @@ export default function CreateDashboard({
               <button
                 style={{
                   ...styles.generateBtn,
-                  ...((loading || rateLimited) ? styles.generateBtnDisabled : {}),
+                  ...(loading ? styles.generateBtnDisabled : {}),
                 }}
                 onClick={handleGenerate}
-                disabled={loading || rateLimited}
+                disabled={loading}
               >
                 {loading ? (
                   <span style={styles.loadingRow}>
@@ -900,9 +895,6 @@ export default function CreateDashboard({
                 </div>
               </div>
             )}
-            <p style={styles.rateText}>
-              {isUnlimited ? "Unlimited generations available" : `${remaining} of ${RATE_LIMIT.max} generations left this 20-min window`}
-            </p>
           </div>
         </section>
 
