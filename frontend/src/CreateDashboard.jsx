@@ -1109,7 +1109,7 @@ function ActionBar({ loggedIn, canPlay, hasContent, onPlay, onHost, onSave, onPo
         onClick={onPlay}
         disabled={!canPlay}
       >
-        ▶ Play
+        Play
       </button>
       <button
         style={{
