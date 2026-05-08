@@ -603,8 +603,7 @@ export default function App() {
             />
           }
         />
-        {/* Legacy redirect */}
-        <Route path="/preview" element={<Navigate to="/home" replace />} />
+
       </Routes>
 
       {isAuthOpen && (

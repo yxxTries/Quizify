@@ -30,9 +30,9 @@ def validate_quiz_payload(quiz: dict) -> None:
         correct_index = item.get("correct_index")
         if not isinstance(text, str) or not text.strip():
             raise HTTPException(status_code=400, detail="Question text is invalid.")
-        if not isinstance(choices, list) or len(choices) != 4 or not all(isinstance(c, str) and c.strip() for c in choices):
-            raise HTTPException(status_code=400, detail="Each question must have 4 non-empty choices.")
-        if not isinstance(correct_index, int) or correct_index < 0 or correct_index > 3:
+        if not isinstance(choices, list) or len(choices) < 2 or len(choices) > 4 or not all(isinstance(c, str) and c.strip() for c in choices):
+            raise HTTPException(status_code=400, detail="Each question must have 2-4 non-empty choices.")
+        if not isinstance(correct_index, int) or correct_index < 0 or correct_index >= len(choices):
             raise HTTPException(status_code=400, detail="Each question must include a valid correct_index.")
 
 

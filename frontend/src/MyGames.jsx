@@ -371,7 +371,7 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
               {!loading && !error && filteredGames.length === 0 && (
                 <div style={styles.emptyState}>
                   <h2 style={styles.emptyTitle}>No saved games found</h2>
-                  <p style={styles.emptyText}>Save a quiz from the preview screen to see it here.</p>
+                  <p style={styles.emptyText}>Generate a quiz and save it to see it here.</p>
                 </div>
               )}
               {!loading && !error && filteredGames.map((game) => (
