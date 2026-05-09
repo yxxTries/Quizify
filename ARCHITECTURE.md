@@ -45,16 +45,19 @@ quiz-ai/
 │       ├── ThemeContext.jsx      # Theme React context
 │       ├── ThemeToggle.jsx      # Sun/moon toggle
 │       ├── AuthModal.jsx        # Sign In / Sign Up / Forgot Password
-│       ├── Welcome.jsx          # Landing page
-│       ├── CreateDashboard.jsx  # Quiz generation + question editor
+│       ├── Welcome.jsx          # Arcade-style landing page
+│       ├── CreateWizard.jsx     # Multi-step quiz creation wizard (primary)
+│       ├── CreateDashboard.jsx  # Legacy quiz generation + editor
 │       ├── Quiz.jsx             # Core quiz-taking (solo + multiplayer)
 │       ├── Host.jsx             # Host multiplayer lobby + live game
 │       ├── Join.jsx             # Join multiplayer by PIN
-│       ├── Discover.jsx         # Community discover board
+│       ├── Discover.jsx         # Spotify-style community feed
 │       ├── MyGames.jsx          # User's saved games library
 │       ├── MyProfile.jsx        # Profile settings + preferences
+│       ├── QuizPreview.jsx      # Quiz detail preview page
+│       ├── PlayQuizPage.jsx     # Public quiz permalink (SEO)
 │       ├── SaveGameModal.jsx    # Save-to-library modal
-│       ├── DiscoverPostModal.jsx # Publish-to-discover modal
+│       ├── DiscoverPostModal.jsx# Publish-to-discover modal
 │       ├── EditMetaModal.jsx    # Edit title/category modal
 │       └── Upload.jsx           # Legacy component
 ```
@@ -251,12 +254,15 @@ main.jsx
 
 | Path | Component | Description |
 |---|---|---|
-| `/` | `Welcome` | Landing page with rocket animation |
-| `/home` | `CreateDashboard` | Quiz generation + question editor |
+| `/` | `CreateWizard` | Multi-step quiz creation wizard (default home) |
+| `/create` | `CreateWizard` | Alias for quiz creation |
+| `/home` | `CreateDashboard` | Legacy quiz generation + editor |
 | `/quiz` | `Quiz` | Solo quiz-taking |
 | `/host` | `Host` | Host multiplayer (lobby + live) |
 | `/join/:pin?` | `Join` | Join multiplayer by PIN |
-| `/discover` | `Discover` | Community board |
+| `/play/:id` | `PlayQuizPage` | Public quiz permalink (SEO-friendly) |
+| `/preview` | `QuizPreview` | Quiz detail preview (from Discover/MyGames) |
+| `/discover` | `Discover` | Spotify-style community feed |
 | `/games` | `MyGames` | Saved games library |
 | `/profile` | `MyProfile` | Profile settings |
 
@@ -264,15 +270,19 @@ main.jsx
 
 No external state library. State is handled via:
 
-1. **Lifted state in `App.jsx`** — `user`, `quiz`, `autoReveal`, `serverStatus`, modal visibility — passed down as props
+1. **Lifted state in `App.jsx`** — `user`, `quiz`, `autoReveal`, `serverStatus`, `previewData`, `editingQuiz`, `quizSource`, modal visibility — passed down as props
 2. **React Context** — `ThemeContext` for light/dark mode
 3. **`sessionStorage`** — Active quiz, solo progress, multiplayer rejoin session
 4. **`localStorage`** — Theme preference, generation attempt counter
 5. **Component-local `useState` / `useRef`** — WebSocket state per component
 
+### Navigation
+
+The app uses a **side drawer** (hamburger toggle at top-left) as primary navigation across all wrapped pages (CreateWizard, Discover, MyGames, MyProfile, QuizPreview). Pages that don't use the drawer (Quiz, Host, Join) are full-screen game views. After finishing a quiz, users are redirected back to their origin page via `quizSource` state tracking.
+
 ### Styling
 
-Inline CSS-in-JS with theme color keys. Components compute styles via:
+Inline CSS-in-JS with theme color keys. Components follow an arcade design language: pill-shaped buttons with `border-radius: 999px`, 3-4px bottom borders acting as 3D bases, offset box-shadow for depth, and the Syne display font at weight 700. Components compute styles via:
 
 ```js
 const { colors } = useTheme();
@@ -282,7 +292,7 @@ const style = useMemo(() => ({
 }), [colors]);
 ```
 
-Global CSS injected via `<style>` template literals in `App.jsx`. Theme CSS variables set on `document.documentElement`.
+Global CSS injected via `<style>` template literals in `App.jsx`, including `.wiz-arcade` hover/active press effects. Theme CSS variables set on `document.documentElement`. Light/dark themes with identical key names.
 
 ---
 
@@ -382,10 +392,18 @@ Quiz starts → saved to sessionStorage("kuizu_active_quiz")
 
 ### Discover Publishing
 ```
-User clicks "Post to Discover"
-  → DiscoverPostModal (title + category)
-  → POST /discover with quiz JSON (rate-limited)
-  → Appears on Discover board (filterable by category, searchable)
+User browses Discover feed (Spotify-style: hero, genre rows)
+  → Clicks a quiz card → QuizPreview page (meta + questions + play/edit)
+  → From preview: Play, Host, Edit (jumps to CreateWizard step 4), Delete, Save, or Post
+  → "Create" button toggles navigating to CreateWizard for new quiz creation
+```
+
+### Smart Navigation
+```
+User starts a quiz from any origin (CreateWizard, Preview, Discover, PlayQuizPage)
+  → `quizSource` state captures the current path
+  → After quiz/host/join completes → redirect back to `quizSource`
+  → No more blind redirects to a single home page
 ```
 
 ---
@@ -393,13 +411,15 @@ User clicks "Post to Discover"
 ## 10. Key Design Decisions
 
 | Decision | Rationale |
-|---|---|
+|---|---|---|
 | **No ORM** | SQLite + raw `sqlite3` is sufficient; a single `_DB_LOCK` ensures thread safety |
 | **Cookie-based JWT** | HttpOnly cookies auto-attach to requests, no token management in JS, more secure against XSS |
 | **Inline CSS-in-JS** | No build-step CSS pipeline; theme colors flow directly into component styles |
+| **Arcade design language** | Pill-shaped 3D buttons, consistent across all pages via shared `.wiz-arcade` class and Syne display font |
 | **No TypeScript on frontend** | Simpler for rapid iteration; all `.jsx`/`.js` files |
 | **sessionStorage persistence** | Quiz progress and multiplayer rejoin survive page refresh without server-side state |
 | **In-memory WebSocket rooms** | Single server instance, no Redis needed; rooms disappear on server restart |
 | **Gemini-only AI** | Hardcoded to `gemini-2.5-flash`; Groq/Ollama configs exist in `.env` but aren't wired up |
 | **Admin bypass** | Fixed email `amil.shahul777@gmail.com` skips rate limits for testing |
-| **Two-server deployment** | Frontend on Vercel (SPA), backend on separate server (e.g., Render/Railway); CORS configured accordingly |
+| **Two-server deployment** | Frontend on Vercel (SPA), backend on separate server (Render/Railway); CORS configured accordingly |
+| **Generic error messages** | API errors surface a unified "Backend error, please try again later" message to users |

@@ -21,8 +21,7 @@ async function request(path, options = {}) {
 
   const payload = await parseJsonSafely(response);
   if (!response.ok) {
-    const message = payload?.detail || payload?.message || `Server error (${response.status})`;
-    throw new Error(message);
+    throw new Error("Backend error, please try again later");
   }
 
   return payload;
@@ -66,14 +65,7 @@ export async function generateQuiz(file, numQuestions = 10, instructions = "", n
   });
 
   if (!response.ok) {
-    let message = `Server error (${response.status})`;
-    try {
-      const err = await response.json();
-      message = err.detail || message;
-    } catch {
-      // ignore JSON parse errors on error responses
-    }
-    throw new Error(message);
+    throw new Error("Backend error, please try again later");
   }
 
   return response.json();
