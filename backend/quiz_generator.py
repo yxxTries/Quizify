@@ -8,16 +8,9 @@ import json_repair
 
 load_dotenv(Path(__file__).parent / ".env")
 
-AI_BACKEND = os.getenv("AI_BACKEND", "groq")
-
-OLLAMA_URL   = os.getenv("OLLAMA_URL",   "http://localhost:11434/api/generate")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-_groq_model_env = os.getenv("GROQ_MODEL", "llama3-8b-8192")
-GROQ_MODEL = "llama-3.1-8b-instant" if _groq_model_env == "llama3-8b-8192" else _groq_model_env
-
-GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL   = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_URL     = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 MAX_TEXT_CHARS = 4000
 
@@ -47,9 +40,9 @@ Language and clarity:
 - Keep question stems concise — under 30 words where possible.
 
 Distractor quality (MCQ):
-- Each question must have exactly 4 answer choices.
+- Each question must have exactly {num_options} answer choices.
 - Exactly ONE answer must be correct.
-- The other 3 answers must be plausible, drawn from related concepts in the source, but clearly incorrect.
+- The other {distractor_count} answers must be plausible, drawn from related concepts in the source, but clearly incorrect.
 - All answer choices must be DIFFERENT from each other and mutually exclusive.
 - Do NOT include choices like "All of the above" or "None of the above".
 - All options should be similar in length and style.
@@ -69,87 +62,76 @@ Return ONLY valid JSON in this exact format with no other text, markdown formatt
 
 {{"questions":[
 {{"question":"string",
-"choices":["First option text","Second option text","Third option text","Fourth option text"],
+"choices":[{choices_example}],
 "correct_index":0}}
 ]}}
 
-Generate exactly {num_questions} multiple choice questions.
+Generate exactly {num_questions} multiple choice questions with exactly {num_options} choices each.
 Document content:
 {document_text}"""
 
 
-def generate_quiz(document_text: str, num_questions: int = 10, custom_instructions: str | None = None) -> dict:
+def generate_quiz(document_text: str, num_questions: int = 10, num_options: int = 4, custom_instructions: str | None = None) -> dict:
     num_questions = max(1, min(num_questions, 20))
+    num_options = max(2, min(num_options, 4))
     truncated = document_text[:MAX_TEXT_CHARS]
-    
+
     ins_block = ""
     if custom_instructions:
-        # Heavily sanitize or just inject
         ins_block = f"\nATTENTION! The user added custom instructions for this quiz:\n>>> {custom_instructions} <<<\nMake absolutely sure to adapt the quiz based on these instructions."
+
+    choices_example = ", ".join([f'"Option {chr(65+i)}"' for i in range(num_options)])
+    distractor_count = num_options - 1
 
     prompt = PROMPT_TEMPLATE.format(
         num_questions=num_questions,
+        num_options=num_options,
+        distractor_count=distractor_count,
+        choices_example=choices_example,
         document_text=truncated,
-        custom_instructions=ins_block
+        custom_instructions=ins_block,
     )
-    if AI_BACKEND == "groq":
-        raw = _call_groq(prompt)
-    else:
-        raw = _call_ollama(prompt)
-    return _parse_quiz(raw, num_questions)
+    raw = _call_gemini(prompt)
+    return _parse_quiz(raw, num_questions, num_options)
 
 
-def _call_ollama(prompt: str) -> str:
-    try:
-        resp = requests.post(
-            OLLAMA_URL,
-            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False},
-            timeout=120,
-        )
-        resp.raise_for_status()
-        return resp.json()["response"]
-    except requests.RequestException as e:
-        raise RuntimeError(f"Ollama request failed: {e}") from e
-
-
-def _call_groq(prompt: str) -> str:
-    if not GROQ_API_KEY:
-        raise RuntimeError("GROQ_API_KEY is not set in the environment.")
+def _call_gemini(prompt: str) -> str:
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY is not set in the environment.")
     resp = None
     try:
         resp = requests.post(
-            GROQ_URL,
-            headers={
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json",
-            },
+            GEMINI_URL,
+            params={"key": GEMINI_API_KEY},
+            headers={"Content-Type": "application/json"},
             json={
-                "model": GROQ_MODEL,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.1,
-                "max_tokens": 2500,
-                "response_format": {"type": "json_object"},
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "temperature": 0.1,
+                    "maxOutputTokens": 2500,
+                    "responseMimeType": "application/json",
+                },
             },
             timeout=60,
         )
         resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"]
+        return resp.json()["candidates"][0]["content"]["parts"][0]["text"]
     except requests.RequestException as e:
         error_details = resp.text if resp is not None else str(e)
-        raise RuntimeError(f"Groq request failed: {e}. Details: {error_details}") from e
+        raise RuntimeError(f"Gemini request failed: {e}. Details: {error_details}") from e
 
 
-def _parse_quiz(raw: str, num_questions: int = 10) -> dict:
+def _parse_quiz(raw: str, num_questions: int = 10, num_options: int = 4) -> dict:
     cleaned = re.sub(r"```(?:json)?\s*", "", raw).strip()
-    
+
     start_idx = cleaned.find('{')
     end_idx = cleaned.rfind('}')
-    
+
     if start_idx == -1 or end_idx == -1:
         raise ValueError(f"Could not find JSON structure in LLM response. Raw: {raw[:500]}")
-        
+
     json_str = cleaned[start_idx:end_idx+1]
-    
+
     try:
         data = json_repair.loads(json_str)
     except Exception as e:
@@ -167,10 +149,10 @@ def _parse_quiz(raw: str, num_questions: int = 10) -> dict:
         if (
             q
             and isinstance(choices, list)
-            and len(choices) == 4
+            and 2 <= len(choices) <= num_options
             and all(isinstance(c, str) and c.strip() for c in choices)
             and isinstance(idx, int)
-            and 0 <= idx <= 3
+            and 0 <= idx < len(choices)
         ):
             valid.append({
                 "question": q,

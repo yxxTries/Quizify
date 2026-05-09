@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { changePassword, getMyGames, updateProfile, updatePreferences } from "./api";
 import { useTheme } from "./ThemeContext.jsx";
+import { FONTS } from "./theme.js";
 
 const getProfileStyles = (COLORS) => `
   .account-page {
     min-height: 100vh;
     background: ${COLORS.cream};
     color: ${COLORS.ink};
-    padding: 32px 20px 48px;
+    padding: 72px 20px 48px;
   }
 
   .account-shell {
@@ -60,9 +61,10 @@ const getProfileStyles = (COLORS) => `
 
   .account-card {
     border: 1px solid ${COLORS.border};
+    border-bottom: 4px solid ${COLORS.border};
     background: ${COLORS.creamSoft};
     border-radius: 20px;
-    box-shadow: 0 18px 40px ${COLORS.shadow};
+    box-shadow: 0 6px 0 ${COLORS.borderSoft}, 0 8px 24px ${COLORS.shadow};
   }
 
   .account-summary {
@@ -170,13 +172,15 @@ const getProfileStyles = (COLORS) => `
 
   .account-input {
     width: 100%;
-    border-radius: 10px;
+    border-radius: 999px;
     border: 1px solid ${COLORS.border};
+    border-bottom: 3px solid ${COLORS.border};
     background: ${COLORS.cream};
     color: ${COLORS.ink};
-    padding: 14px 16px;
+    padding: 14px 20px;
     outline: none;
     font-size: 15px;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
 
   .account-input:focus {
@@ -186,15 +190,20 @@ const getProfileStyles = (COLORS) => `
 
   .account-button {
     width: 100%;
-    border-radius: 10px;
-    border: 1px solid ${COLORS.blueDark};
-    background: ${COLORS.blueDark};
+    border-radius: 999px;
+    border: none;
+    border-bottom: 4px solid ${COLORS.blueDark};
+    background: ${COLORS.blue};
     color: ${COLORS.creamSoft};
-    font-weight: 800;
+    font-weight: 700;
     font-size: 15px;
     cursor: pointer;
     padding: 14px 20px;
     min-height: 48px;
+    font-family: ${FONTS.display};
+    letter-spacing: 0.5px;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    box-shadow: 0 5px 0 ${COLORS.blueDark}, 0 8px 18px rgba(90,127,168,0.25);
   }
 
   .account-button:disabled {
@@ -235,7 +244,7 @@ const getProfileStyles = (COLORS) => `
 
   @media (max-width: 560px) {
     .account-page {
-      padding: 24px 16px 40px;
+      padding: 64px 16px 40px;
     }
 
     .account-summary,
@@ -253,7 +262,7 @@ function buildFeedback(message = "", tone = "") {
   return { message, tone };
 }
 
-export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, autoReveal = true, onAutoRevealChange }) {
+export default function MyProfile({ user, onRequireAuth, onUserUpdated, autoReveal = true, onAutoRevealChange }) {
   const { colors: COLORS } = useTheme();
   const profileStyles = useMemo(() => getProfileStyles(COLORS), [COLORS]);
 
@@ -393,9 +402,6 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, 
                 <p className="account-kicker">Account</p>
                 <h1 className="account-title">My Profile</h1>
               </div>
-              <button type="button" onClick={onBack} className="account-back">
-                Back
-              </button>
             </header>
 
             <div className="account-card account-empty">
@@ -425,9 +431,6 @@ export default function MyProfile({ user, onBack, onRequireAuth, onUserUpdated, 
                 Edit your name, email, and password from one place.
               </p>
             </div>
-            <button type="button" onClick={onBack} className="account-back">
-              Back
-            </button>
           </header>
 
           <section className="account-card account-summary">

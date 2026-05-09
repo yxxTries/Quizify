@@ -1,0 +1,12 @@
+{
+  "name": "Kuizu — AI Quiz Maker",
+  "short_name": "Kuizu",
+  "description": "Free AI-powered quiz maker. Turn slides, PDFs, and text into interactive quizzes. Play solo or host live multiplayer games.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF6E9",
+  "theme_color": "#2A3340",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

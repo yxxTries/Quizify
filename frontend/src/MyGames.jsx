@@ -3,6 +3,7 @@ import DiscoverPostModal from "./DiscoverPostModal.jsx";
 import EditMetaModal from "./EditMetaModal.jsx";
 import { getMyGames, setMyGamePinned, deleteMyGame, updateMyGame, createDiscoverPost } from "./api";
 import { useTheme } from "./ThemeContext.jsx";
+import { FONTS } from "./theme.js";
 
 const MAX_PINNED_GAMES = 5;
 
@@ -21,7 +22,7 @@ function GameCard({ game, isPinned, onPlay, onTogglePin, onToggleMenu, onEdit, o
   return (
     <article
       style={isPinned ? { ...styles.card, ...styles.pinnedCard } : styles.card}
-      onClick={() => onPlay(game.quiz)}
+      onClick={() => onPlay(game)}
     >
       <div style={styles.cardTop}>
         <span style={styles.category}>{game.category}</span>
@@ -42,7 +43,7 @@ function GameCard({ game, isPinned, onPlay, onTogglePin, onToggleMenu, onEdit, o
       </div>
 
       <div style={styles.actions}>
-        <button type="button" style={styles.secondaryAction} onClick={(e) => { e.stopPropagation(); onPlay(game.quiz); }}>Play</button>
+        <button type="button" style={styles.secondaryAction} onClick={(e) => { e.stopPropagation(); onPlay(game); }}>Play</button>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onTogglePin(game); }}
@@ -76,7 +77,7 @@ function formatDate(isoDate) {
   });
 }
 
-export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
+export default function MyGames({ username, onPlay, onRequireAuth }) {
   const { colors: COLORS } = useTheme();
   const styles = useMemo(() => getStyles(COLORS), [COLORS]);
   const [games, setGames] = useState([]);
@@ -282,10 +283,6 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
               {username ? `${username}, here` : "Here"} are your saved quiz sets.
             </p>
           </div>
-
-          <button type="button" onClick={onBack} style={styles.backBtn} className="mygames-back-btn">
-            Back
-          </button>
         </header>
 
         {authRequired && (
@@ -371,7 +368,7 @@ export default function MyGames({ onBack, username, onPlay, onRequireAuth }) {
               {!loading && !error && filteredGames.length === 0 && (
                 <div style={styles.emptyState}>
                   <h2 style={styles.emptyTitle}>No saved games found</h2>
-                  <p style={styles.emptyText}>Save a quiz from the preview screen to see it here.</p>
+                  <p style={styles.emptyText}>Generate a quiz and save it to see it here.</p>
                 </div>
               )}
               {!loading && !error && filteredGames.map((game) => (
@@ -566,23 +563,31 @@ const getStyles = (COLORS) => ({
   },
   filterBtn: {
     border: `1px solid ${COLORS.blueDark}`,
-    background: "transparent",
+    borderBottom: `3px solid ${COLORS.blueDark}`,
+    background: COLORS.creamSoft,
     color: COLORS.inkMuted,
     borderRadius: "999px",
-    padding: "10px 14px",
+    padding: "10px 16px",
     cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: 600,
+    fontSize: "13px",
+    fontWeight: 700,
     minHeight: 44,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     flex: "1 1 auto",
+    fontFamily: FONTS.display,
+    letterSpacing: 0.5,
+    transition: "all 0.12s ease",
+    boxShadow: `0 4px 0 ${COLORS.blueDark}, 0 4px 10px rgba(90,127,168,0.15)`,
   },
   filterBtnActive: {
-    background: COLORS.blueDark,
+    background: COLORS.blue,
     borderColor: COLORS.blueDark,
-    color: COLORS.borderSoft,
+    borderBottomColor: COLORS.blueDark,
+    color: COLORS.creamSoft,
+    fontWeight: 700,
+    boxShadow: `0 4px 0 ${COLORS.blueDark}, 0 6px 14px rgba(90,127,168,0.3)`,
   },
   pinStatusWrap: {
     display: "flex",
@@ -627,17 +632,22 @@ const getStyles = (COLORS) => ({
     color: COLORS.inkMuted,
   },
   card: {
-    borderRadius: "14px",
-    border: `1px solid ${COLORS.blueDark}`,
+    borderRadius: "18px",
+    border: `1px solid ${COLORS.border}`,
+    borderBottom: `4px solid ${COLORS.border}`,
     background: COLORS.creamSoft,
     padding: "14px",
     display: "flex",
     flexDirection: "column",
     gap: "9px",
     cursor: "pointer",
+    boxShadow: `0 6px 0 ${COLORS.borderSoft}, 0 6px 16px rgba(42,51,64,0.05)`,
+    transition: "border-color 0.15s, transform 0.15s, box-shadow 0.15s",
   },
   pinnedCard: {
     border: `1px solid ${COLORS.blueDark}`,
+    borderBottomColor: COLORS.blueDark,
+    boxShadow: `0 6px 0 ${COLORS.blueDark}, 0 6px 16px rgba(90,127,168,0.12)`,
   },
   cardTop: {
     display: "flex",
@@ -704,39 +714,54 @@ const getStyles = (COLORS) => ({
   },
   secondaryAction: {
     flex: 1,
-    borderRadius: "9px",
+    borderRadius: "999px",
     border: `1px solid ${COLORS.blueDark}`,
-    background: "transparent",
-    color: COLORS.blueSoft, // or similar appropriate for contrast
-    padding: "11px 9px",
+    borderBottom: `3px solid ${COLORS.blueDark}`,
+    background: COLORS.creamSoft,
+    color: COLORS.blueDark,
+    padding: "11px 12px",
     cursor: "pointer",
     fontWeight: 700,
     fontSize: "13px",
     minHeight: "44px",
+    fontFamily: FONTS.display,
+    letterSpacing: 0.5,
+    transition: "all 0.12s ease",
+    boxShadow: `0 4px 0 ${COLORS.blueDark}, 0 4px 10px rgba(90,127,168,0.12)`,
   },
   pinAction: {
     flex: 1,
-    borderRadius: "9px",
+    borderRadius: "999px",
     border: `1px solid ${COLORS.blueDark}`,
+    borderBottom: `3px solid ${COLORS.blueDark}`,
     background: COLORS.blueSoft,
-    color: COLORS.blue,
-    padding: "11px 9px",
+    color: COLORS.blueDark,
+    padding: "11px 12px",
     cursor: "pointer",
     fontWeight: 700,
     fontSize: "13px",
     minHeight: "44px",
+    fontFamily: FONTS.display,
+    letterSpacing: 0.5,
+    transition: "all 0.12s ease",
+    boxShadow: `0 4px 0 ${COLORS.blueDark}, 0 4px 10px rgba(90,127,168,0.12)`,
   },
   pinActionActive: {
     flex: 1,
-    borderRadius: "9px",
+    borderRadius: "999px",
     border: `1px solid ${COLORS.blueDark}`,
-    background: COLORS.blueSoft, // Could adjust opacity if needed
-    color: COLORS.ink,
-    padding: "11px 9px",
+    borderBottom: `3px solid ${COLORS.blueDark}`,
+    background: COLORS.blue,
+    color: COLORS.creamSoft,
+    padding: "11px 12px",
     cursor: "pointer",
     fontWeight: 700,
     fontSize: "13px",
     minHeight: "44px",
+    fontFamily: FONTS.display,
+    letterSpacing: 0.5,
+    transition: "all 0.12s ease",
+    boxShadow: `0 4px 0 ${COLORS.blueDark}, 0 6px 14px rgba(90,127,168,0.3)`,
   },
   authPrompt: {
     border: `1px solid ${COLORS.border}`,
@@ -754,14 +779,20 @@ const getStyles = (COLORS) => ({
   },
   authBtn: {
     marginTop: "14px",
-    border: `1px solid ${COLORS.inkMuted}`,
-    borderRadius: "10px",
-    background: COLORS.blueDark,
-    color: COLORS.borderSoft,
+    border: "none",
+    borderBottom: `4px solid ${COLORS.blueDark}`,
+    borderRadius: "999px",
+    background: COLORS.blue,
+    color: COLORS.creamSoft,
     fontWeight: 700,
-    padding: "10px 14px",
+    padding: "12px 18px",
     cursor: "pointer",
     width: "100%",
+    fontFamily: FONTS.display,
+    letterSpacing: 0.5,
+    fontSize: 14,
+    transition: "transform 0.12s ease, box-shadow 0.12s ease",
+    boxShadow: `0 5px 0 ${COLORS.blueDark}, 0 8px 18px rgba(90,127,168,0.25)`,
   },
   inlineSelect: {
     padding: "4px 8px",

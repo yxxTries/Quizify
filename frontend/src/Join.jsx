@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Quiz from "./Quiz.jsx";
 import { buildWebSocketUrl } from "./api.js";
 import { useTheme } from "./ThemeContext.jsx";
+import { FONTS } from "./theme.js";
 import ThemeToggle from "./ThemeToggle.jsx";
 
 const SESSION_KEY = "kuizu_mp_session";
@@ -310,16 +311,19 @@ export default function Join({ onExit, initialPin = "" }) {
               style={{
                 width: "100%",
                 padding: "clamp(14px, 4vw, 20px)",
-                background: (!pin || !name) ? C.border : C.blueDark,
+                background: (!pin || !name) ? C.border : C.blue,
                 color: (!pin || !name) ? C.inkSoft : "#FFFFFF",
                 border: "none",
-                borderRadius: "16px",
+                borderBottom: `4px solid ${(!pin || !name) ? C.border : C.blueDark}`,
+                borderRadius: "999px",
                 cursor: (status === "joining" || !pin || !name) ? "not-allowed" : "pointer",
                 fontSize: "clamp(16px, 4.5vw, 20px)",
-                fontWeight: "bold",
+                fontWeight: 700,
                 marginTop: "10px",
-                transition: "all 0.2s",
-                boxShadow: (!pin || !name) ? "none" : `0 8px 24px ${C.shadow}`,
+                fontFamily: FONTS.display,
+                letterSpacing: 0.5,
+                transition: "all 0.12s ease",
+                boxShadow: (!pin || !name) ? "none" : `0 5px 0 ${C.blueDark}, 0 10px 24px rgba(90,127,168,0.25)`,
                 opacity: status === "joining" ? 0.7 : 1
               }}
               onMouseOver={(e) => { if(pin && name && status !== "joining") e.currentTarget.style.transform = "translateY(-2px)"; }}
@@ -333,15 +337,19 @@ export default function Join({ onExit, initialPin = "" }) {
                onClick={onExit}
                style={{
                  width: "100%",
-                 padding: "16px",
+                 padding: "14px",
                  background: "transparent",
                  color: C.inkSoft,
-                 border: "2px solid transparent",
-                 borderRadius: "16px",
+                 border: `1px solid ${C.border}`,
+                 borderBottom: `4px solid ${C.border}`,
+                 borderRadius: "999px",
                  cursor: "pointer",
-                 fontSize: "18px",
-                 fontWeight: "600",
-                 transition: "all 0.2s",
+                 fontSize: "17px",
+                 fontWeight: 700,
+                 fontFamily: FONTS.display,
+                 letterSpacing: 0.5,
+                 transition: "all 0.12s ease",
+                 boxShadow: `0 5px 0 ${C.borderSoft}, 0 6px 14px rgba(42,51,64,0.06)`,
                }}
                onMouseOver={(e) => { e.currentTarget.style.background = C.yellowSoft; e.currentTarget.style.color = C.ink; }}
                onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.inkSoft; }}

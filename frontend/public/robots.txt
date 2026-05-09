@@ -1,2 +1,8 @@
 User-agent: *
 Allow: /
+Allow: /play/
+Disallow: /host
+Disallow: /join
+Disallow: /quiz
+Disallow: /profile
+Sitemap: https://www.kuizu.online/sitemap.xml

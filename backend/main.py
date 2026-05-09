@@ -204,6 +204,7 @@ async def websocket_join(websocket: WebSocket, pin: str, name: str):
 async def generate_quiz_endpoint(
     file: UploadFile = File(None),
     num_questions: int = Form(10),
+    num_options: int = Form(4),
     custom_instructions: str = Form(None)
 ):
     if not file and not custom_instructions:
@@ -244,7 +245,7 @@ async def generate_quiz_endpoint(
 
     # ── 4. Generate quiz ───────────────────────────────────────────────────
     try:
-        quiz = generate_quiz(text, num_questions=num_questions, custom_instructions=custom_instructions)
+        quiz = generate_quiz(text, num_questions=num_questions, num_options=num_options, custom_instructions=custom_instructions)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except ValueError as e:

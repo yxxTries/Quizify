@@ -1,4 +1,4 @@
-﻿﻿import React, { useState, useRef, useCallback, useEffect } from "react";
+﻿import React, { useState, useRef, useCallback, useEffect } from "react";
 import { generateQuiz, getMyGames } from "./api.js";
 
 const ALLOWED = [".pdf", ".pptx"];
@@ -571,7 +571,7 @@ const styles = {
   },
   logo: {
     fontFamily: "'Syne', sans-serif",
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: "22px",
     color: "#F1F2F6",
     letterSpacing: "-0.5px",
@@ -635,7 +635,7 @@ const styles = {
   userGreetingTitle: {
     margin: "8px 0 10px 0",
     fontFamily: "'Syne', sans-serif",
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: "clamp(32px, 4.5vw, 48px)",
     lineHeight: 1.08,
     color: "#F1F2F6",
@@ -649,7 +649,7 @@ const styles = {
   },
   h1: {
     fontFamily: "'Syne', sans-serif",
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: "clamp(30px, 5vw, 56px)",
     lineHeight: 1.1,
     textAlign: "center",
@@ -767,7 +767,7 @@ const styles = {
   },
   sliderValue: {
     fontFamily: "'Syne', sans-serif",
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: "22px",
     color: "#00D2D3",
     lineHeight: 1,
@@ -859,7 +859,7 @@ const styles = {
   },
   timerValue: {
     fontFamily: "'Syne', sans-serif",
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: "18px",
     color: "#00D2D3",
     lineHeight: 1,

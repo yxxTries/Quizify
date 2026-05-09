@@ -45,14 +45,16 @@ export function buildWebSocketUrl(path) {
  * Upload a file to the backend and receive a generated quiz.
  * @param {File} file - The PDF or PPTX file to upload.
  * @param {number} numQuestions - How many questions to generate (1–20).
+ * @param {number} numOptions - How many options per question (2–4).
  * @returns {Promise<{questions: Array}>} The quiz data.
  */
-export async function generateQuiz(file, numQuestions = 10, instructions = "") {
+export async function generateQuiz(file, numQuestions = 10, instructions = "", numOptions = 4) {
   const formData = new FormData();
   if (file) {
     formData.append("file", file);
   }
   formData.append("num_questions", String(numQuestions));
+  formData.append("num_options", String(numOptions));
   if (instructions && instructions.trim() !== "") {
     formData.append("custom_instructions", instructions.trim());
   }

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#2A3340"/>
+  <rect x="60" y="60" width="1080" height="510" rx="24" fill="none" stroke="#FBF6E9" stroke-width="2" opacity="0.15"/>
+  <text x="600" y="260" text-anchor="middle" font-family="Syne, sans-serif" font-size="120" font-weight="800" fill="#FBF6E9" letter-spacing="4">Kuizu</text>
+  <text x="600" y="340" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="32" fill="#8B9DC3" font-weight="500">Turn slides into quizzes</text>
+  <text x="600" y="420" text-anchor="middle" font-family="'DM Sans', sans-serif" font-size="24" fill="#6B7F9C">Free AI-powered quiz maker · Solo or live multiplayer</text>
+</svg>

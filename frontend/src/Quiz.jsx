@@ -38,8 +38,8 @@ const pbStyles = {
   container: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: "4px",
+    justifyContent: "center",
+    gap: "clamp(6px, 1.5vw, 10px)",
     width: "100%",
     boxSizing: "border-box",
     padding: "4px 0",
@@ -48,6 +48,7 @@ const pbStyles = {
     flexShrink: 0,
     borderRadius: "50%",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    borderBottom: "2px solid transparent",
   }
 };
 
@@ -58,8 +59,7 @@ function ProgressBar({ results, current }) {
   return (
     <div style={{
       ...pbStyles.container,
-      justifyContent: isFew ? "center" : "space-between",
-      gap: isFew ? "clamp(16px, 4vw, 32px)" : "4px"
+      gap: isFew ? "clamp(14px, 4vw, 28px)" : "clamp(6px, 1.5vw, 10px)"
     }}>
       {results.map((res, i) => {
         let bgColor = C.quizCard;
@@ -110,7 +110,6 @@ function ScoreScreen({ score, total, onRestart, onJoinNew, leaderboard, isMultip
   const { colors: C } = useTheme();
   const scoreStyles = useMemo(() => buildScoreStyles(C), [C]);
   const pct = Math.round((score / total) * 100);
-  const emoji = pct === 100 ? "🏆" : pct >= 70 ? "🎉" : pct >= 40 ? "🙂" : "😅";
 
   const [copied, setCopied] = useState(false);
 
@@ -124,7 +123,6 @@ function ScoreScreen({ score, total, onRestart, onJoinNew, leaderboard, isMultip
 
   return (
     <div style={scoreStyles.wrap}>
-      <div style={scoreStyles.emoji}>{emoji}</div>
       <h1 style={scoreStyles.h1}>Quiz complete!</h1>
       <div style={scoreStyles.scoreBox}>
         <span style={scoreStyles.scoreNum}>{score}</span>
@@ -213,7 +211,7 @@ const buildScoreStyles = (C) => ({
   emoji: { fontSize: "72px", lineHeight: 1 },
   h1: {
     fontFamily: "'Syne', sans-serif",
-    fontWeight: 800,
+    fontWeight: 700,
     fontSize: "clamp(28px, 6vw, 40px)",
     color: C.quizText,
     margin: 0,
@@ -222,24 +220,29 @@ const buildScoreStyles = (C) => ({
   scoreBox: { display: "flex", alignItems: "baseline", gap: "6px", marginTop: "8px" },
   scoreNum: {
     fontFamily: "'Syne', sans-serif",
-    fontWeight: 800,
-    fontSize: "clamp(48px, 10vw, 72px)",
+    fontWeight: 700,
+    fontSize: "clamp(56px, 12vw, 80px)",
     color: C.quizAccent,
     lineHeight: 1,
+    textShadow: `0 2px 0 ${C.quizAccent}`,
   },
-  scoreOf: { fontSize: "28px", color: C.quizTextMuted },
-  pct: { fontSize: "18px", color: C.quizTextSoft },
+  scoreOf: { fontSize: "28px", color: C.quizTextMuted, fontFamily: "'Syne', sans-serif", fontWeight: 700 },
+  pct: { fontSize: "18px", color: C.quizTextSoft, fontWeight: 700, fontFamily: "'Syne', sans-serif" },
   btn: {
     marginTop: "24px",
     background: C.quizAccent,
-    color: C.quizBg,
+    color: "#FFFFFF",
     border: "none",
-    borderRadius: "12px",
-    padding: "16px 40px",
+    borderBottom: `4px solid ${C.quizAccent}`,
+    borderRadius: 999,
+    padding: "14px 36px",
     fontSize: "16px",
-    fontWeight: 500,
-    fontFamily: "'DM Sans', sans-serif",
+    fontWeight: 700,
+    fontFamily: "'Syne', sans-serif",
     cursor: "pointer",
+    letterSpacing: 0.5,
+    transition: "transform 0.12s ease, box-shadow 0.12s ease",
+    boxShadow: `0 5px 0 ${C.quizAccent}, 0 8px 20px ${C.shadow}`,
   },
   reviewSection: {
     width: "100%",
@@ -908,10 +911,10 @@ const buildStyles = (C) => ({
   header: {
     display: "flex",
     flexDirection: "column",
-    padding: "clamp(12px, 1.5vw, 24px) 0",
+    padding: "clamp(10px, 1.5vw, 20px) 0",
     background: C.quizHeader,
-    borderBottom: `1px solid ${C.quizCardBorder}`,
-    boxShadow: `0 4px 20px ${C.shadow}`,
+    borderBottom: `3px solid ${C.quizCardBorder}`,
+    boxShadow: `0 4px 0 ${C.quizCardBorder}, 0 8px 24px ${C.shadow}`,
   },
   headerTop: {
     display: "flex",
@@ -922,35 +925,49 @@ const buildStyles = (C) => ({
   },
   logo: {
     fontFamily: "'Syne', sans-serif",
-    fontWeight: 800,
-    fontSize: "24px",
+    fontWeight: 700,
+    fontSize: "22px",
     color: C.quizText,
     letterSpacing: "-0.5px",
+    background: C.quizSubCard,
+    padding: "6px 16px",
+    borderRadius: 999,
+    borderBottom: `3px solid ${C.quizSubCardBorder}`,
+    boxShadow: `0 3px 0 ${C.quizSubCardBorder}`,
   },
   scoreChip: {
     background: C.quizSubCard,
-    borderRadius: "20px",
-    padding: "6px 14px",
-    fontSize: "14px",
+    border: `1px solid ${C.quizCardBorder}`,
+    borderBottom: `3px solid ${C.quizCardBorder}`,
+    borderRadius: 999,
+    padding: "8px 16px",
+    fontSize: "13px",
     color: C.quizText,
-    fontWeight: 500,
+    fontWeight: 700,
+    fontFamily: "'Syne', sans-serif",
+    letterSpacing: 0.3,
+    boxShadow: `0 3px 0 ${C.quizSubCardBorder}`,
   },
   timerChip: {
     background: C.quizAccentSoft,
     border: `1px solid ${C.quizAccent}`,
-    borderRadius: "999px",
+    borderBottom: `3px solid ${C.quizAccent}`,
+    borderRadius: 999,
     padding: "10px 18px",
     color: C.quizAccent,
     fontWeight: 700,
-    fontSize: "15px",
+    fontSize: "14px",
     whiteSpace: "nowrap",
-    minWidth: "120px",
+    minWidth: "110px",
     textAlign: "center",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     lineHeight: 1,
     flexShrink: 0,
+    fontFamily: "'Syne', sans-serif",
+    letterSpacing: 0.3,
+    boxShadow: `0 3px 0 ${C.quizAccent}`,
   },
   timerChipExpired: {
     background: C.quizNegativeBg,

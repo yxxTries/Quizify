@@ -5,7 +5,7 @@ export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin })
   const username = user?.username || user?.email?.split("@")[0] || "";
   const rocketRef = useRef(null);
   const trailRef = useRef(null);
-  
+
   const posRef = useRef({
     x: typeof window !== 'undefined' ? window.innerWidth / 4 : 100,
     y: typeof window !== 'undefined' ? window.innerHeight / 4 : 100,
@@ -15,7 +15,7 @@ export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin })
 
   useEffect(() => {
     let frameId;
-    const size = 68; // Dimensions of the rocket SVG
+    const size = 68;
     let frameCount = 0;
 
     const loop = () => {
@@ -27,7 +27,6 @@ export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin })
       let nextY = pos.y + pos.vy;
       let bounced = false;
 
-      // Collision: Screen Walls
       if (nextX <= 0) {
         pos.vx = Math.abs(pos.vx);
         nextX = 0;
@@ -48,7 +47,6 @@ export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin })
         bounced = true;
       }
 
-      // Collision: Interactive Cards
       const cards = document.querySelectorAll('.welcome-card');
       for (let i = 0; i < cards.length; i++) {
         const rect = cards[i].getBoundingClientRect();
@@ -69,7 +67,6 @@ export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin })
         }
       }
 
-      // Add slight randomness to bounce so it doesn't get stuck in a perfect loop
       if (bounced) {
         const angleVariation = (Math.random() - 0.5) * 0.4;
         const speed = Math.sqrt(pos.vx * pos.vx + pos.vy * pos.vy);
@@ -81,33 +78,29 @@ export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin })
       pos.x = Math.max(0, Math.min(nextX, window.innerWidth - size));
       pos.y = Math.max(0, Math.min(nextY, window.innerHeight - size));
 
-      // Original SVG points top-right (-45 deg). We offset the calculated movement angle by 45.
       const angle = Math.atan2(pos.vy, pos.vx) * (180 / Math.PI) + 45;
       rocketRef.current.style.transform = `translate(${pos.x}px, ${pos.y}px) rotate(${angle}deg)`;
 
-      // Drop trail dots (sketched line look)
       if (frameCount % 14 === 0 && trailRef.current) {
         const dot = document.createElement("div");
         dot.className = "trail-dot";
-        
+
         const speed = Math.sqrt(pos.vx * pos.vx + pos.vy * pos.vy);
-        // Align exactly with the exhaust tip
         const tailX = pos.x + size / 2 - (pos.vx / speed) * 32;
         const tailY = pos.y + size / 2 - (pos.vy / speed) * 32;
-        
+
         dot.style.left = `${tailX}px`;
         dot.style.top = `${tailY}px`;
-        
-        // Randomize length and angle slightly for a hand-drawn feel
+
         const dashLength = 6 + Math.random() * 6;
         dot.style.width = `${dashLength}px`;
-        
+
         const moveAngle = Math.atan2(pos.vy, pos.vx) * (180 / Math.PI);
         const wobble = (Math.random() - 0.5) * 18;
         dot.style.transform = `translate(-50%, -50%) rotate(${moveAngle + wobble}deg)`;
-        
+
         trailRef.current.appendChild(dot);
-        
+
         setTimeout(() => {
           if (dot.parentNode) dot.parentNode.removeChild(dot);
         }, 2500);
@@ -165,74 +158,102 @@ export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin })
           0%, 100% { transform: translateY(0) rotate(0deg); }
           50% { transform: translateY(-8px) rotate(4deg); }
         }
+        @keyframes arcadePulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.03); }
+        }
+        @keyframes fadeDown {
+          from { opacity: 0; transform: translateY(-15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
         .welcome-container {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 40px;
+          gap: 24px;
           width: 100%;
           position: relative;
           z-index: 2;
         }
         .welcome-greeting {
           font-family: ${FONTS.display};
-          font-size: clamp(32px, 5vw, 48px);
-          font-weight: 800;
+          font-size: clamp(28px, 4vw, 44px);
+          font-weight: 700;
           color: ${COLORS.ink};
           text-align: center;
           margin: 0;
           animation: fadeDown 0.4s ease-out;
         }
-        @keyframes fadeDown {
-          from { opacity: 0; transform: translateY(-15px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .welcome-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 20px;
-          width: 100%;
-          max-width: 960px;
-        }
-        .welcome-card {
-          background: ${COLORS.creamSoft};
-          border: 1px solid ${COLORS.border};
-          border-radius: 20px;
-          padding: 56px 28px;
+        .arcade-btn {
           font-family: ${FONTS.display};
-          font-weight: 800;
-          font-size: 22px;
-          letter-spacing: 0.5px;
-          color: ${COLORS.ink};
+          font-weight: 700;
+          font-size: clamp(36px, 6vw, 56px);
+          letter-spacing: 2px;
+          border: none;
+          border-radius: 999px;
           cursor: pointer;
-          transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-          min-height: 220px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
+          transition: transform 0.12s ease, box-shadow 0.12s ease;
+          text-transform: uppercase;
+          width: 100%;
+          max-width: 520px;
+          padding: 32px 48px;
+          position: relative;
         }
-        .welcome-card:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 12px 28px rgba(42, 51, 64, 0.12);
+        .arcade-btn:hover {
+          transform: translateY(-4px) scale(1.02);
         }
-        .welcome-card-signin { background: ${COLORS.yellow}; }
-        .welcome-card-signin:hover { background: ${COLORS.yellowSoft}; }
-        .welcome-card-create { background: ${COLORS.blue}; color: ${COLORS.creamSoft}; }
-        .welcome-card-create:hover { background: ${COLORS.blueDark}; }
-        .welcome-card-join { background: ${COLORS.sage}; color: ${COLORS.ink}; }
-        .welcome-card-join:hover { background: ${COLORS.sageDark}; }
-
-        @media (max-width: 768px) {
-          .welcome-grid {
-            grid-template-columns: 1fr;
-            gap: 14px;
-            max-width: 420px;
-          }
-          .welcome-card {
-            min-height: 120px;
-            padding: 36px 24px;
-            font-size: 20px;
+        .arcade-btn:active {
+          transform: translateY(0) scale(0.98);
+        }
+        .arcade-btn-create {
+          background: ${COLORS.yellow};
+          color: ${COLORS.ink};
+          border-bottom: 6px solid ${COLORS.yellowDark};
+          box-shadow: 0 8px 0 ${COLORS.yellowDark}, 0 12px 32px rgba(232, 199, 107, 0.35);
+          animation: arcadePulse 3s ease-in-out infinite;
+        }
+        .arcade-btn-create:hover {
+          box-shadow: 0 10px 0 ${COLORS.yellowDark}, 0 16px 40px rgba(232, 199, 107, 0.45);
+        }
+        .arcade-btn-create:active {
+          border-bottom-width: 3px;
+          box-shadow: 0 4px 0 ${COLORS.yellowDark}, 0 6px 16px rgba(232, 199, 107, 0.3);
+        }
+        .arcade-btn-join {
+          background: ${COLORS.sage};
+          color: ${COLORS.ink};
+          border-bottom: 6px solid ${COLORS.sageDark};
+          box-shadow: 0 8px 0 ${COLORS.sageDark}, 0 12px 32px rgba(130, 168, 123, 0.35);
+        }
+        .arcade-btn-join:hover {
+          box-shadow: 0 10px 0 ${COLORS.sageDark}, 0 16px 40px rgba(130, 168, 123, 0.45);
+        }
+        .arcade-btn-join:active {
+          border-bottom-width: 3px;
+          box-shadow: 0 4px 0 ${COLORS.sageDark}, 0 6px 16px rgba(130, 168, 123, 0.3);
+        }
+        .welcome-signin {
+          margin-top: 12px;
+          font-family: ${FONTS.body};
+          font-size: 15px;
+          font-weight: 600;
+          color: ${COLORS.inkSoft};
+          background: none;
+          border: none;
+          border-bottom: 2px dashed ${COLORS.inkMuted};
+          cursor: pointer;
+          padding: 4px 2px;
+          transition: color 0.15s, border-color 0.15s;
+        }
+        .welcome-signin:hover {
+          color: ${COLORS.ink};
+          border-color: ${COLORS.inkSoft};
+        }
+        @media (max-width: 600px) {
+          .arcade-btn {
+            padding: 24px 32px;
+            font-size: clamp(28px, 7vw, 40px);
+            max-width: 90vw;
           }
         }
       `}</style>
@@ -254,43 +275,41 @@ export default function Welcome({ user, onSignIn, onSignOut, onCreate, onJoin })
         {user && (
           <h1 className="welcome-greeting">Hi {username}</h1>
         )}
-        <div className="welcome-grid">
-          {user ? (
-            <button
-              type="button"
-              className="welcome-card welcome-card-signin"
-              onClick={() => {
-                if (window.confirm("Are you sure you want to sign out?")) {
-                  onSignOut();
-                }
-              }}
-            >
-              SIGN OUT
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="welcome-card welcome-card-signin"
-              onClick={onSignIn}
-            >
-              SIGN IN
-            </button>
-          )}
+        <button
+          type="button"
+          className="welcome-card arcade-btn arcade-btn-create"
+          onClick={onCreate}
+        >
+          CREATE
+        </button>
+        <button
+          type="button"
+          className="welcome-card arcade-btn arcade-btn-join"
+          onClick={onJoin}
+        >
+          JOIN
+        </button>
+        {user ? (
           <button
             type="button"
-            className="welcome-card welcome-card-create"
-            onClick={onCreate}
+            className="welcome-signin"
+            onClick={() => {
+              if (window.confirm("Are you sure you want to sign out?")) {
+                onSignOut();
+              }
+            }}
           >
-            {user ? "HOME" : "CREATE GAME"}
+            Sign Out
           </button>
+        ) : (
           <button
             type="button"
-            className="welcome-card welcome-card-join"
-            onClick={onJoin}
+            className="welcome-signin"
+            onClick={onSignIn}
           >
-            JOIN GAME
+            Sign In
           </button>
-        </div>
+        )}
       </div>
     </div>
   );

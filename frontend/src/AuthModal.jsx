@@ -5,6 +5,7 @@ import {
   register,
   resetPassword,
 } from "./api";
+import { FONTS } from "./theme.js";
 import { useTheme } from "./ThemeContext.jsx";
 
 const getStyles = (COLORS) => ({
@@ -22,8 +23,9 @@ const getStyles = (COLORS) => ({
     width: "min(92vw, 420px)",
     background: COLORS.creamSoft,
     border: `1px solid ${COLORS.border}`,
-    borderRadius: 14,
-    boxShadow: `0 16px 45px ${COLORS.shadow}`,
+    borderBottom: `4px solid ${COLORS.border}`,
+    borderRadius: 20,
+    boxShadow: `0 6px 0 ${COLORS.borderSoft}, 0 12px 32px ${COLORS.shadow}`,
     padding: "20px 18px",
   },
   tabRow: {
@@ -33,12 +35,14 @@ const getStyles = (COLORS) => ({
   },
   field: {
     width: "100%",
-    padding: "11px 12px",
+    padding: "12px 16px",
     background: COLORS.cream,
     border: `1px solid ${COLORS.border}`,
-    borderRadius: 8,
+    borderBottom: `3px solid ${COLORS.border}`,
+    borderRadius: 999,
     color: COLORS.ink,
     outline: "none",
+    transition: "border-color 0.15s, box-shadow 0.15s",
   },
   label: {
     display: "block",
@@ -49,13 +53,19 @@ const getStyles = (COLORS) => ({
   },
   actionBtn: {
     width: "100%",
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: `1px solid ${COLORS.blueDark}`,
-    background: COLORS.blueDark,
+    padding: "12px 16px",
+    borderRadius: 999,
+    border: "none",
+    borderBottom: `4px solid ${COLORS.blueDark}`,
+    background: COLORS.blue,
     color: COLORS.creamSoft,
-    fontWeight: 800,
+    fontWeight: 700,
     cursor: "pointer",
+    fontFamily: FONTS.display,
+    letterSpacing: 0.5,
+    fontSize: 15,
+    boxShadow: `0 5px 0 ${COLORS.blueDark}, 0 8px 18px rgba(90,127,168,0.25)`,
+    transition: "transform 0.12s ease, box-shadow 0.12s ease",
   },
 });
 
@@ -146,13 +156,19 @@ export default function AuthModal({ onClose, onAuthSuccess }) {
 
   const getTabButtonStyle = (active) => ({
     flex: 1,
-    padding: "8px 10px",
-    borderRadius: 8,
+    padding: "10px 14px",
+    borderRadius: 999,
     border: active ? `1px solid ${COLORS.blue}` : `1px solid ${COLORS.border}`,
+    borderBottom: active ? `3px solid ${COLORS.blueDark}` : `3px solid ${COLORS.border}`,
     background: active ? COLORS.blueSoft : COLORS.cream,
-    color: active ? COLORS.blue : COLORS.inkSoft,
+    color: active ? COLORS.blueDark : COLORS.inkSoft,
     fontWeight: 700,
     cursor: "pointer",
+    fontFamily: FONTS.display,
+    letterSpacing: 0.5,
+    fontSize: 14,
+    transition: "all 0.12s ease",
+    boxShadow: active ? `0 4px 0 ${COLORS.blueDark}, 0 4px 10px rgba(90,127,168,0.15)` : `0 4px 0 ${COLORS.borderSoft}`,
   });
 
   return (

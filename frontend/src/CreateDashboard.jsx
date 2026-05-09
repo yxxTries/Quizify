@@ -43,7 +43,7 @@ function validateCard(q) {
   q.choices.forEach((c, i) => {
     if (!c.trim()) errors[`choice_${i}`] = "Cannot be empty.";
   });
-  if (typeof q.correct_index !== "number" || q.correct_index < 0 || q.correct_index > 3) {
+  if (typeof q.correct_index !== "number" || q.correct_index < 0 || q.correct_index >= q.choices.length) {
     errors.correct_index = "Select a correct answer.";
   }
   return errors;
@@ -268,8 +268,29 @@ function QuestionCard({
               {localErrors[`choice_${i}`] && (
                 <span style={cardStyles.inlineError}>{localErrors[`choice_${i}`]}</span>
               )}
+              {draft.choices.length > 2 && (
+                <button
+                  title="Remove option"
+                  style={cardStyles.removeChoiceBtn}
+                  onClick={() => {
+                    const updated = draft.choices.filter((_, j) => j !== i);
+                    let newCorrect = draft.correct_index;
+                    if (newCorrect === i) newCorrect = 0;
+                    else if (newCorrect > i) newCorrect -= 1;
+                    setDraft({ ...draft, choices: updated, correct_index: newCorrect });
+                  }}
+                >✕</button>
+              )}
             </div>
           ))}
+          {draft.choices.length < 4 && (
+            <button
+              style={cardStyles.addChoiceBtn}
+              onClick={() => setDraft({ ...draft, choices: [...draft.choices, ""] })}
+            >
+              ＋ Add Option
+            </button>
+          )}
 
           <div style={cardStyles.editFooter}>
             <button style={cardStyles.cancelLink} onClick={handleCancel}>Cancel</button>
@@ -301,6 +322,7 @@ export default function CreateDashboard({
   const [prompt, setPrompt] = useState("");
   const [dragging, setDragging] = useState(false);
   const [numQuestions, setNumQuestions] = useState(initialQuiz?.questions?.length || 5);
+  const [numOptions, setNumOptions] = useState(4);
   const [timeControl, setTimeControl] = useState(() => normalizeTimeControl(initialQuiz?.timeControl));
   const inputRef = useRef();
   const promptRef = useRef(null);
@@ -380,7 +402,7 @@ export default function CreateDashboard({
     if (!file && !prompt.trim()) {
       const dummyQuestions = Array.from({ length: numQuestions }, (_, i) => ({
         question: `Question ${i + 1}`,
-        choices: ["Option A", "Option B", "Option C", "Option D"],
+        choices: Array.from({ length: numOptions }, (_, j) => `Option ${String.fromCharCode(65 + j)}`),
         correct_index: 0
       }));
       const dummyQuiz = {
@@ -421,7 +443,7 @@ export default function CreateDashboard({
     try {
       const next = recordAttempt();
       setAttempts(next);
-      const quiz = await generateQuiz(file, numQuestions, prompt);
+      const quiz = await generateQuiz(file, numQuestions, prompt, numOptions);
       setQuizMeta({ ...quiz, timeControl: buildTimeControlPayload(timeControl) });
       setQuestions(cloneQuestions(quiz.questions));
       setEditingIndex(null);
@@ -487,7 +509,7 @@ export default function CreateDashboard({
       if (hasErrors(errs)) return;
       setEditingIndex(null);
     }
-    const blank = { _id: uid(), question: "", choices: ["", "", "", ""], correct_index: 0 };
+    const blank = { _id: uid(), question: "", choices: Array(numOptions).fill(""), correct_index: 0 };
     setQuestions((prev) => [...prev, blank]);
     setEditingIndex(questions.length);
     setGlobalErrors({});
@@ -859,6 +881,25 @@ export default function CreateDashboard({
                 </div>
 
                 <div style={styles.settingGroup}>
+                  <span style={styles.label}>Options per Question</span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {[2, 3, 4].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        style={{
+                          ...styles.toolBtn,
+                          ...(numOptions === n ? styles.toolBtnActive : {}),
+                        }}
+                        onClick={() => setNumOptions(n)}
+                      >
+                        {n} Options
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={styles.settingGroup}>
                   <span style={styles.label}>Timer</span>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                     <button
@@ -972,6 +1013,25 @@ export default function CreateDashboard({
                     <span style={{ fontSize: 12, color: COLORS.inkSoft, fontWeight: 600 }}>s</span>
                   </div>
                 )}
+              </div>
+
+              <div className="divider" />
+
+              <div className="group">
+                <span style={styles.label}>Options</span>
+                {[2, 3, 4].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    style={{
+                      ...styles.toolBtn,
+                      ...(numOptions === n ? styles.toolBtnActive : {}),
+                    }}
+                    onClick={() => setNumOptions(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
               </div>
 
               <div className="divider" />
@@ -1164,7 +1224,7 @@ const buildStyles = (COLORS) => ({
   panelTitle: {
     fontFamily: FONTS.display,
     fontSize: 22,
-    fontWeight: 800,
+    fontWeight: 700,
     color: COLORS.ink,
     margin: 0,
   },
@@ -1677,6 +1737,32 @@ const buildCardStyles = (COLORS) => ({
   choiceInputCorrect: {
     borderColor: COLORS.sageDark,
     background: COLORS.sageSoft,
+  },
+  addChoiceBtn: {
+    background: COLORS.creamWarm,
+    border: `2px dashed ${COLORS.border}`,
+    borderRadius: 8,
+    color: COLORS.inkMuted,
+    fontSize: 12,
+    fontWeight: 600,
+    padding: "7px 10px",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    marginTop: 4,
+  },
+  removeChoiceBtn: {
+    background: COLORS.coralSoft,
+    border: `1px solid ${COLORS.coral}`,
+    color: COLORS.coralDark,
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    cursor: "pointer",
+    fontSize: 11,
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   inputError: {
     borderColor: COLORS.coral,

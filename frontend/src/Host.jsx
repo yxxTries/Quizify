@@ -3,6 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import Quiz from "./Quiz.jsx";
 import { buildWebSocketUrl } from "./api.js";
 import { useTheme } from "./ThemeContext.jsx";
+import { FONTS } from "./theme.js";
 import ThemeToggle from "./ThemeToggle.jsx";
 
 function normalizeTimeControl(quiz) {
@@ -213,13 +214,17 @@ export default function Host({ quiz, onEnd, autoReveal = true }) {
                       style={{
                         background: copied ? C.quizAccentSoft : "transparent",
                         border: `2px solid ${C.quizAccent}`,
+                        borderBottom: `4px solid ${C.quizAccent}`,
                         color: C.quizAccent,
-                        padding: "12px 24px",
-                        borderRadius: "12px",
+                        padding: "12px 28px",
+                        borderRadius: "999px",
                         cursor: "pointer",
-                        fontWeight: "bold",
-                        fontSize: "16px",
-                        transition: "all 0.2s"
+                        fontWeight: 700,
+                        fontSize: "15px",
+                        fontFamily: FONTS.display,
+                        letterSpacing: 0.5,
+                        transition: "all 0.12s ease",
+                        boxShadow: `0 5px 0 ${C.quizAccent}, 0 8px 20px rgba(0,210,211,0.2)`,
                       }}
                       onMouseOver={(e) => { if(!copied) e.currentTarget.style.background = C.quizAccentSoft; }}
                       onMouseOut={(e) => { if(!copied) e.currentTarget.style.background = "transparent"; }}
@@ -254,15 +259,18 @@ export default function Host({ quiz, onEnd, autoReveal = true }) {
                     background: C.quizSubCard,
                     color: C.quizText,
                     border: `1px solid ${C.quizSubCardBorder}`,
-                    padding: "20px 40px",
-                    borderRadius: "16px",
-                    fontSize: "20px",
+                    borderBottom: `4px solid ${C.quizSubCardBorder}`,
+                    padding: "18px 40px",
+                    borderRadius: "999px",
+                    fontSize: "18px",
                     cursor: "pointer",
                     width: "100%",
                     maxWidth: "500px",
-                    fontWeight: "bold",
-                    transition: "all 0.2s",
-                    boxShadow: `0 4px 16px ${C.shadow}`
+                    fontWeight: 700,
+                    fontFamily: FONTS.display,
+                    letterSpacing: 0.5,
+                    transition: "all 0.12s ease",
+                    boxShadow: `0 5px 0 ${C.quizSubCardBorder}, 0 8px 20px ${C.shadow}`,
                   }}
                   onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; }}
                   onMouseOut={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
@@ -305,14 +313,16 @@ export default function Host({ quiz, onEnd, autoReveal = true }) {
                     key={p}
                     title={p}
                     style={{
-                      padding: "12px 24px",
+                      padding: "12px 28px",
                       background: i % 2 === 0 ? C.quizAccent : "#FF9F43",
                       color: "#FFFFFF",
-                      borderRadius: "16px",
-                      fontSize: "18px",
-                      fontWeight: "600",
+                      borderRadius: "999px",
+                      fontSize: "17px",
+                      fontWeight: 700,
+                      fontFamily: FONTS.display,
+                      letterSpacing: 0.5,
                       animation: "scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-                      boxShadow: `0 4px 16px ${C.shadow}`,
+                      boxShadow: `0 4px 0 rgba(0,0,0,0.15), 0 6px 16px ${C.shadow}`,
                       display: "inline-block",
                       maxWidth: "200px",
                       whiteSpace: "nowrap",
@@ -330,15 +340,40 @@ export default function Host({ quiz, onEnd, autoReveal = true }) {
               <button
                 onClick={onEnd}
                 style={{
-                  padding: "18px 40px",
+                  padding: "16px 36px",
                   background: "transparent",
                   border: `2px solid ${C.quizNegative}`,
+                  borderBottom: `4px solid ${C.quizNegative}`,
                   color: C.quizNegative,
-                  borderRadius: "16px",
-                  fontSize: "20px",
-                  fontWeight: "bold",
+                  borderRadius: "999px",
+                  fontSize: "17px",
+                  fontWeight: 700,
                   cursor: "pointer",
-                  transition: "all 0.2s"
+                  fontFamily: FONTS.display,
+                  letterSpacing: 0.5,
+                  transition: "all 0.12s ease",
+                  boxShadow: `0 5px 0 ${C.quizNegative}, 0 8px 20px rgba(255,112,112,0.15)`,
+                }}
+              >
+                Quit Lobby
+              </button>
+              <button
+                onClick={handleStart}
+                style={{
+                  padding: "16px 56px",
+                  background: C.quizAccent,
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderBottom: `4px solid ${C.quizAccent}`,
+                  borderRadius: "999px",
+                  cursor: "pointer",
+                  fontSize: "17px",
+                  fontWeight: 700,
+                  fontFamily: FONTS.display,
+                  letterSpacing: 0.5,
+                  boxShadow: `0 5px 0 ${C.quizAccent}, 0 10px 28px ${C.shadow}`,
+                  transition: "all 0.12s ease",
+                  opacity: 1
                 }}
                 onMouseOver={(e) => { e.currentTarget.style.background = C.quizNegativeBg; }}
                 onMouseOut={(e) => { e.currentTarget.style.background = "transparent"; }}
@@ -438,7 +473,7 @@ export default function Host({ quiz, onEnd, autoReveal = true }) {
                })}
              {Object.keys(scores).length === 0 && <p style={{color: C.quizTextSoft }}>No final scores available.</p>}
            </div>
-           <button onClick={onEnd} style={{ marginTop: 40, padding: "16px 32px", fontSize: "20px", background: "transparent", color: C.quizTextSoft, border: `1px solid ${C.quizCardBorder}`, borderRadius: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+            <button onClick={onEnd} style={{ marginTop: 40, padding: "14px 32px", fontSize: "16px", background: "transparent", color: C.quizTextSoft, border: `1px solid ${C.quizCardBorder}`, borderBottom: `4px solid ${C.quizCardBorder}`, borderRadius: 999, cursor: "pointer", fontFamily: FONTS.display, fontWeight: 700, letterSpacing: 0.5, boxShadow: `0 5px 0 ${C.quizCardBorder}, 0 6px 14px ${C.shadow}`, transition: "all 0.12s ease" }}>
              Exit Game
            </button>
            <style>{`
