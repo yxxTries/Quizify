@@ -501,7 +501,7 @@ export default function App() {
 
   const handlePreviewEdit = (data) => {
     setEditingQuiz({ ...data.quiz, questions: data.quiz?.questions || [] });
-    navigate("/");
+    navigate("/create");
     setTimeout(() => setEditingQuiz(null), 0);
   };
 
@@ -597,6 +597,12 @@ export default function App() {
 
   const pageMeta = {
     "/": {
+      title: "Discover Free Quizzes & Trivia Games — Kuizu",
+      description: "Browse hundreds of community-made quizzes on math, science, history, trivia, and more. Play solo or with friends — all free.",
+      robots: "index, follow",
+      schemaType: "discover",
+    },
+    "/create": {
       title: "Kuizu — Free AI Quiz Maker | Turn Slides Into Quizzes",
       description: "Create and share AI-generated quizzes from PDFs, PPTX, or text. Play solo or host live multiplayer games — free Kahoot alternative.",
       robots: "index, follow",
@@ -726,14 +732,26 @@ export default function App() {
               onLogout={handleLogout}
               navigate={navigate}
             >
-              <CreateWizard
+              <Discover
+                onPlay={(post) => {
+                  setPreviewData({
+                    quiz: post.quiz,
+                    title: post.title,
+                    category: post.category,
+                    author: post.author,
+                    questions_count: post.questions_count,
+                    difficulty: post.difficulty,
+                    estimated_time: post.estimated_time,
+                    plays: post.plays,
+                    source: "discover",
+                    ownerId: post.user_id,
+                    postId: post.id,
+                  });
+                  navigate("/preview");
+                }}
                 user={user}
-                onPlay={handlePlay}
-                onHost={handleHostStart}
-                onSaveGame={handleSaveGame}
-                onPostDiscover={handlePostDiscover}
                 onRequireAuth={() => setIsAuthOpen(true)}
-                initialQuiz={editingQuiz}
+                onCreate={() => navigate("/create")}
               />
             </MainLayout>
           }
@@ -827,42 +845,7 @@ export default function App() {
         />
         <Route
           path="/discover"
-          element={
-            <MainLayout
-              user={user}
-              isProfileMenuOpen={isProfileMenuOpen}
-              profileMenuRef={profileMenuRef}
-              username={username}
-              profileInitial={profileInitial}
-              authBooting={authBooting}
-              onProfileMenuToggle={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              onAuthOpen={() => setIsAuthOpen(true)}
-              onLogout={handleLogout}
-              navigate={navigate}
-            >
-              <Discover
-                onPlay={(post) => {
-                  setPreviewData({
-                    quiz: post.quiz,
-                    title: post.title,
-                    category: post.category,
-                    author: post.author,
-                    questions_count: post.questions_count,
-                    difficulty: post.difficulty,
-                    estimated_time: post.estimated_time,
-                    plays: post.plays,
-                    source: "discover",
-                    ownerId: post.user_id,
-                    postId: post.id,
-                  });
-                  navigate("/preview");
-                }}
-                user={user}
-                onRequireAuth={() => setIsAuthOpen(true)}
-                onCreate={() => navigate("/")}
-              />
-            </MainLayout>
-          }
+          element={<Navigate to="/" replace />}
         />
         <Route
           path="/games"
@@ -1075,8 +1058,9 @@ function MainLayout({
         <div className="nav-drawer-wordmark" onClick={() => { navigate("/"); closeNav(); }}>
           Kuizu
         </div>
-        {navItem("Home", "/", path === "/" || path === "/create" || path === "/home")}
-        {navItem("Discover", "/discover", path === "/discover")}
+        {navItem("Discover", "/", path === "/" || path === "/discover")}
+        {navItem("Create", "/create", path === "/create")}
+        {navItem("Home", "/home", path === "/home")}
         {navItem("My Games", "/games", path === "/games")}
         {navItem("Join a Game", "/join", path.startsWith("/join"))}
         <div className="nav-drawer-section">Account</div>
